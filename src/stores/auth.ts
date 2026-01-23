@@ -5,20 +5,24 @@ import { authService } from '../services/auth'
 interface AuthState {
   user: User | null
   isLoading: boolean
-  error: string | null
+  isInitializing: boolean
+  authError: string | null
+  initError: string | null
   signIn: (email: string, password: string) => Promise<void>
   signOut: () => Promise<void>
   checkAuth: () => Promise<void>
-  clearError: () => void
+  clearAuthError: () => void
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   isLoading: false,
-  error: null,
+  isInitializing: true,
+  authError: null,
+  initError: null,
 
   signIn: async (email: string, password: string) => {
-    set({ isLoading: true, error: null })
+    set({ isLoading: true, authError: null })
     try {
       const { user } = await authService.signIn(email, password)
       set({ user, isLoading: false })
@@ -27,39 +31,40 @@ export const useAuthStore = create<AuthState>((set) => ({
       const friendly = /confirm/i.test(raw)
         ? 'Tu correo no está confirmado. Reenvía el correo de confirmación y vuelve a intentar.'
         : raw
+      
       set({ 
-        error: friendly, 
+        authError: friendly, 
         isLoading: false 
       })
     }
   },
 
   signOut: async () => {
-    set({ isLoading: true, user: null, error: null })
+    set({ isLoading: true, user: null, authError: null })
     try {
       await authService.signOut()
       set({ user: null, isLoading: false })
     } catch (error: any) {
       set({ 
-        error: error.message || 'Error al cerrar sesión', 
+        authError: error.message || 'Error al cerrar sesión', 
         isLoading: false 
       })
     }
   },
 
   checkAuth: async () => {
-    set({ isLoading: true })
+    set({ isInitializing: true, initError: null })
     try {
       const user = await authService.getCurrentUser()
-      set({ user, isLoading: false })
+      set({ user, isInitializing: false })
     } catch (error: any) {
       set({ 
         user: null, 
-        error: error.message || 'Error al verificar autenticación', 
-        isLoading: false 
+        initError: error?.message || 'Error al verificar autenticación', 
+        isInitializing: false 
       })
     }
   },
 
-  clearError: () => set({ error: null })
+  clearAuthError: () => set({ authError: null })
 }))

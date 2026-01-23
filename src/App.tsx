@@ -1,18 +1,25 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom"
-import { useEffect, useState } from "react"
-import { useAuthStore } from "./stores/auth"
-import { authService } from "./services/auth"
-import Layout from "./components/Layout"
-import Login from "./pages/Login"
-import Dashboard from "./pages/Dashboard"
-import POS from "./pages/POS"
-import Inventory from "./pages/Inventory"
-import Expenses from "./pages/Expenses"
-import Reports from "./pages/Reports"
-import Settings from "./pages/Settings"
+import { useEffect } from "react"
+import { useAuthStore } from "@/stores/auth"
+import { authService } from "@/services/auth"
+import Layout from "@/components/Layout"
+import Login from "@/pages/Login"
+import Dashboard from "@/pages/Dashboard"
+import POS from "@/pages/POS"
+import Inventory from "@/pages/Inventory"
+import Expenses from "@/pages/Expenses"
+import Reports from "@/pages/Reports"
+import Settings from "@/pages/Settings"
 
 function ProtectedRoute({ children, allowedRoles }: { children: React.ReactNode, allowedRoles?: string[] }) {
-  const { user } = useAuthStore()
+  const { user, isInitializing } = useAuthStore()
+  if (isInitializing) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+      </div>
+    )
+  }
   if (!user) {
     return <Navigate to="/login" replace />
   }
@@ -32,37 +39,53 @@ function ProtectedRoute({ children, allowedRoles }: { children: React.ReactNode,
 }
 
 function AppRoutes() {
-  const { user, checkAuth } = useAuthStore()
-  const [loading, setLoading] = useState(true)
+  const { user, checkAuth, isInitializing } = useAuthStore()
 
   useEffect(() => {
     const init = async () => {
       try {
         await checkAuth()
-      } finally {
-        setLoading(false)
+      } catch (e) {
+        console.error("Auth init error:", e)
       }
     }
-    const { data: sub } = authService.onAuthStateChange(async () => {
-      await checkAuth()
+    
+    const { data: sub } = authService.onAuthStateChange(async (event) => {
+      if (event === 'SIGNED_OUT') {
+        useAuthStore.setState({
+          user: null,
+          isInitializing: false,
+          isLoading: false,
+          authError: null,
+          initError: null
+        })
+        return
+      }
+      if (event === 'SIGNED_IN') {
+        await checkAuth()
+      }
     })
+
     init()
     return () => {
       sub?.subscription?.unsubscribe()
     }
   }, [checkAuth])
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-red-600"></div>
-      </div>
-    )
-  }
-
   return (
     <Routes>
-      <Route path="/login" element={!user ? <Login /> : <Navigate to="/dashboard" replace />} />
+      <Route
+        path="/login"
+        element={
+          isInitializing
+            ? (
+              <div className="min-h-screen flex items-center justify-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+              </div>
+            )
+            : (!user ? <Login /> : <Navigate to="/dashboard" replace />)
+        }
+      />
       
       <Route path="/dashboard" element={
         <ProtectedRoute>

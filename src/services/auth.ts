@@ -1,21 +1,38 @@
 import { supabase } from '../lib/supabase'
 import { User } from '../types'
 
+async function withTimeout<T>(promise: PromiseLike<T>, ms: number, message: string): Promise<T> {
+  let timeoutId: any
+  const timeoutPromise = new Promise<T>((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error(message)), ms)
+  })
+  try {
+    return await Promise.race([Promise.resolve(promise), timeoutPromise])
+  } finally {
+    clearTimeout(timeoutId)
+  }
+}
+
 export const authService = {
   async signIn(email: string, password: string) {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
+    const { data, error } = await withTimeout(
+      supabase.auth.signInWithPassword({ email, password }),
+      12000,
+      'Tiempo de espera agotado al iniciar sesión'
+    )
 
     if (error) throw error
 
     // Obtener información adicional del usuario
-    const { data: userData, error: userError } = await supabase
-      .from('users')
-      .select('*')
-      .eq('id', data.user.id)
-      .single()
+    const { data: userData, error: userError } = await withTimeout(
+      supabase
+        .from('users')
+        .select('*')
+        .eq('id', data.user.id)
+        .single(),
+      12000,
+      'Tiempo de espera agotado al cargar el perfil del usuario'
+    )
 
     if (userError) throw userError
 
@@ -23,19 +40,33 @@ export const authService = {
   },
 
   async signOut() {
-    const { error } = await supabase.auth.signOut({ scope: 'global' })
+    const { error } = await withTimeout(
+      supabase.auth.signOut(),
+      12000,
+      'Tiempo de espera agotado al cerrar sesión'
+    )
     if (error) throw error
   },
 
   async getCurrentUser() {
-    const { data: { user } } = await supabase.auth.getUser()
+    const { data: { session } } = await withTimeout(
+      supabase.auth.getSession(),
+      12000,
+      'Tiempo de espera agotado al verificar la sesión'
+    )
+    const user = session?.user
     if (!user) return null
 
-    const { data: userData } = await supabase
-      .from('users')
-      .select('*')
-      .eq('id', user.id)
-      .single()
+    const { data: userData, error: userError } = await withTimeout(
+      supabase
+        .from('users')
+        .select('*')
+        .eq('id', user.id)
+        .single(),
+      12000,
+      'Tiempo de espera agotado al cargar el perfil del usuario'
+    )
+    if (userError) throw userError
 
     return userData as User
   },
@@ -69,11 +100,5 @@ export const authService = {
 
   onAuthStateChange(callback: (event: string, session: any) => void) {
     return supabase.auth.onAuthStateChange(callback)
-  }
-  ,
-  async resendConfirmation(email: string) {
-    const { error } = await supabase.auth.resend({ type: 'signup', email })
-    if (error) throw error
-    return true
   }
 }
