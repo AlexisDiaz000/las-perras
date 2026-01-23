@@ -94,6 +94,7 @@ export default function Reports() {
     plugins: {
       legend: {
         position: 'top' as const,
+        labels: { color: '#F4F4F5' as any }
       },
       title: {
         display: true,
@@ -107,6 +108,7 @@ export default function Reports() {
     plugins: {
       legend: {
         position: 'top' as const,
+        labels: { color: '#F4F4F5' as any }
       },
       title: {
         display: true,
@@ -118,41 +120,41 @@ export default function Reports() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Reportes</h1>
-        <p className="mt-2 text-sm text-gray-600">Genere reportes financieros y exporte los datos</p>
+        <h1 className="brand-heading text-3xl">Reportes</h1>
+        <p className="mt-2 text-sm text-secondary-300">Genere reportes financieros y exporte los datos</p>
       </div>
 
       {/* Filter Section */}
-      <div className="bg-white shadow rounded-lg p-6 mb-6">
-        <h2 className="text-lg font-medium text-gray-900 mb-4">Filtros</h2>
+      <div className="brand-card p-6 mb-6">
+        <h2 className="brand-heading text-xl mb-4">Filtros</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-xs font-semibold text-secondary-200 mb-2 uppercase tracking-widest">
               Fecha Inicial
             </label>
             <input
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2"
+              className="brand-input"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-xs font-semibold text-secondary-200 mb-2 uppercase tracking-widest">
               Fecha Final
             </label>
             <input
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2"
+              className="brand-input"
             />
           </div>
           <div className="flex items-end">
             <button
               onClick={generateReport}
               disabled={loading}
-              className="w-full bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 disabled:opacity-50"
+              className="brand-button w-full"
             >
               {loading ? 'Generando...' : 'Generar Reporte'}
             </button>
@@ -165,41 +167,41 @@ export default function Reports() {
         <div className="space-y-6">
           {/* Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-            <div className="bg-white overflow-hidden shadow rounded-lg p-5">
-              <h3 className="text-sm font-medium text-gray-500">Ventas Totales</h3>
-              <p className="text-2xl font-bold text-green-600">
+            <div className="brand-card p-5">
+              <h3 className="text-xs font-semibold text-secondary-300 uppercase tracking-widest">Ventas Totales</h3>
+              <p className="text-2xl font-bold text-secondary-50">
                 {formatCurrency(reportData.metrics.total_sales)}
               </p>
             </div>
-            <div className="bg-white overflow-hidden shadow rounded-lg p-5">
-              <h3 className="text-sm font-medium text-gray-500">Gastos Totales</h3>
-              <p className="text-2xl font-bold text-red-600">
+            <div className="brand-card p-5">
+              <h3 className="text-xs font-semibold text-secondary-300 uppercase tracking-widest">Gastos Totales</h3>
+              <p className="text-2xl font-bold text-secondary-50">
                 {formatCurrency(reportData.metrics.total_expenses)}
               </p>
             </div>
-            <div className="bg-white overflow-hidden shadow rounded-lg p-5">
-              <h3 className="text-sm font-medium text-gray-500">Ganancia Neta</h3>
-              <p className="text-2xl font-bold text-blue-600">
+            <div className="brand-card p-5">
+              <h3 className="text-xs font-semibold text-secondary-300 uppercase tracking-widest">Ganancia Neta</h3>
+              <p className="text-2xl font-bold text-secondary-50">
                 {formatCurrency(reportData.metrics.net_profit)}
               </p>
             </div>
-            <div className="bg-white overflow-hidden shadow rounded-lg p-5">
-              <h3 className="text-sm font-medium text-gray-500">Socio 1 (70%)</h3>
-              <p className="text-2xl font-bold text-purple-600">
-                {formatCurrency(reportData.metrics.partner1_profit)}
+            <div className="brand-card p-5">
+              <h3 className="text-xs font-semibold text-secondary-300 uppercase tracking-widest">Socio 1 (70%)</h3>
+              <p className="text-2xl font-bold text-secondary-50">
+                {formatCurrency(reportData.metrics.partner1_share)}
               </p>
             </div>
-            <div className="bg-white overflow-hidden shadow rounded-lg p-5">
-              <h3 className="text-sm font-medium text-gray-500">Socio 2 (30%)</h3>
-              <p className="text-2xl font-bold text-yellow-600">
-                {formatCurrency(reportData.metrics.partner2_profit)}
+            <div className="brand-card p-5">
+              <h3 className="text-xs font-semibold text-secondary-300 uppercase tracking-widest">Socio 2 (30%)</h3>
+              <p className="text-2xl font-bold text-secondary-50">
+                {formatCurrency(reportData.metrics.partner2_share)}
               </p>
             </div>
           </div>
 
           {/* Charts */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-white p-6 rounded-lg shadow">
+            <div className="brand-card p-6">
               <Bar
                 options={salesChartOptions}
                 data={{
@@ -208,19 +210,19 @@ export default function Reports() {
                     {
                       label: 'Cantidad',
                       data: reportData.salesData.map((item: any) => item.count),
-                      backgroundColor: 'rgba(220, 38, 38, 0.8)',
+                      backgroundColor: 'rgba(244, 244, 245, 0.85)',
                     },
                     {
                       label: 'Total',
                       data: reportData.salesData.map((item: any) => item.total),
-                      backgroundColor: 'rgba(234, 179, 8, 0.8)',
+                      backgroundColor: 'rgba(161, 161, 170, 0.85)',
                     },
                   ],
                 }}
               />
             </div>
             
-            <div className="bg-white p-6 rounded-lg shadow">
+            <div className="brand-card p-6">
               <Bar
                 options={expensesChartOptions}
                 data={{
@@ -230,12 +232,12 @@ export default function Reports() {
                       label: 'Total',
                       data: reportData.expensesData.map((item: any) => item.total),
                       backgroundColor: [
-                        'rgba(220, 38, 38, 0.8)',
-                        'rgba(234, 179, 8, 0.8)',
-                        'rgba(59, 130, 246, 0.8)',
-                        'rgba(16, 185, 129, 0.8)',
-                        'rgba(139, 92, 246, 0.8)',
-                        'rgba(236, 72, 153, 0.8)',
+                        'rgba(244, 244, 245, 0.85)',
+                        'rgba(228, 228, 231, 0.85)',
+                        'rgba(212, 212, 216, 0.85)',
+                        'rgba(161, 161, 170, 0.85)',
+                        'rgba(113, 113, 122, 0.85)',
+                        'rgba(82, 82, 91, 0.85)',
                       ],
                     },
                   ],
@@ -245,10 +247,10 @@ export default function Reports() {
           </div>
 
           {/* Export Button */}
-          <div className="bg-white p-6 rounded-lg shadow text-center">
+          <div className="brand-card p-6 text-center">
             <button
               onClick={exportToCSV}
-              className="bg-green-600 text-white py-2 px-6 rounded-md hover:bg-green-700"
+              className="brand-button"
             >
               Exportar a CSV
             </button>

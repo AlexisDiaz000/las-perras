@@ -112,7 +112,7 @@ export default function Expenses() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white/30"></div>
       </div>
     )
   }
@@ -123,11 +123,11 @@ export default function Expenses() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="brand-heading">Gastos</h1>
-          <p className="text-sm brand-text">Total: {formatCurrency(totalExpenses)}</p>
+          <p className="text-sm text-secondary-300 uppercase tracking-widest">Total: {formatCurrency(totalExpenses)}</p>
         </div>
         <button
           onClick={() => setShowAddExpense(true)}
-          className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 flex items-center"
+          className="brand-button"
         >
           <PlusIcon className="h-5 w-5 mr-2" />
           Agregar Gasto
@@ -135,14 +135,14 @@ export default function Expenses() {
       </div>
 
       {/* Filtros */}
-      <div className="bg-white p-4 rounded-lg shadow-md">
+      <div className="brand-card p-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Categoría</label>
+            <label className="block text-xs font-semibold text-secondary-200 mb-1 uppercase tracking-widest">Categoría</label>
             <select
               value={filterCategory}
               onChange={(e) => setFilterCategory(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-red-500 focus:border-red-500"
+              className="brand-input"
             >
               <option value="">Todas las categorías</option>
               {EXPENSE_CATEGORIES.map(category => (
@@ -151,12 +151,12 @@ export default function Expenses() {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
+            <label className="block text-xs font-semibold text-secondary-200 mb-1 uppercase tracking-widest">Fecha</label>
             <input
               type="date"
               value={filterDate}
               onChange={(e) => setFilterDate(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-red-500 focus:border-red-500"
+              className="brand-input"
             />
           </div>
           <div className="flex items-end">
@@ -165,7 +165,7 @@ export default function Expenses() {
                 setFilterCategory('')
                 setFilterDate('')
               }}
-              className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
+              className="brand-button"
             >
               Limpiar Filtros
             </button>
@@ -174,51 +174,51 @@ export default function Expenses() {
       </div>
 
       {/* Tabla de Gastos */}
-      <div className="bg-white shadow-md rounded-lg overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+      <div className="brand-card overflow-hidden">
+        <table className="min-w-full divide-y divide-white/10">
+          <thead className="bg-transparent">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descripción</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Categoría</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Monto</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Comprobante</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Usuario</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+              <th className="px-6 py-3 text-left text-xs font-semibold text-secondary-300 uppercase tracking-widest">Fecha</th>
+              <th className="px-6 py-3 text-left text-xs font-semibold text-secondary-300 uppercase tracking-widest">Descripción</th>
+              <th className="px-6 py-3 text-left text-xs font-semibold text-secondary-300 uppercase tracking-widest">Categoría</th>
+              <th className="px-6 py-3 text-left text-xs font-semibold text-secondary-300 uppercase tracking-widest">Monto</th>
+              <th className="px-6 py-3 text-left text-xs font-semibold text-secondary-300 uppercase tracking-widest">Comprobante</th>
+              <th className="px-6 py-3 text-left text-xs font-semibold text-secondary-300 uppercase tracking-widest">Usuario</th>
+              <th className="px-6 py-3 text-left text-xs font-semibold text-secondary-300 uppercase tracking-widest">Acciones</th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="divide-y divide-white/10">
             {expenses.map((expense) => (
               <tr key={expense.id}>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-secondary-50">
                   {new Date(expense.expense_date).toLocaleDateString('es-CO')}
                 </td>
-                <td className="px-6 py-4 text-sm text-gray-900">{expense.description}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{expense.category}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                <td className="px-6 py-4 text-sm text-secondary-50">{expense.description}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-secondary-300">{expense.category}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-secondary-50">
                   {formatCurrency(expense.amount)}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-secondary-300">
                   {expense.receipt_url ? (
-                    <a href={expense.receipt_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800">
+                    <a href={expense.receipt_url} target="_blank" rel="noopener noreferrer" className="text-secondary-50 hover:text-secondary-100 underline underline-offset-4">
                       Ver Comprobante
                     </a>
                   ) : (
-                    <span className="text-gray-400">Sin comprobante</span>
+                    <span className="text-secondary-500">Sin comprobante</span>
                   )}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{expense.user?.name}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-secondary-300">{expense.user?.name}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <div className="flex space-x-2">
                     <button
                       onClick={() => setEditingExpense(expense)}
-                      className="text-blue-600 hover:text-blue-900"
+                      className="text-secondary-200 hover:text-secondary-50"
                     >
                       <PencilIcon className="h-4 w-4" />
                     </button>
                     <button
                       onClick={() => handleDeleteExpense(expense.id)}
-                      className="text-red-600 hover:text-red-900"
+                      className="text-secondary-200 hover:text-secondary-50"
                     >
                       <TrashIcon className="h-4 w-4" />
                     </button>
@@ -229,7 +229,7 @@ export default function Expenses() {
           </tbody>
         </table>
         {expenses.length === 0 && (
-          <div className="text-center py-8 text-gray-500">
+          <div className="text-center py-8 text-secondary-400">
             No hay gastos registrados
           </div>
         )}

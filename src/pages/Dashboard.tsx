@@ -64,8 +64,8 @@ export default function Dashboard() {
           datasets: [{
             label: 'Ventas ($)',
             data: salesData.map(item => item.total),
-            backgroundColor: ['#DC2626', '#EF4444', '#F87171', '#FCA5A5', '#FECACA', '#FEE2E2'],
-            borderColor: ['#DC2626'],
+            backgroundColor: ['#F4F4F5', '#E4E4E7', '#D4D4D8', '#A1A1AA', '#71717A', '#52525B'],
+            borderColor: ['#FAFAFA'],
             borderWidth: 1,
           }]
         })
@@ -78,7 +78,7 @@ export default function Dashboard() {
           datasets: [{
             label: 'Gastos ($)',
             data: expensesData.map(item => item.total),
-            backgroundColor: ['#EAB308', '#F59E0B', '#FBBF24', '#FCD34D', '#FDE68A', '#FEF3C7'],
+            backgroundColor: ['#F4F4F5', '#E4E4E7', '#D4D4D8', '#A1A1AA', '#71717A', '#52525B'],
             borderWidth: 1,
           }]
         })
@@ -101,7 +101,7 @@ export default function Dashboard() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white/30"></div>
       </div>
     )
   }
@@ -110,75 +110,75 @@ export default function Dashboard() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+        <h1 className="brand-heading text-3xl">Dashboard</h1>
         <div className="flex space-x-4">
           <input
             type="date"
             value={dateRange.start}
             onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
-            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-red-500 focus:border-red-500"
+            className="brand-input w-auto"
           />
           <input
             type="date"
             value={dateRange.end}
             onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
-            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-red-500 focus:border-red-500"
+            className="brand-input w-auto"
           />
         </div>
       </div>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-lg shadow-md">
+        <div className="brand-card p-6">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <CurrencyDollarIcon className="h-8 w-8 text-green-600" />
+              <CurrencyDollarIcon className="h-8 w-8 text-secondary-200" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">Ventas Totales</p>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-xs font-semibold text-secondary-300 uppercase tracking-widest">Ventas Totales</p>
+              <p className="text-2xl font-bold text-secondary-50">
                 {formatCurrency(metrics?.total_sales || 0)}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow-md">
+        <div className="brand-card p-6">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <CurrencyDollarIcon className="h-8 w-8 text-red-600" />
+              <CurrencyDollarIcon className="h-8 w-8 text-secondary-200" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">Gastos Totales</p>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-xs font-semibold text-secondary-300 uppercase tracking-widest">Gastos Totales</p>
+              <p className="text-2xl font-bold text-secondary-50">
                 {formatCurrency(metrics?.total_expenses || 0)}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow-md">
+        <div className="brand-card p-6">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <ChartBarIcon className="h-8 w-8 text-blue-600" />
+              <ChartBarIcon className="h-8 w-8 text-secondary-200" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">Ganancia Neta</p>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-xs font-semibold text-secondary-300 uppercase tracking-widest">Ganancia Neta</p>
+              <p className="text-2xl font-bold text-secondary-50">
                 {formatCurrency(metrics?.net_profit || 0)}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow-md">
+        <div className="brand-card p-6">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <ShoppingCartIcon className="h-8 w-8 text-yellow-600" />
+              <ShoppingCartIcon className="h-8 w-8 text-secondary-200" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">Socios (70%/30%)</p>
-              <p className="text-lg font-bold text-gray-900">
+              <p className="text-xs font-semibold text-secondary-300 uppercase tracking-widest">Socios (70%/30%)</p>
+              <p className="text-lg font-bold text-secondary-50">
                 {formatCurrency(metrics?.partner1_share || 0)} / {formatCurrency(metrics?.partner2_share || 0)}
               </p>
             </div>
@@ -188,12 +188,12 @@ export default function Dashboard() {
 
       {/* Alertas de Stock Bajo */}
       {lowStockItems.length > 0 && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+        <div className="brand-card p-4">
           <div className="flex">
-            <ExclamationTriangleIcon className="h-5 w-5 text-yellow-400" />
+            <ExclamationTriangleIcon className="h-5 w-5 text-secondary-200" />
             <div className="ml-3">
-              <h3 className="text-sm font-medium text-yellow-800">Alertas de Stock Bajo</h3>
-              <div className="mt-2 text-sm text-yellow-700">
+              <h3 className="text-xs font-semibold text-secondary-200 uppercase tracking-widest">Alertas de Stock Bajo</h3>
+              <div className="mt-2 text-sm text-secondary-200">
                 <ul className="list-disc pl-5 space-y-1">
                   {lowStockItems.map((item) => (
                     <li key={item.id}>
@@ -210,14 +210,15 @@ export default function Dashboard() {
       {/* Gráficos */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Gráfico de Ventas por Tipo de Perro */}
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Ventas por Tipo de Perro</h3>
+        <div className="brand-card p-6">
+          <h3 className="brand-heading text-xl mb-4">Ventas por Tipo</h3>
           {salesChartData ? (
             <Bar data={salesChartData} options={{
               responsive: true,
               plugins: {
                 legend: {
                   position: 'top' as const,
+                  labels: { color: '#F4F4F5' as any }
                 },
                 title: {
                   display: true,
@@ -227,28 +228,35 @@ export default function Dashboard() {
               scales: {
                 y: {
                   beginAtZero: true,
+                  grid: { color: 'rgba(255,255,255,0.08)' as any },
                   ticks: {
+                    color: '#D4D4D8' as any,
                     callback: function(value) {
                       return '$' + value.toLocaleString('es-CO')
                     }
                   }
+                },
+                x: {
+                  ticks: { color: '#D4D4D8' as any },
+                  grid: { color: 'rgba(255,255,255,0.04)' as any },
                 }
               }
             }} />
           ) : (
-            <div className="text-center text-gray-500 py-8">No hay datos de ventas</div>
+            <div className="text-center text-secondary-400 py-8">No hay datos de ventas</div>
           )}
         </div>
 
         {/* Gráfico de Gastos por Categoría */}
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Gastos por Categoría</h3>
+        <div className="brand-card p-6">
+          <h3 className="brand-heading text-xl mb-4">Gastos por Categoría</h3>
           {expensesChartData ? (
             <Doughnut data={expensesChartData} options={{
               responsive: true,
               plugins: {
                 legend: {
                   position: 'bottom' as const,
+                  labels: { color: '#F4F4F5' as any }
                 },
                 title: {
                   display: true,
@@ -257,7 +265,7 @@ export default function Dashboard() {
               }
             }} />
           ) : (
-            <div className="text-center text-gray-500 py-8">No hay datos de gastos</div>
+            <div className="text-center text-secondary-400 py-8">No hay datos de gastos</div>
           )}
         </div>
       </div>

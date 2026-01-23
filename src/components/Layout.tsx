@@ -56,7 +56,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               leaveFrom="opacity-100"
               leaveTo="opacity-0"
             >
-              <div className="fixed inset-0 bg-gray-900/80" />
+              <div className="fixed inset-0 bg-black/80" />
             </Transition.Child>
 
             <div className="fixed inset-0 flex">
@@ -87,9 +87,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                     </div>
                   </Transition.Child>
                   
-                  <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-white px-6 pb-4">
+                  <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-primary-900 px-6 pb-4 border-r border-white/10">
                     <div className="flex h-16 shrink-0 items-center">
-                      <h1 className="text-2xl font-bold text-primary-600">Las Perras</h1>
+                      <h1 className="brand-logo text-3xl">Las Perras</h1>
                     </div>
                     <nav className="flex flex-1 flex-col">
                       <ul role="list" className="flex flex-1 flex-col gap-y-7">
@@ -101,14 +101,14 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                                   to={item.href}
                                   className={classNames(
                                     location.pathname === item.href
-                                      ? 'bg-primary-50 text-primary-600'
-                                      : 'text-gray-700 hover:text-primary-600 hover:bg-gray-50',
-                                    'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold'
+                                      ? 'bg-white/10 text-secondary-50'
+                                      : 'text-secondary-200 hover:text-secondary-50 hover:bg-white/5',
+                                    'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold uppercase tracking-widest'
                                   )}
                                 >
                                   <item.icon
                                     className={classNames(
-                                      location.pathname === item.href ? 'text-primary-600' : 'text-gray-400 group-hover:text-primary-600',
+                                      location.pathname === item.href ? 'text-secondary-50' : 'text-secondary-400 group-hover:text-secondary-50',
                                       'h-6 w-6 shrink-0'
                                     )}
                                     aria-hidden="true"
@@ -129,9 +129,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </Transition.Root>
 
         <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col">
-          <div className="flex grow flex-col gap-y-5 overflow-y-auto border-r border-gray-200 bg-white px-6 pb-4">
+          <div className="flex grow flex-col gap-y-5 overflow-y-auto border-r border-white/10 bg-primary-900 px-6 pb-4">
             <div className="flex h-16 shrink-0 items-center">
-              <h1 className="text-2xl font-bold text-primary-600">Las Perras</h1>
+              <h1 className="brand-logo text-3xl">Las Perras</h1>
             </div>
             <nav className="flex flex-1 flex-col">
               <ul role="list" className="flex flex-1 flex-col gap-y-7">
@@ -143,14 +143,14 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                           to={item.href}
                           className={classNames(
                             location.pathname === item.href
-                              ? 'bg-primary-50 text-primary-600'
-                              : 'text-gray-700 hover:text-primary-600 hover:bg-gray-50',
-                            'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold'
+                              ? 'bg-white/10 text-secondary-50'
+                              : 'text-secondary-200 hover:text-secondary-50 hover:bg-white/5',
+                            'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold uppercase tracking-widest'
                           )}
                         >
                           <item.icon
                             className={classNames(
-                              location.pathname === item.href ? 'text-primary-600' : 'text-gray-400 group-hover:text-primary-600',
+                              location.pathname === item.href ? 'text-secondary-50' : 'text-secondary-400 group-hover:text-secondary-50',
                               'h-6 w-6 shrink-0'
                             )}
                             aria-hidden="true"
@@ -163,18 +163,18 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 </li>
                 
                 <li className="mt-auto">
-                  <div className="flex items-center gap-x-4 py-3 text-sm font-semibold leading-6 text-gray-900 border-t border-gray-200 pt-4">
-                    <div className="h-8 w-8 rounded-full bg-secondary-100 flex items-center justify-center text-secondary-600">
+                  <div className="flex items-center gap-x-4 py-3 text-sm font-semibold leading-6 text-secondary-50 border-t border-white/10 pt-4">
+                    <div className="h-8 w-8 rounded-full bg-white/10 flex items-center justify-center text-secondary-50">
                       {user?.name?.[0]?.toUpperCase() || 'U'}
                     </div>
                     <span className="sr-only">Tu perfil</span>
                     <div className="flex flex-col">
                       <span aria-hidden="true">{user?.name}</span>
-                      <span className="text-xs text-gray-500 font-normal capitalize">{user?.role}</span>
+                      <span className="text-xs text-secondary-400 font-normal capitalize">{user?.role}</span>
                     </div>
                     <button
                       onClick={handleSignOut}
-                      className="ml-auto p-2 hover:bg-gray-100 rounded-full text-gray-500 hover:text-red-600 transition-colors"
+                      className="ml-auto p-2 hover:bg-white/10 rounded-full text-secondary-300 hover:text-secondary-50 transition-colors"
                       title="Cerrar Sesión"
                     >
                       <ArrowLeftOnRectangleIcon className="h-5 w-5" />
@@ -187,23 +187,23 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </div>
 
         <div className="lg:pl-72">
-          <div className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-gray-200 bg-white px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8 lg:hidden">
-            <button type="button" className="-m-2.5 p-2.5 text-gray-700 lg:hidden" onClick={() => setSidebarOpen(true)}>
+          <div className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-white/10 bg-primary-900/80 backdrop-blur px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8 lg:hidden">
+            <button type="button" className="-m-2.5 p-2.5 text-secondary-50 lg:hidden" onClick={() => setSidebarOpen(true)}>
               <span className="sr-only">Abrir menú</span>
               <Bars3Icon className="h-6 w-6" aria-hidden="true" />
             </button>
 
             <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
               <div className="flex items-center gap-x-4 lg:gap-x-6 ml-auto">
-                <div className="flex items-center gap-x-4 px-6 py-3 text-sm font-semibold leading-6 text-gray-900">
-                   <div className="h-8 w-8 rounded-full bg-secondary-100 flex items-center justify-center text-secondary-600">
+                <div className="flex items-center gap-x-4 px-6 py-3 text-sm font-semibold leading-6 text-secondary-50">
+                   <div className="h-8 w-8 rounded-full bg-white/10 flex items-center justify-center text-secondary-50">
                       {user?.name?.[0]?.toUpperCase() || 'U'}
                     </div>
                   <span className="sr-only">Tu perfil</span>
                   <span aria-hidden="true">{user?.name}</span>
                    <button
                       onClick={handleSignOut}
-                      className="ml-2 p-1 hover:bg-gray-100 rounded-full text-gray-500 hover:text-red-600 transition-colors"
+                      className="ml-2 p-1 hover:bg-white/10 rounded-full text-secondary-300 hover:text-secondary-50 transition-colors"
                     >
                       <ArrowLeftOnRectangleIcon className="h-5 w-5" />
                     </button>
