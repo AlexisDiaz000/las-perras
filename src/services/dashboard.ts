@@ -38,16 +38,6 @@ export const dashboardService = {
     const partner1Share = netProfit * PARTNER1_PERCENTAGE
     const partner2Share = netProfit * PARTNER2_PERCENTAGE
 
-    // Obtener ventas por tipo de perro
-    const { data: salesByTypeData, error: salesByTypeError } = await supabase
-      .from('sale_items')
-      .select(`
-        hotdog_type,
-        sum(total_price) as total,
-        sum(quantity) as count
-      `)
-      .eq('sales.created_at', startDate) // This needs proper date filtering
-
     // Obtener gastos por categoría
     const { data: expensesByCategoryData, error: expensesByCategoryError } = await supabase
       .from('expenses')
@@ -91,7 +81,7 @@ export const dashboardService = {
       if (manualError) throw manualError
 
       // Filtrar manualmente por fecha y agrupar
-      const filtered = manualData.filter(item => {
+      const filtered = (manualData as any[]).filter((item: any) => {
         const itemDate = new Date(item.sales.created_at).toISOString().split('T')[0]
         return itemDate >= startDate && itemDate <= endDate
       })
@@ -144,11 +134,11 @@ export const dashboardService = {
 
   async getLowStockItems() {
     const { data, error } = await supabase
-      .from('v_inventory_low_stock')
+      .from('inventory_items')
       .select('*')
       .order('current_stock', { ascending: true })
 
     if (error) throw error
-    return data
+    return (data || []).filter((item: any) => item.current_stock <= item.min_threshold)
   }
 }

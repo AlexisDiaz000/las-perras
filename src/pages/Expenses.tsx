@@ -13,7 +13,13 @@ export default function Expenses() {
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null)
   const [filterCategory, setFilterCategory] = useState('')
   const [filterDate, setFilterDate] = useState('')
-  const [newExpense, setNewExpense] = useState({
+  const [newExpense, setNewExpense] = useState<{
+    expense_date: string
+    description: string
+    category: typeof EXPENSE_CATEGORIES[number]
+    amount: number
+    receipt_url: string
+  }>({
     expense_date: new Date().toISOString().split('T')[0],
     description: '',
     category: EXPENSE_CATEGORIES[0],
@@ -116,8 +122,8 @@ export default function Expenses() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Gastos</h1>
-          <p className="text-sm text-gray-500">Total: {formatCurrency(totalExpenses)}</p>
+          <h1 className="brand-heading">Gastos</h1>
+          <p className="text-sm brand-text">Total: {formatCurrency(totalExpenses)}</p>
         </div>
         <button
           onClick={() => setShowAddExpense(true)}
@@ -250,7 +256,7 @@ export default function Expenses() {
               />
               <select
                 value={newExpense.category}
-                onChange={(e) => setNewExpense({...newExpense, category: e.target.value})}
+                onChange={(e) => setNewExpense({...newExpense, category: e.target.value as typeof EXPENSE_CATEGORIES[number]})}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-red-500 focus:border-red-500"
               >
                 {EXPENSE_CATEGORIES.map(category => (
@@ -316,7 +322,7 @@ export default function Expenses() {
               />
               <select
                 value={editingExpense.category}
-                onChange={(e) => setEditingExpense({...editingExpense, category: e.target.value})}
+                onChange={(e) => setEditingExpense({...editingExpense, category: e.target.value as typeof EXPENSE_CATEGORIES[number]})}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-red-500 focus:border-red-500"
               >
                 {EXPENSE_CATEGORIES.map(category => (

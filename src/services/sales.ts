@@ -1,5 +1,7 @@
 import { supabase } from '../lib/supabase'
 import { Sale, SaleItem } from '../types'
+import { HOTDOG_TYPES, INGREDIENT_CONSUMPTION } from '../constants'
+import { inventoryService } from './inventory'
 
 export const salesService = {
   async getSales(startDate?: string, endDate?: string): Promise<Sale[]> {
@@ -53,16 +55,6 @@ export const salesService = {
   },
 
   async getSalesByHotdogType(startDate?: string, endDate?: string): Promise<{ hotdog_type: string; total: number; count: number }[]> {
-    let query = supabase
-      .from('sale_items')
-      .select(`
-        hotdog_type,
-        sum(total_price) as total,
-        sum(quantity) as count
-      `)
-      .eq('sales.created_at', startDate) // This is wrong, need to join
-
-    // Usar una consulta más compleja con join
     const { data, error } = await supabase
       .from('sale_items')
       .select(`
@@ -74,12 +66,18 @@ export const salesService = {
 
     if (error) throw error
 
-    // Agrupar manualmente
-    const grouped = data.reduce((acc: any, item: any) => {
-      const existing = acc.find((g: any) => g.hotdog_type === item.hotdog_type)
-      if (existing) {
-        existing.total += item.total_price
-        existing.count += item.quantity
+    const filtered = data.filter((item: any) => {
+      const d = new Date(item.sales.created_at).toISOString().split('T')[0]
+      if (startDate && d < startDate) return false
+      if (endDate && d > endDate) return false
+      return true
+    })
+
+    const grouped = filtered.reduce((acc: any[], item: any) => {
+      const found = acc.find((g: any) => g.hotdog_type === item.hotdog_type)
+      if (found) {
+        found.total += item.total_price
+        found.count += item.quantity
       } else {
         acc.push({
           hotdog_type: item.hotdog_type,
@@ -92,4 +90,30 @@ export const salesService = {
 
     return grouped
   }
+}
+
+export async function createSaleAndConsumeInventory(
+  sale: Omit<Sale, 'id' | 'created_at'>,
+  items: Omit<SaleItem, 'id' | 'sale_id'>[]
+): Promise<Sale> {
+  const saleData = await salesService.createSale(sale, items)
+
+  for (const item of items) {
+    const config = HOTDOG_TYPES[item.hotdog_type]
+    for (const ingredient of config.ingredients) {
+      const consumption = INGREDIENT_CONSUMPTION[ingredient]
+      const totalQty = consumption.quantity * item.quantity
+      const invItem = await inventoryService.getItemByName(ingredient)
+      if (!invItem) continue
+      await inventoryService.createMovement({
+        item_id: invItem.id,
+        type: 'out',
+        quantity: totalQty,
+        reason: `Venta ${item.hotdog_type}`,
+        user_id: sale.seller_id
+      })
+    }
+  }
+
+  return saleData
 }

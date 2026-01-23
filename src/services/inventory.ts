@@ -11,15 +11,24 @@ export const inventoryService = {
     if (error) throw error
     return data as InventoryItem[]
   },
+  async createItem(item: Omit<InventoryItem, 'id' | 'created_at' | 'updated_at'>): Promise<InventoryItem> {
+    const { data, error } = await supabase
+      .from('inventory_items')
+      .insert([item])
+      .select('*')
+      .single()
+    if (error) throw error
+    return data as InventoryItem
+  },
 
   async getLowStockItems(): Promise<InventoryItem[]> {
     const { data, error } = await supabase
-      .from('v_inventory_low_stock')
+      .from('inventory_items')
       .select('*')
       .order('current_stock', { ascending: true })
 
     if (error) throw error
-    return data as InventoryItem[]
+    return (data as InventoryItem[]).filter(item => item.current_stock <= item.min_threshold)
   },
 
   async updateItem(id: string, updates: Partial<InventoryItem>): Promise<InventoryItem> {
@@ -34,19 +43,8 @@ export const inventoryService = {
     return data as InventoryItem
   },
 
-  async createItem(newItem: Omit<InventoryItem, 'id' | 'created_at' | 'updated_at'>): Promise<InventoryItem> {
-    const { data, error } = await supabase
-      .from('inventory_items')
-      .insert([newItem])
-      .select()
-      .single()
-
-    if (error) throw error
-    return data as InventoryItem
-  },
-
   async createMovement(movement: Omit<InventoryMovement, 'id' | 'created_at'>): Promise<InventoryMovement> {
-    const { data, error } = await supabase
+    const { data: inserted, error } = await supabase
       .from('inventory_movements')
       .insert([movement])
       .select(`
@@ -57,18 +55,25 @@ export const inventoryService = {
 
     if (error) throw error
 
-    // Actualizar el stock del item
-    const multiplier = movement.type === 'in' ? 1 : -1
+    const { data: itemData, error: itemError } = await supabase
+      .from('inventory_items')
+      .select('id, current_stock')
+      .eq('id', movement.item_id)
+      .single()
+
+    if (itemError) throw itemError
+
+    const delta = movement.type === 'in' ? movement.quantity : -movement.quantity
+    const newStock = (itemData.current_stock || 0) + delta
+
     const { error: updateError } = await supabase
       .from('inventory_items')
-      .update({
-        current_stock: supabase.sql`current_stock + (${movement.quantity} * ${multiplier})`
-      })
+      .update({ current_stock: newStock })
       .eq('id', movement.item_id)
 
     if (updateError) throw updateError
 
-    return data as InventoryMovement
+    return inserted as InventoryMovement
   },
 
   async getMovements(itemId?: string): Promise<InventoryMovement[]> {
@@ -88,5 +93,15 @@ export const inventoryService = {
 
     if (error) throw error
     return data as InventoryMovement[]
+  }
+  ,
+  async getItemByName(name: string): Promise<InventoryItem | null> {
+    const { data, error } = await supabase
+      .from('inventory_items')
+      .select('*')
+      .eq('name', name)
+      .single()
+    if (error && error.code !== 'PGRST116') throw error
+    return (data as InventoryItem) || null
   }
 }

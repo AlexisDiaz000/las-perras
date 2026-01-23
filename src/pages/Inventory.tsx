@@ -18,7 +18,14 @@ export default function Inventory() {
   const [movementQuantity, setMovementQuantity] = useState('')
   const [movementReason, setMovementReason] = useState('')
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null)
-  const [newItem, setNewItem] = useState({
+  const [newItem, setNewItem] = useState<{
+    name: string
+    category: typeof INVENTORY_CATEGORIES[number]
+    unit: typeof UNITS[number]
+    current_stock: number
+    min_threshold: number
+    unit_cost: number
+  }>({
     name: '',
     category: INVENTORY_CATEGORIES[0],
     unit: UNITS[0],
@@ -216,7 +223,7 @@ export default function Inventory() {
               />
               <select
                 value={newItem.category}
-                onChange={(e) => setNewItem({...newItem, category: e.target.value})}
+                onChange={(e) => setNewItem({...newItem, category: e.target.value as typeof INVENTORY_CATEGORIES[number]})}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-red-500 focus:border-red-500"
               >
                 {INVENTORY_CATEGORIES.map(cat => (
@@ -225,7 +232,7 @@ export default function Inventory() {
               </select>
               <select
                 value={newItem.unit}
-                onChange={(e) => setNewItem({...newItem, unit: e.target.value})}
+                onChange={(e) => setNewItem({...newItem, unit: e.target.value as typeof UNITS[number]})}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-red-500 focus:border-red-500"
               >
                 {UNITS.map(unit => (
@@ -331,7 +338,7 @@ export default function Inventory() {
               />
               <select
                 value={editingItem.category}
-                onChange={(e) => setEditingItem({...editingItem, category: e.target.value})}
+                onChange={(e) => setEditingItem({...editingItem, category: e.target.value as typeof INVENTORY_CATEGORIES[number]})}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-red-500 focus:border-red-500"
               >
                 {INVENTORY_CATEGORIES.map(cat => (
@@ -340,7 +347,7 @@ export default function Inventory() {
               </select>
               <select
                 value={editingItem.unit}
-                onChange={(e) => setEditingItem({...editingItem, unit: e.target.value})}
+                onChange={(e) => setEditingItem({...editingItem, unit: e.target.value as typeof UNITS[number]})}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-red-500 focus:border-red-500"
               >
                 {UNITS.map(unit => (
