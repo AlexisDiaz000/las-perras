@@ -109,20 +109,20 @@ export default function Dashboard() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center">
         <h1 className="brand-heading text-3xl">Dashboard</h1>
-        <div className="flex space-x-4">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
           <input
             type="date"
             value={dateRange.start}
             onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
-            className="brand-input w-auto"
+            className="brand-input sm:w-auto"
           />
           <input
             type="date"
             value={dateRange.end}
             onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
-            className="brand-input w-auto"
+            className="brand-input sm:w-auto"
           />
         </div>
       </div>

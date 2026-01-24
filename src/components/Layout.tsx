@@ -1,4 +1,4 @@
-import { Fragment, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import { Dialog, Transition } from '@headlessui/react'
 import {
   Bars3Icon,
@@ -10,6 +10,8 @@ import {
   Cog6ToothIcon,
   XMarkIcon,
   ArrowLeftOnRectangleIcon,
+  MoonIcon,
+  SunIcon,
 } from '@heroicons/react/24/outline'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/auth'
@@ -32,6 +34,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation()
   const navigate = useNavigate()
   const { user, signOut } = useAuthStore()
+  const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains('dark'))
+
+  useEffect(() => {
+    setIsDark(document.documentElement.classList.contains('dark'))
+  }, [])
 
   const handleSignOut = async () => {
     await signOut()
@@ -41,6 +48,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const filteredNavigation = navigation.filter(item =>
     !item.roles || (user && item.roles.includes(user.role))
   )
+
+  const toggleTheme = () => {
+    const nextIsDark = !document.documentElement.classList.contains('dark')
+    document.documentElement.classList.toggle('dark', nextIsDark)
+    localStorage.setItem('theme', nextIsDark ? 'dark' : 'light')
+    setIsDark(nextIsDark)
+  }
 
   return (
     <>
@@ -87,7 +101,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                     </div>
                   </Transition.Child>
                   
-                  <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-primary-900 px-6 pb-4 border-r border-white/10">
+                  <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-[color:var(--brand-surface)] px-6 pb-4 border-r border-[color:var(--app-border)]">
                     <div className="flex h-16 shrink-0 items-center">
                       <h1 className="brand-logo text-3xl">Las Perras</h1>
                     </div>
@@ -101,14 +115,14 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                                   to={item.href}
                                   className={classNames(
                                     location.pathname === item.href
-                                      ? 'bg-white/10 text-secondary-50'
-                                      : 'text-secondary-200 hover:text-secondary-50 hover:bg-white/5',
+                                      ? 'bg-[color:var(--app-hover-strong)] text-[color:var(--app-text)]'
+                                      : 'text-[color:var(--app-muted-2)] hover:text-[color:var(--app-text)] hover:bg-[color:var(--app-hover)]',
                                     'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold uppercase tracking-widest'
                                   )}
                                 >
                                   <item.icon
                                     className={classNames(
-                                      location.pathname === item.href ? 'text-secondary-50' : 'text-secondary-400 group-hover:text-secondary-50',
+                                      location.pathname === item.href ? 'text-[color:var(--app-text)]' : 'text-[color:var(--app-muted-2)] group-hover:text-[color:var(--app-text)]',
                                       'h-6 w-6 shrink-0'
                                     )}
                                     aria-hidden="true"
@@ -129,7 +143,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </Transition.Root>
 
         <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col">
-          <div className="flex grow flex-col gap-y-5 overflow-y-auto border-r border-white/10 bg-primary-900 px-6 pb-4">
+          <div className="flex grow flex-col gap-y-5 overflow-y-auto border-r border-[color:var(--app-border)] bg-[color:var(--brand-surface)] px-6 pb-4">
             <div className="flex h-16 shrink-0 items-center">
               <h1 className="brand-logo text-3xl">Las Perras</h1>
             </div>
@@ -143,14 +157,14 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                           to={item.href}
                           className={classNames(
                             location.pathname === item.href
-                              ? 'bg-white/10 text-secondary-50'
-                              : 'text-secondary-200 hover:text-secondary-50 hover:bg-white/5',
+                              ? 'bg-[color:var(--app-hover-strong)] text-[color:var(--app-text)]'
+                              : 'text-[color:var(--app-muted-2)] hover:text-[color:var(--app-text)] hover:bg-[color:var(--app-hover)]',
                             'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold uppercase tracking-widest'
                           )}
                         >
                           <item.icon
                             className={classNames(
-                              location.pathname === item.href ? 'text-secondary-50' : 'text-secondary-400 group-hover:text-secondary-50',
+                              location.pathname === item.href ? 'text-[color:var(--app-text)]' : 'text-[color:var(--app-muted-2)] group-hover:text-[color:var(--app-text)]',
                               'h-6 w-6 shrink-0'
                             )}
                             aria-hidden="true"
@@ -163,18 +177,25 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 </li>
                 
                 <li className="mt-auto">
-                  <div className="flex items-center gap-x-4 py-3 text-sm font-semibold leading-6 text-secondary-50 border-t border-white/10 pt-4">
-                    <div className="h-8 w-8 rounded-full bg-white/10 flex items-center justify-center text-secondary-50">
+                  <div className="flex items-center gap-x-3 py-3 text-sm font-semibold leading-6 text-[color:var(--app-text)] border-t border-[color:var(--app-border)] pt-4">
+                    <div className="h-8 w-8 rounded-full bg-[color:var(--app-hover-strong)] flex items-center justify-center text-[color:var(--app-text)]">
                       {user?.name?.[0]?.toUpperCase() || 'U'}
                     </div>
                     <span className="sr-only">Tu perfil</span>
-                    <div className="flex flex-col">
-                      <span aria-hidden="true">{user?.name}</span>
-                      <span className="text-xs text-secondary-400 font-normal capitalize">{user?.role}</span>
+                    <div className="flex flex-col min-w-0">
+                      <span aria-hidden="true" className="truncate">{user?.name}</span>
+                      <span className="text-xs text-[color:var(--app-muted-3)] font-normal capitalize">{user?.role}</span>
                     </div>
                     <button
+                      onClick={toggleTheme}
+                      className="ml-auto p-2 hover:bg-[color:var(--app-hover)] rounded-full text-[color:var(--app-muted-2)] hover:text-[color:var(--app-text)] transition-colors"
+                      title={isDark ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro'}
+                    >
+                      {isDark ? <SunIcon className="h-5 w-5" /> : <MoonIcon className="h-5 w-5" />}
+                    </button>
+                    <button
                       onClick={handleSignOut}
-                      className="ml-auto p-2 hover:bg-white/10 rounded-full text-secondary-300 hover:text-secondary-50 transition-colors"
+                      className="p-2 hover:bg-[color:var(--app-hover)] rounded-full text-[color:var(--app-muted-2)] hover:text-[color:var(--app-text)] transition-colors"
                       title="Cerrar Sesión"
                     >
                       <ArrowLeftOnRectangleIcon className="h-5 w-5" />
@@ -187,26 +208,34 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </div>
 
         <div className="lg:pl-72">
-          <div className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-white/10 bg-primary-900/80 backdrop-blur px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8 lg:hidden">
-            <button type="button" className="-m-2.5 p-2.5 text-secondary-50 lg:hidden" onClick={() => setSidebarOpen(true)}>
+          <div className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-[color:var(--app-border)] bg-[color:var(--brand-surface)] backdrop-blur px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8 lg:hidden">
+            <button type="button" className="-m-2.5 p-2.5 text-[color:var(--app-text)] lg:hidden" onClick={() => setSidebarOpen(true)}>
               <span className="sr-only">Abrir menú</span>
               <Bars3Icon className="h-6 w-6" aria-hidden="true" />
             </button>
 
             <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
               <div className="flex items-center gap-x-4 lg:gap-x-6 ml-auto">
-                <div className="flex items-center gap-x-4 px-6 py-3 text-sm font-semibold leading-6 text-secondary-50">
-                   <div className="h-8 w-8 rounded-full bg-white/10 flex items-center justify-center text-secondary-50">
+                <div className="flex items-center gap-x-3 py-3 text-sm font-semibold leading-6 text-[color:var(--app-text)] min-w-0">
+                   <div className="h-8 w-8 rounded-full bg-[color:var(--app-hover-strong)] flex items-center justify-center text-[color:var(--app-text)]">
                       {user?.name?.[0]?.toUpperCase() || 'U'}
                     </div>
                   <span className="sr-only">Tu perfil</span>
-                  <span aria-hidden="true">{user?.name}</span>
-                   <button
-                      onClick={handleSignOut}
-                      className="ml-2 p-1 hover:bg-white/10 rounded-full text-secondary-300 hover:text-secondary-50 transition-colors"
-                    >
-                      <ArrowLeftOnRectangleIcon className="h-5 w-5" />
-                    </button>
+                  <span aria-hidden="true" className="truncate max-w-[10rem]">{user?.name}</span>
+                  <button
+                    onClick={toggleTheme}
+                    className="ml-1 p-1 hover:bg-[color:var(--app-hover)] rounded-full text-[color:var(--app-muted-2)] hover:text-[color:var(--app-text)] transition-colors"
+                    title={isDark ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro'}
+                  >
+                    {isDark ? <SunIcon className="h-5 w-5" /> : <MoonIcon className="h-5 w-5" />}
+                  </button>
+                  <button
+                    onClick={handleSignOut}
+                    className="p-1 hover:bg-[color:var(--app-hover)] rounded-full text-[color:var(--app-muted-2)] hover:text-[color:var(--app-text)] transition-colors"
+                    title="Cerrar Sesión"
+                  >
+                    <ArrowLeftOnRectangleIcon className="h-5 w-5" />
+                  </button>
                 </div>
               </div>
             </div>
