@@ -1,27 +1,45 @@
 export const HOTDOG_TYPES = {
-  'Básico': {
+  'Perrita': {
     price: 6000,
-    ingredients: ['Pan de perro', 'Salchicha']
+    ingredients: ['Pan de perro', 'Salchicha', 'Cebolla', 'Papa Fosforito', 'Queso', 'Salsa BBQ', 'Salsa Mayonesa', 'Salsa Mostaza']
   },
-  'Mejorado': {
+  'Perrota': {
     price: 7000,
-    ingredients: ['Pan de perro', 'Salchicha', 'Tocineta']
+    ingredients: ['Pan de perro', 'Salchicha', 'Cebolla', 'Papa Fosforito', 'Queso', 'Salsa BBQ', 'Salsa Mayonesa', 'Salsa Mostaza'],
+    multipliers: { 'Salchicha': 2 }
   },
-  'Especial': {
+  'Perrísima': {
     price: 8000,
-    ingredients: ['Pan de perro', 'Salchicha', 'Tocineta', 'Cebolla']
+    ingredients: ['Pan de perro', 'Salchicha', 'Cebolla', 'Papa Fosforito', 'Queso', 'Salsa BBQ', 'Salsa Mayonesa', 'Salsa Mostaza'],
+    multipliers: { 'Salchicha': 3 }
   },
-  'Carnívoro': {
+  'La Gran Perra': {
     price: 12000,
-    ingredients: ['Pan de perro', 'Salchicha', 'Carne de Cerdo']
+    ingredients: ['Pan de perro', 'Salchicha', 'Cebolla', 'Papa Fosforito', 'Queso', 'Salsa BBQ', 'Salsa Mayonesa', 'Salsa Mostaza'],
+    multipliers: { 'Salchicha': 3 },
+    requiresProteinChoice: true
   },
-  'Tricarne': {
+  'La Perra Trifásica': {
     price: 14000,
-    ingredients: ['Pan de perro', 'Salchicha', 'Carne de Cerdo', 'Carne de Pollo', 'Desmechada de Res']
+    ingredients: ['Pan de perro', 'Salchicha', 'Desmechada de Res', 'Carne de Pollo', 'Carne de Cerdo', 'Cebolla', 'Papa Fosforito', 'Queso', 'Salsa BBQ', 'Salsa Mayonesa', 'Salsa Mostaza'],
+    multipliers: { 'Salchicha': 3 }
   },
-  'Supremo': {
+  'La Super Perra': {
     price: 15000,
-    ingredients: ['Pan de perro', 'Carne de Cerdo', 'Carne de Pollo', 'Tocineta', 'Huevos de Codorniz']
+    ingredients: ['Pan de perro', 'Salchicha', 'Desmechada de Res', 'Carne de Pollo', 'Tocineta', 'Huevos de Codorniz', 'Cebolla', 'Papa Fosforito', 'Queso', 'Salsa BBQ', 'Salsa Mayonesa', 'Salsa Mostaza'],
+    multipliers: { 'Salchicha': 3 }
+  },
+  'Coca-Cola Personal 400ml': {
+    price: 4000,
+    ingredients: ['CocaCola Personal']
+  },
+  'Coca-Cola 1 litro': {
+    price: 5000,
+    ingredients: ['CocaCola 1L']
+  },
+  'Coca-Cola 1.5 litros': {
+    price: 7000,
+    ingredients: ['CocaCola 1.5L']
   }
 } as const
 
@@ -30,10 +48,18 @@ export const INGREDIENT_CONSUMPTION = {
   'Salchicha': { unit: 'unidades', quantity: 1 },
   'Tocineta': { unit: 'gramos', quantity: 20 },
   'Cebolla': { unit: 'gramos', quantity: 15 },
+  'Papa Fosforito': { unit: 'gramos', quantity: 20 },
+  'Queso': { unit: 'gramos', quantity: 25 },
+  'Salsa BBQ': { unit: 'gramos', quantity: 5 },
+  'Salsa Mayonesa': { unit: 'gramos', quantity: 5 },
+  'Salsa Mostaza': { unit: 'gramos', quantity: 5 },
   'Carne de Cerdo': { unit: 'gramos', quantity: 50 },
   'Carne de Pollo': { unit: 'gramos', quantity: 40 },
   'Desmechada de Res': { unit: 'gramos', quantity: 30 },
-  'Huevos de Codorniz': { unit: 'unidades', quantity: 2 }
+  'Huevos de Codorniz': { unit: 'unidades', quantity: 2 },
+  'CocaCola Personal': { unit: 'unidades', quantity: 1 },
+  'CocaCola 1L': { unit: 'unidades', quantity: 1 },
+  'CocaCola 1.5L': { unit: 'unidades', quantity: 1 }
 } as const
 
 export const PARTNER1_PERCENTAGE = 0.7

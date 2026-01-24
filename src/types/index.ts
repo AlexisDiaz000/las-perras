@@ -27,6 +27,9 @@ export interface InventoryMovement {
   user_id: string
   created_at: string
   item?: InventoryItem
+  sale_id?: string
+  reversal_of?: string
+  movement_group?: string
 }
 
 export interface Sale {
@@ -36,15 +39,21 @@ export interface Sale {
   seller_id: string
   created_at: string
   seller?: User
+  status?: 'draft' | 'preparing' | 'delivered' | 'paid' | 'voided' | 'refunded'
+  updated_at?: string
+  void_reason?: string
+  voided_at?: string
+  voided_by?: string
 }
 
 export interface SaleItem {
   id: string
   sale_id: string
-  hotdog_type: 'Básico' | 'Mejorado' | 'Especial' | 'Carnívoro' | 'Tricarne' | 'Supremo'
+  hotdog_type: string
   quantity: number
   unit_price: number
   total_price: number
+  modifiers?: any
 }
 
 export interface Expense {
@@ -70,7 +79,7 @@ export interface DashboardMetrics {
 }
 
 export interface CartItem {
-  hotdog_type: 'Básico' | 'Mejorado' | 'Especial' | 'Carnívoro' | 'Tricarne' | 'Supremo'
+  hotdog_type: string
   quantity: number
   unit_price: number
   total_price: number
