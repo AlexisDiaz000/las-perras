@@ -87,16 +87,58 @@ export const salesService = {
     return data as Sale[]
   },
 
+  async getSalesWithItems(startDate?: string, endDate?: string): Promise<Sale[]> {
+    let query = supabase
+      .from('sales')
+      .select(`
+        *,
+        seller:users(*),
+        items:sale_items(*)
+      `)
+      .order('created_at', { ascending: false })
+
+    if (startDate) {
+      query = query.gte('created_at', startDate)
+    }
+    if (endDate) {
+      query = query.lte('created_at', endDate)
+    }
+
+    const { data, error } = await query
+    if (error) throw error
+    return data as Sale[]
+  },
+
   async createSale(sale: Omit<Sale, 'id' | 'created_at'>, items: Omit<SaleItem, 'id' | 'sale_id'>[]): Promise<Sale> {
     // Crear la venta principal
-    const { data: saleData, error: saleError } = await supabase
+    const payload: any = { ...sale }
+    if (payload.description == null || String(payload.description).trim() === '') {
+      delete payload.description
+    }
+
+    let saleData: any
+    let saleError: any
+
+    ;({ data: saleData, error: saleError } = await supabase
       .from('sales')
-      .insert([sale])
+      .insert([payload])
       .select(`
         *,
         seller:users(*)
       `)
-      .single()
+      .single())
+
+    if (saleError && /column .*description.* does not exist/i.test(saleError.message || '')) {
+      delete payload.description
+      ;({ data: saleData, error: saleError } = await supabase
+        .from('sales')
+        .insert([payload])
+        .select(`
+          *,
+          seller:users(*)
+        `)
+        .single())
+    }
 
     if (saleError) throw saleError
 
@@ -151,6 +193,43 @@ export const salesService = {
     if (updateError) throw updateError
 
     if (!reverseInventory) return
+
+    const movements = await this.getMovementsBySaleId(saleId)
+    const originals = movements.filter(m => !m.reversal_of)
+    if (!originals.length) return
+
+    const group = crypto.randomUUID()
+    const reversals = originals.map(m => ({
+      item_id: m.item_id,
+      type: m.type === 'out' ? 'in' : 'out',
+      quantity: m.quantity,
+      reason: `Reverso venta ${saleId}: ${reason}`,
+      user_id: userId,
+      sale_id: saleId,
+      reversal_of: m.id,
+      movement_group: group,
+    }))
+
+    const { error: insertError } = await supabase
+      .from('inventory_movements')
+      .insert(reversals as any)
+
+    if (insertError) throw insertError
+  },
+
+  async refundSale(saleId: string, reason: string, userId: string): Promise<void> {
+    const { error: updateError } = await supabase
+      .from('sales')
+      .update({
+        status: 'refunded',
+        void_reason: reason,
+        voided_at: new Date().toISOString(),
+        voided_by: userId,
+        updated_at: new Date().toISOString(),
+      } as any)
+      .eq('id', saleId)
+
+    if (updateError) throw updateError
 
     const movements = await this.getMovementsBySaleId(saleId)
     const originals = movements.filter(m => !m.reversal_of)

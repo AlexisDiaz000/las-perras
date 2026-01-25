@@ -2,7 +2,6 @@ import { useMemo, useState } from 'react'
 import { useAuthStore } from '../stores/auth'
 import { HOTDOG_TYPES, PAYMENT_METHODS } from '../constants'
 import { createSaleAndConsumeInventory, salesService } from '../services/sales'
-import { RecentOrders } from '../components/RecentOrders'
 
 type ProteinChoice = 'Desmechada de Res' | 'Carne de Pollo' | 'Carne de Cerdo'
 
@@ -33,6 +32,7 @@ export default function POS() {
   const { user } = useAuthStore()
   const [stage, setStage] = useState<OrderStage>('draft')
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card'>('cash')
+  const [description, setDescription] = useState('')
   const [cart, setCart] = useState<CartLine[]>([])
   const [saleId, setSaleId] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -103,6 +103,7 @@ export default function POS() {
     setCart([])
     setStage('draft')
     setSaleId(null)
+    setDescription('')
     setMessage(null)
     setLoading(false)
   }
@@ -123,7 +124,17 @@ export default function POS() {
     if (!user) return
     if (!cart.length) return
     if (saleId) {
-      setStage('preparing')
+      setLoading(true)
+      setMessage(null)
+      try {
+        await salesService.updateSale(saleId, { status: 'preparing' } as any)
+        setStage('preparing')
+        setMessage('Pedido enviado a preparación')
+      } catch (e: any) {
+        setMessage(e?.message || 'No se pudo actualizar el pedido')
+      } finally {
+        setLoading(false)
+      }
       return
     }
     setLoading(true)
@@ -134,7 +145,8 @@ export default function POS() {
           total_amount: totals.total,
           payment_method: paymentMethod,
           seller_id: user.id,
-          status: 'preparing'
+          status: 'preparing',
+          description: description.trim() ? description.trim() : null,
         } as any,
         buildSaleItems() as any
       )
@@ -149,10 +161,8 @@ export default function POS() {
   }
 
   const markDelivered = async () => {
-    if (!saleId) {
-      setStage('delivered')
-      return
-    }
+    if (!saleId) return
+    if (stage !== 'preparing') return
     setLoading(true)
     setMessage(null)
     try {
@@ -207,6 +217,7 @@ export default function POS() {
             total_amount: totals.total,
             payment_method: paymentMethod,
             seller_id: user.id,
+            description: description.trim() ? description.trim() : null,
           },
           buildSaleItems() as any
         )
@@ -328,6 +339,16 @@ export default function POS() {
               </div>
 
               <div>
+                <label className="block text-xs font-semibold text-secondary-200 uppercase tracking-widest mb-2">Descripción</label>
+                <input
+                  className="brand-input"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Ej: sin cebolla, para llevar, mesa 3..."
+                />
+              </div>
+
+              <div>
                 <label className="block text-xs font-semibold text-secondary-200 uppercase tracking-widest mb-2">Método de pago</label>
                 <select className="brand-input" value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value as any)}>
                   {PAYMENT_METHODS.map(m => (
@@ -340,7 +361,7 @@ export default function POS() {
                 <button disabled={!cart.length || stage !== 'draft' || loading} onClick={markPreparing} className="brand-button">
                   Preparando
                 </button>
-                <button disabled={!cart.length || stage === 'draft' || loading} onClick={markDelivered} className="brand-button">
+                <button disabled={!cart.length || stage !== 'preparing' || loading || !saleId} onClick={markDelivered} className="brand-button">
                   Entregada
                 </button>
               </div>
@@ -356,8 +377,6 @@ export default function POS() {
               {message && <div className="text-sm text-secondary-200">{message}</div>}
             </div>
           </div>
-
-          <RecentOrders />
         </div>
       </div>
 

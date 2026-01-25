@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { salesService } from '../services/sales'
 import { Sale } from '../types'
 import { useAuthStore } from '../stores/auth'
@@ -7,22 +7,22 @@ function formatCurrency(amount: number) {
   return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(amount)
 }
 
+const BOARD_COLUMNS = [
+  { key: 'draft', title: 'Borrador' },
+  { key: 'preparing', title: 'Preparación' },
+  { key: 'delivered', title: 'Por cobrar' },
+  { key: 'paid', title: 'Pagado' },
+  { key: 'refunded', title: 'Reembolsado' },
+  { key: 'voided', title: 'Anulado' },
+] as const
+
 const STATUS_LABELS: Record<string, string> = {
   draft: 'Borrador',
-  preparing: 'En Preparación',
+  preparing: 'Preparación',
   delivered: 'Entregado',
   paid: 'Pagado',
   voided: 'Anulado',
-  refunded: 'Reembolsado'
-}
-
-const STATUS_COLORS: Record<string, string> = {
-  draft: 'text-gray-400',
-  preparing: 'text-yellow-400',
-  delivered: 'text-blue-400',
-  paid: 'text-green-400',
-  voided: 'text-red-400',
-  refunded: 'text-red-400'
+  refunded: 'Reembolsado',
 }
 
 export function RecentOrders() {
@@ -30,6 +30,9 @@ export function RecentOrders() {
   const [orders, setOrders] = useState<Sale[]>([])
   const [loading, setLoading] = useState(false)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
+  const [selected, setSelected] = useState<Sale | null>(null)
+  const [search, setSearch] = useState('')
+  const [payMethod, setPayMethod] = useState<'cash' | 'card'>('cash')
 
   const loadOrders = async () => {
     setLoading(true)
@@ -37,7 +40,7 @@ export function RecentOrders() {
       const today = new Date().toISOString().split('T')[0]
       const start = `${today}T00:00:00`
       const end = `${today}T23:59:59`
-      const data = await salesService.getSales(start, end)
+      const data = await salesService.getSalesWithItems(start, end)
       setOrders(data)
     } catch (error) {
       console.error('Error loading orders:', error)
@@ -52,30 +55,26 @@ export function RecentOrders() {
     return () => clearInterval(interval)
   }, [])
 
-  const handleMarkDelivered = async (saleId: string) => {
-    if (!confirm('¿Marcar como entregado?')) return
+  const updateStatus = async (saleId: string, status: Sale['status']) => {
     setActionLoading(saleId)
     try {
-      await salesService.updateSale(saleId, { status: 'delivered' } as any)
+      await salesService.updateSale(saleId, { status } as any)
       await loadOrders()
-    } catch (error) {
-      alert('Error al actualizar pedido')
+    } catch (error: any) {
+      alert(error?.message || 'Error al actualizar pedido')
     } finally {
       setActionLoading(null)
     }
   }
 
-  const handlePay = async (saleId: string) => {
+  const handlePay = async (saleId: string, method: 'cash' | 'card') => {
     if (!user) return
-    const method = prompt('Método de pago (cash/card):', 'cash')
-    if (method !== 'cash' && method !== 'card') return
-
     setActionLoading(saleId)
     try {
-      await salesService.finalizeSaleAndConsumeInventory(saleId, user.id, method as 'cash' | 'card')
+      await salesService.finalizeSaleAndConsumeInventory(saleId, user.id, method)
       await loadOrders()
     } catch (error: any) {
-      alert(error.message || 'Error al procesar pago')
+      alert(error?.message || 'Error al procesar pago')
     } finally {
       setActionLoading(null)
     }
@@ -84,95 +83,296 @@ export function RecentOrders() {
   const handleVoid = async (sale: Sale) => {
     if (!user) return
     const reason = prompt('Motivo de anulación:')
-    if (!reason) return
-
+    if (!reason || !reason.trim()) return
     setActionLoading(sale.id)
     try {
-      const shouldReverse = sale.status === 'paid'
-      await salesService.voidSale(sale.id, reason, user.id, shouldReverse)
+      await salesService.voidSale(sale.id, reason.trim(), user.id, false)
       await loadOrders()
     } catch (error: any) {
-      alert(error.message || 'Error al anular pedido')
+      alert(error?.message || 'Error al anular pedido')
     } finally {
       setActionLoading(null)
     }
   }
 
-  return (
-    <div className="brand-card p-6 h-[55vh] lg:h-[500px] flex flex-col">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="brand-heading text-xl">Órdenes del Día</h2>
-        <button onClick={loadOrders} className="text-sm text-secondary-300 hover:text-secondary-50">
-          Actualizar
-        </button>
-      </div>
+  const handleRefund = async (sale: Sale) => {
+    if (!user) return
+    const reason = prompt('Motivo de reembolso:')
+    if (!reason || !reason.trim()) return
+    setActionLoading(sale.id)
+    try {
+      await salesService.refundSale(sale.id, reason.trim(), user.id)
+      await loadOrders()
+    } catch (error: any) {
+      alert(error?.message || 'Error al reembolsar')
+    } finally {
+      setActionLoading(null)
+    }
+  }
 
-      <div className="flex-1 overflow-y-auto space-y-3 pr-2">
+  useEffect(() => {
+    if (!selected) return
+    if (selected.payment_method === 'cash' || selected.payment_method === 'card') {
+      setPayMethod(selected.payment_method)
+    } else {
+      setPayMethod('cash')
+    }
+  }, [selected])
+
+  const filteredOrders = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    if (!q) return orders
+    return orders.filter(s => {
+      const label = getOrderLabel(s).toLowerCase()
+      const desc = String(s.description || '').toLowerCase()
+      const num = String(s.order_number ?? '').toLowerCase()
+      return label.includes(q) || desc.includes(q) || num.includes(q) || s.id.toLowerCase().includes(q)
+    })
+  }, [orders, search])
+
+  const grouped = useMemo(() => {
+    const map: Record<string, Sale[]> = {}
+    for (const col of BOARD_COLUMNS) map[col.key] = []
+    for (const sale of filteredOrders) {
+      const key = (sale.status || 'draft') as string
+      if (!map[key]) map[key] = []
+      map[key].push(sale)
+    }
+    return map
+  }, [filteredOrders])
+
+  const getOrderLabel = (sale: Sale) => {
+    if (typeof sale.order_number === 'number') return `#${sale.order_number}`
+    return `#${sale.id.slice(0, 8)}`
+  }
+
+  const renderItemsPreview = (sale: Sale) => {
+    const items = sale.items || []
+    if (!items.length) return null
+    const preview = items.slice(0, 3).map(it => `${it.quantity}× ${it.hotdog_type}`).join(' · ')
+    const extra = items.length > 3 ? ` · +${items.length - 3} más` : ''
+    return `${preview}${extra}`
+  }
+
+  return (
+    <>
+      <div className="space-y-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="brand-heading text-3xl">Pedidos</h1>
+            <div className="text-sm text-secondary-300">Caja: cobra, anula y reembolsa</div>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
+            <input
+              className="brand-input sm:w-[22rem]"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar # pedido, descripción o id..."
+            />
+            <button onClick={loadOrders} className="brand-button">
+              Actualizar
+            </button>
+          </div>
+        </div>
+
         {loading && !orders.length ? (
-          <div className="text-center text-secondary-400 py-4">Cargando...</div>
-        ) : orders.length === 0 ? (
-          <div className="text-center text-secondary-400 py-4">No hay órdenes hoy.</div>
+          <div className="brand-card p-6 text-secondary-300">Cargando...</div>
+        ) : filteredOrders.length === 0 ? (
+          <div className="brand-card p-6 text-secondary-300">No hay pedidos hoy.</div>
         ) : (
-          orders.map(sale => (
-            <div key={sale.id} className="border border-white/10 rounded-lg p-3 bg-white/5">
-              <div className="flex justify-between items-start mb-2">
-                <div>
-                  <div className="text-xs text-secondary-400">
-                    #{sale.id.slice(0, 8)} • {new Date(sale.created_at).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}
-                  </div>
-                  <div className={`text-sm font-semibold ${STATUS_COLORS[sale.status || 'draft']}`}>
-                    {STATUS_LABELS[sale.status || 'draft'] || sale.status}
-                  </div>
+          <div className="grid grid-cols-1 lg:grid-cols-6 gap-4">
+            {BOARD_COLUMNS.map(col => (
+              <div key={col.key} className="brand-card p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="text-xs font-semibold uppercase tracking-widest text-secondary-300">{col.title}</div>
+                  <div className="text-xs text-secondary-400">{(grouped[col.key] || []).length}</div>
                 </div>
-                <div className="text-right">
-                  <div className="font-semibold text-secondary-50">{formatCurrency(sale.total_amount)}</div>
-                  {sale.payment_method && (
-                    <div className="text-xs text-secondary-400 uppercase">{sale.payment_method}</div>
-                  )}
+                <div className="space-y-3">
+                  {(grouped[col.key] || []).map(sale => (
+                    <button
+                      key={sale.id}
+                      onClick={() => setSelected(sale)}
+                      className="w-full text-left border border-white/10 rounded-lg p-3 bg-white/5 hover:bg-white/10"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="text-sm font-semibold text-secondary-50 truncate">
+                            {getOrderLabel(sale)}
+                          </div>
+                          <div className="text-xs text-secondary-400">
+                            {new Date(sale.created_at).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })} · {STATUS_LABELS[sale.status || 'draft'] || sale.status}
+                          </div>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <div className="text-sm font-semibold text-secondary-50">{formatCurrency(Number(sale.total_amount || 0))}</div>
+                        </div>
+                      </div>
+
+                      {sale.description && (
+                        <div className="mt-2 text-xs text-secondary-300 line-clamp-2">
+                          {sale.description}
+                        </div>
+                      )}
+                      {renderItemsPreview(sale) && (
+                        <div className="mt-2 text-xs text-secondary-400">
+                          {renderItemsPreview(sale)}
+                        </div>
+                      )}
+                    </button>
+                  ))}
                 </div>
               </div>
+            ))}
+          </div>
+        )}
+      </div>
 
-              {sale.void_reason && (
-                <div className="text-xs text-red-300 mb-2 italic">
-                  Motivo: {sale.void_reason}
+      {selected && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="brand-card p-6 w-full max-w-2xl">
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <div className="brand-heading text-2xl">{getOrderLabel(selected)}</div>
+                <div className="text-sm text-secondary-300 mt-1">
+                  {new Date(selected.created_at).toLocaleString('es-CO')} · {STATUS_LABELS[selected.status || 'draft'] || selected.status}
                 </div>
-              )}
-
-              <div className="flex gap-2 mt-2 justify-end">
-                {sale.status === 'preparing' && (
-                  <button
-                    onClick={() => handleMarkDelivered(sale.id)}
-                    disabled={actionLoading === sale.id}
-                    className="px-3 py-1 text-xs rounded bg-blue-600/20 text-blue-300 border border-blue-600/50 hover:bg-blue-600/30"
-                  >
-                    Entregar
-                  </button>
+                {selected.description && (
+                  <div className="text-sm text-secondary-200 mt-3">
+                    {selected.description}
+                  </div>
                 )}
+              </div>
+              <button onClick={() => setSelected(null)} className="px-3 py-2 rounded-md border border-white/10 text-secondary-200 hover:bg-white/10 uppercase tracking-widest text-xs">
+                Cerrar
+              </button>
+            </div>
 
-                {sale.status === 'delivered' && (
-                  <button
-                    onClick={() => handlePay(sale.id)}
-                    disabled={actionLoading === sale.id}
-                    className="px-3 py-1 text-xs rounded bg-green-600/20 text-green-300 border border-green-600/50 hover:bg-green-600/30"
-                  >
-                    Cobrar
-                  </button>
-                )}
-
-                {(sale.status === 'preparing' || sale.status === 'delivered' || sale.status === 'paid') && (
-                  <button
-                    onClick={() => handleVoid(sale)}
-                    disabled={actionLoading === sale.id}
-                    className="px-3 py-1 text-xs rounded bg-red-600/20 text-red-300 border border-red-600/50 hover:bg-red-600/30"
-                  >
-                    Anular
-                  </button>
+            <div className="mt-5 border-t border-white/10 pt-5">
+              <div className="text-xs font-semibold uppercase tracking-widest text-secondary-300 mb-3">Items</div>
+              <div className="space-y-2">
+                {(selected.items || []).length === 0 ? (
+                  <div className="text-sm text-secondary-400">Sin items.</div>
+                ) : (
+                  (selected.items || []).map((it: any) => (
+                    <div key={it.id} className="flex items-start justify-between gap-3 border border-white/10 rounded-lg p-3 bg-white/5">
+                      <div className="min-w-0">
+                        <div className="text-sm font-semibold text-secondary-50">
+                          {it.quantity}× {it.hotdog_type}
+                        </div>
+                        {it.modifiers?.protein && (
+                          <div className="text-xs text-secondary-300 uppercase tracking-widest mt-1">
+                            Proteína: {it.modifiers.protein}
+                          </div>
+                        )}
+                        {(it.modifiers?.extraSauce || it.modifiers?.noSauce) && (
+                          <div className="text-xs text-secondary-400 mt-1">
+                            {it.modifiers?.noSauce ? 'Sin salsas' : null}
+                            {it.modifiers?.noSauce && it.modifiers?.extraSauce ? ' · ' : null}
+                            {it.modifiers?.extraSauce ? 'Extra salsas' : null}
+                          </div>
+                        )}
+                      </div>
+                      <div className="text-sm text-secondary-200">
+                        {formatCurrency(Number(it.total_price || 0))}
+                      </div>
+                    </div>
+                  ))
                 )}
               </div>
             </div>
-          ))
-        )}
-      </div>
-    </div>
+
+            {selected.status === 'delivered' && (
+              <div className="mt-5 border-t border-white/10 pt-5">
+                <div className="text-xs font-semibold uppercase tracking-widest text-secondary-300 mb-3">Cobro</div>
+                <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setPayMethod('cash')}
+                      className={`px-3 py-2 rounded-md border text-xs uppercase tracking-widest ${
+                        payMethod === 'cash' ? 'bg-white/10 border-white/20 text-secondary-50' : 'border-white/10 text-secondary-200 hover:bg-white/10'
+                      }`}
+                    >
+                      Efectivo
+                    </button>
+                    <button
+                      onClick={() => setPayMethod('card')}
+                      className={`px-3 py-2 rounded-md border text-xs uppercase tracking-widest ${
+                        payMethod === 'card' ? 'bg-white/10 border-white/20 text-secondary-50' : 'border-white/10 text-secondary-200 hover:bg-white/10'
+                      }`}
+                    >
+                      Tarjeta
+                    </button>
+                  </div>
+                  <div className="text-sm text-secondary-200">
+                    Total: <span className="font-semibold text-secondary-50">{formatCurrency(Number(selected.total_amount || 0))}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="mt-5 flex flex-col sm:flex-row gap-2 justify-end">
+              {(selected.status === 'draft' || selected.status === 'preparing' || selected.status === 'delivered') && (
+                <button
+                  onClick={() => handleVoid(selected)}
+                  disabled={actionLoading === selected.id}
+                  className="px-4 py-2 rounded-md border border-white/10 text-secondary-200 hover:bg-white/10 uppercase tracking-widest text-xs"
+                >
+                  Anular
+                </button>
+              )}
+
+              {selected.status === 'paid' && (
+                <button
+                  onClick={() => handleRefund(selected)}
+                  disabled={actionLoading === selected.id}
+                  className="px-4 py-2 rounded-md border border-white/10 text-secondary-200 hover:bg-white/10 uppercase tracking-widest text-xs"
+                >
+                  Reembolsar
+                </button>
+              )}
+
+              {selected.status === 'draft' && (
+                <button
+                  onClick={async () => {
+                    await updateStatus(selected.id, 'preparing')
+                    setSelected(null)
+                  }}
+                  disabled={actionLoading === selected.id}
+                  className="brand-button"
+                >
+                  Enviar a preparación
+                </button>
+              )}
+
+              {selected.status === 'preparing' && (
+                <button
+                  onClick={async () => {
+                    await updateStatus(selected.id, 'delivered')
+                    setSelected(null)
+                  }}
+                  disabled={actionLoading === selected.id}
+                  className="brand-button"
+                >
+                  Marcar entregado
+                </button>
+              )}
+
+              {selected.status === 'delivered' && (
+                <button
+                  onClick={async () => {
+                    await handlePay(selected.id, payMethod)
+                    setSelected(null)
+                  }}
+                  disabled={actionLoading === selected.id}
+                  className="brand-button"
+                >
+                  Cobrar
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   )
 }

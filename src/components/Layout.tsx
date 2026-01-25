@@ -4,6 +4,7 @@ import {
   Bars3Icon,
   HomeIcon,
   CurrencyDollarIcon,
+  ClipboardDocumentListIcon,
   ArchiveBoxIcon,
   BanknotesIcon,
   ChartBarIcon,
@@ -19,6 +20,7 @@ import { useAuthStore } from '../stores/auth'
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
   { name: 'Punto de Venta', href: '/pos', icon: CurrencyDollarIcon, roles: ['admin', 'vendor'] },
+  { name: 'Pedidos', href: '/orders', icon: ClipboardDocumentListIcon, roles: ['admin', 'vendor'] },
   { name: 'Inventario', href: '/inventory', icon: ArchiveBoxIcon, roles: ['admin'] },
   { name: 'Gastos', href: '/expenses', icon: BanknotesIcon, roles: ['admin'] },
   { name: 'Reportes', href: '/reports', icon: ChartBarIcon, roles: ['admin'] },

@@ -6,6 +6,7 @@ import Layout from "@/components/Layout"
 import Login from "@/pages/Login"
 import Dashboard from "@/pages/Dashboard"
 import POS from "@/pages/POS"
+import Orders from "@/pages/Orders"
 import Inventory from "@/pages/Inventory"
 import Expenses from "@/pages/Expenses"
 import Reports from "@/pages/Reports"
@@ -96,6 +97,12 @@ function AppRoutes() {
       <Route path="/pos" element={
         <ProtectedRoute allowedRoles={['vendor', 'admin']}>
           <POS />
+        </ProtectedRoute>
+      } />
+
+      <Route path="/orders" element={
+        <ProtectedRoute allowedRoles={['vendor', 'admin']}>
+          <Orders />
         </ProtectedRoute>
       } />
       

@@ -34,6 +34,8 @@ export interface InventoryMovement {
 
 export interface Sale {
   id: string
+  order_number?: number
+  description?: string
   total_amount: number
   payment_method: 'cash' | 'card'
   seller_id: string
@@ -44,6 +46,7 @@ export interface Sale {
   void_reason?: string
   voided_at?: string
   voided_by?: string
+  items?: SaleItem[]
 }
 
 export interface SaleItem {
