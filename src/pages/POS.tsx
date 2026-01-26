@@ -1,7 +1,8 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { useAuthStore } from '../stores/auth'
 import { HOTDOG_TYPES, PAYMENT_METHODS } from '../constants'
 import { createSaleAndConsumeInventory, salesService } from '../services/sales'
+import { supabase } from '../lib/supabase'
 
 type ProteinChoice = 'Desmechada de Res' | 'Carne de Pollo' | 'Carne de Cerdo'
 
@@ -18,7 +19,7 @@ type CartLine = {
   modifiers?: LineModifiers
 }
 
-type OrderStage = 'draft' | 'preparing' | 'delivered'
+type OrderStage = 'draft' | 'preparing' | 'ready' | 'delivered'
 
 const DOGS_SIMPLE = ['Perrita', 'Perrota', 'Perrísima'] as const
 const DOGS_SPECIAL = ['La Gran Perra', 'La Perra Trifásica', 'La Super Perra'] as const
@@ -37,6 +38,7 @@ export default function POS() {
   const [saleId, setSaleId] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
+  const [notif, setNotif] = useState<string | null>(null)
 
   const [proteinModal, setProteinModal] = useState<{
     open: boolean
@@ -51,6 +53,27 @@ export default function POS() {
     }, 0)
     return { subtotal, total: subtotal }
   }, [cart])
+
+  // Notificación: pedidos cambiados a "ready" (listo para entregar)
+  useEffect(() => {
+    const channel = supabase
+      .channel('sales-ready-notifier')
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'sales' }, (payload: any) => {
+        try {
+          const newRow = payload.new
+          if (newRow?.status === 'ready') {
+            const label = typeof newRow.order_number === 'number' ? `#${newRow.order_number}` : `#${String(newRow.id).slice(0,8)}`
+            setNotif(`Pedido ${label} listo para entregar`)
+            setTimeout(() => setNotif(null), 5000)
+          }
+        } catch {}
+      })
+      .subscribe()
+
+    return () => {
+      try { supabase.removeChannel(channel) } catch {}
+    }
+  }, [])
 
   const addToCart = (product: keyof typeof HOTDOG_TYPES) => {
     const cfg: any = HOTDOG_TYPES[product]
@@ -153,6 +176,8 @@ export default function POS() {
       setSaleId(created.id)
       setStage('preparing')
       setMessage('Pedido enviado a preparación')
+      // Limpiar POS para nueva orden
+      resetOrder()
     } catch (e: any) {
       setMessage(e?.message || 'No se pudo crear el pedido')
     } finally {
@@ -162,7 +187,7 @@ export default function POS() {
 
   const markDelivered = async () => {
     if (!saleId) return
-    if (stage !== 'preparing') return
+    if (stage !== 'ready') return
     setLoading(true)
     setMessage(null)
     try {
@@ -199,41 +224,16 @@ export default function POS() {
   }
 
   const chargeAndRegister = async () => {
-    if (!user) return
-    if (cart.length === 0) return
-    if (stage !== 'delivered') {
-      setMessage('Marca el pedido como entregado antes de cobrar')
-      return
-    }
-
-    setLoading(true)
-    setMessage(null)
-    try {
-      if (saleId) {
-        await salesService.finalizeSaleAndConsumeInventory(saleId, user.id, paymentMethod)
-      } else {
-        await createSaleAndConsumeInventory(
-          {
-            total_amount: totals.total,
-            payment_method: paymentMethod,
-            seller_id: user.id,
-            description: description.trim() ? description.trim() : null,
-          },
-          buildSaleItems() as any
-        )
-      }
-
-      resetOrder()
-      setMessage('Venta registrada')
-    } catch (e: any) {
-      setMessage(e?.message || 'Error al registrar venta')
-    } finally {
-      setLoading(false)
-    }
+    // Deprecated
   }
 
   return (
     <div className="space-y-6">
+      {notif && (
+        <div className="brand-card p-3 text-sm text-secondary-50 bg-green-600/20 border border-green-500/30">
+          {notif}
+        </div>
+      )}
       <div className="flex items-center justify-between">
         <h1 className="brand-heading text-3xl">Punto de Venta</h1>
       </div>
@@ -242,9 +242,9 @@ export default function POS() {
         <div className="lg:col-span-2 space-y-6">
           <div className="brand-card p-6">
             <h2 className="brand-heading text-xl mb-4">Perros Sencillas</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="flex overflow-x-auto pb-4 gap-4 md:grid md:grid-cols-3 md:overflow-visible md:pb-0 snap-x">
               {DOGS_SIMPLE.map((name) => (
-                <button key={name} onClick={() => addToCart(name)} className="brand-card p-4 text-left hover:bg-white/5">
+                <button key={name} onClick={() => addToCart(name)} className="brand-card p-4 text-left hover:bg-white/5 min-w-[200px] md:min-w-0 snap-center">
                   <div className="brand-heading text-lg">{name}</div>
                   <div className="text-sm text-secondary-300 mt-1">{formatCurrency(HOTDOG_TYPES[name].price)}</div>
                 </button>
@@ -254,9 +254,9 @@ export default function POS() {
 
           <div className="brand-card p-6">
             <h2 className="brand-heading text-xl mb-4">Perros Especiales</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="flex overflow-x-auto pb-4 gap-4 md:grid md:grid-cols-3 md:overflow-visible md:pb-0 snap-x">
               {DOGS_SPECIAL.map((name) => (
-                <button key={name} onClick={() => addToCart(name)} className="brand-card p-4 text-left hover:bg-white/5">
+                <button key={name} onClick={() => addToCart(name)} className="brand-card p-4 text-left hover:bg-white/5 min-w-[200px] md:min-w-0 snap-center">
                   <div className="brand-heading text-lg">{name}</div>
                   <div className="text-sm text-secondary-300 mt-1">{formatCurrency(HOTDOG_TYPES[name].price)}</div>
                   {(HOTDOG_TYPES as any)[name].requiresProteinChoice && (
@@ -269,9 +269,9 @@ export default function POS() {
 
           <div className="brand-card p-6">
             <h2 className="brand-heading text-xl mb-4">Bebidas</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="flex overflow-x-auto pb-4 gap-4 md:grid md:grid-cols-3 md:overflow-visible md:pb-0 snap-x">
               {DRINKS.map((name) => (
-                <button key={name} onClick={() => addToCart(name)} className="brand-card p-4 text-left hover:bg-white/5">
+                <button key={name} onClick={() => addToCart(name)} className="brand-card p-4 text-left hover:bg-white/5 min-w-[200px] md:min-w-0 snap-center">
                   <div className="brand-heading text-lg">{name}</div>
                   <div className="text-sm text-secondary-300 mt-1">{formatCurrency(HOTDOG_TYPES[name].price)}</div>
                 </button>
@@ -357,18 +357,11 @@ export default function POS() {
                 </select>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <button disabled={!cart.length || stage !== 'draft' || loading} onClick={markPreparing} className="brand-button">
-                  Preparando
-                </button>
-                <button disabled={!cart.length || stage !== 'preparing' || loading || !saleId} onClick={markDelivered} className="brand-button">
-                  Entregada
+              <div>
+                <button disabled={!cart.length || stage !== 'draft' || loading} onClick={markPreparing} className="brand-button w-full text-xs sm:text-sm px-2 py-3">
+                  ENVIAR A COCINA
                 </button>
               </div>
-
-              <button disabled={!user || loading || !cart.length} onClick={chargeAndRegister} className="brand-button w-full">
-                {loading ? 'Procesando...' : 'Cobrar y registrar'}
-              </button>
 
               <button disabled={!cart.length} onClick={voidOrder} className="w-full px-4 py-2 rounded-md border border-white/10 text-secondary-200 hover:bg-white/10 uppercase tracking-widest">
                 Anular pedido

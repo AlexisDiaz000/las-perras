@@ -70,7 +70,7 @@ export const salesService = {
       .from('sales')
       .select(`
         *,
-        seller:users(*)
+        seller:users!sales_seller_id_fkey(*)
       `)
       .order('created_at', { ascending: false })
 
@@ -92,7 +92,7 @@ export const salesService = {
       .from('sales')
       .select(`
         *,
-        seller:users(*),
+        seller:users!sales_seller_id_fkey(*),
         items:sale_items(*)
       `)
       .order('created_at', { ascending: false })
@@ -124,7 +124,7 @@ export const salesService = {
       .insert([payload])
       .select(`
         *,
-        seller:users(*)
+        seller:users!sales_seller_id_fkey(*)
       `)
       .single())
 
@@ -135,7 +135,7 @@ export const salesService = {
         .insert([payload])
         .select(`
           *,
-          seller:users(*)
+          seller:users!sales_seller_id_fkey(*)
         `)
         .single())
     }
@@ -262,12 +262,10 @@ export const salesService = {
     if (error) throw error
   },
 
-  async finalizeSaleAndConsumeInventory(saleId: string, sellerId: string, paymentMethod: 'cash' | 'card'): Promise<void> {
-    const movements = await this.getMovementsBySaleId(saleId)
-    const alreadyConsumed = movements.some(m => !m.reversal_of)
-    if (alreadyConsumed) {
-      throw new Error('Este pedido ya descontó inventario')
-    }
+  async finalizeSale(saleId: string, sellerId: string, paymentMethod: 'cash' | 'card'): Promise<void> {
+    // Si ya es paid, no hacer nada
+    // No validamos inventario aquí porque el consumo se hace al crear la venta o al enviar a preparación
+    // Simplemente marcamos como pagado
 
     const items = await this.getSaleItems(saleId)
     const totalAmount = items.reduce((sum, it) => sum + Number(it.total_price), 0)
@@ -277,45 +275,20 @@ export const salesService = {
       payment_method: paymentMethod,
       total_amount: totalAmount,
     } as any)
-
-    await consumeInventoryForSale(saleId, sellerId, items as any)
   },
 
   async getSalesByHotdogType(startDate?: string, endDate?: string): Promise<{ hotdog_type: string; total: number; count: number }[]> {
+    if (!startDate || !endDate) {
+      const today = new Date().toISOString().split('T')[0]
+      startDate = startDate || today
+      endDate = endDate || today
+    }
+
     const { data, error } = await supabase
-      .from('sale_items')
-      .select(`
-        hotdog_type,
-        total_price,
-        quantity,
-        sales!inner(created_at)
-      `)
+      .rpc('get_sales_by_hotdog_type', { start_date: startDate, end_date: endDate })
 
     if (error) throw error
-
-    const filtered = data.filter((item: any) => {
-      const d = new Date(item.sales.created_at).toISOString().split('T')[0]
-      if (startDate && d < startDate) return false
-      if (endDate && d > endDate) return false
-      return true
-    })
-
-    const grouped = filtered.reduce((acc: any[], item: any) => {
-      const found = acc.find((g: any) => g.hotdog_type === item.hotdog_type)
-      if (found) {
-        found.total += item.total_price
-        found.count += item.quantity
-      } else {
-        acc.push({
-          hotdog_type: item.hotdog_type,
-          total: item.total_price,
-          count: item.quantity
-        })
-      }
-      return acc
-    }, [])
-
-    return grouped
+    return data as any
   }
 }
 

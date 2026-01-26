@@ -8,19 +8,15 @@ function formatCurrency(amount: number) {
 }
 
 const BOARD_COLUMNS = [
-  { key: 'draft', title: 'Borrador' },
   { key: 'preparing', title: 'Preparación' },
-  { key: 'delivered', title: 'Por cobrar' },
-  { key: 'paid', title: 'Pagado' },
-  { key: 'refunded', title: 'Reembolsado' },
-  { key: 'voided', title: 'Anulado' },
+  { key: 'delivered', title: 'Por Cobrar' },
+  { key: 'paid', title: 'Completado' },
 ] as const
 
 const STATUS_LABELS: Record<string, string> = {
-  draft: 'Borrador',
   preparing: 'Preparación',
-  delivered: 'Entregado',
-  paid: 'Pagado',
+  delivered: 'Por Cobrar',
+  paid: 'Completado',
   voided: 'Anulado',
   refunded: 'Reembolsado',
 }
@@ -71,7 +67,7 @@ export function RecentOrders() {
     if (!user) return
     setActionLoading(saleId)
     try {
-      await salesService.finalizeSaleAndConsumeInventory(saleId, user.id, method)
+      await salesService.finalizeSale(saleId, user.id, method)
       await loadOrders()
     } catch (error: any) {
       alert(error?.message || 'Error al procesar pago')
@@ -88,6 +84,7 @@ export function RecentOrders() {
     try {
       await salesService.voidSale(sale.id, reason.trim(), user.id, false)
       await loadOrders()
+      setSelected(null)
     } catch (error: any) {
       alert(error?.message || 'Error al anular pedido')
     } finally {
@@ -103,6 +100,7 @@ export function RecentOrders() {
     try {
       await salesService.refundSale(sale.id, reason.trim(), user.id)
       await loadOrders()
+      setSelected(null)
     } catch (error: any) {
       alert(error?.message || 'Error al reembolsar')
     } finally {
@@ -331,19 +329,6 @@ export function RecentOrders() {
                 </button>
               )}
 
-              {selected.status === 'draft' && (
-                <button
-                  onClick={async () => {
-                    await updateStatus(selected.id, 'preparing')
-                    setSelected(null)
-                  }}
-                  disabled={actionLoading === selected.id}
-                  className="brand-button"
-                >
-                  Enviar a preparación
-                </button>
-              )}
-
               {selected.status === 'preparing' && (
                 <button
                   onClick={async () => {
@@ -353,7 +338,7 @@ export function RecentOrders() {
                   disabled={actionLoading === selected.id}
                   className="brand-button"
                 >
-                  Marcar entregado
+                  Marcar Listo / Por Cobrar
                 </button>
               )}
 

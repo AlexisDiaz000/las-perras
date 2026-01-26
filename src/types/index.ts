@@ -41,7 +41,7 @@ export interface Sale {
   seller_id: string
   created_at: string
   seller?: User
-  status?: 'draft' | 'preparing' | 'delivered' | 'paid' | 'voided' | 'refunded'
+  status?: 'draft' | 'preparing' | 'ready' | 'delivered' | 'paid' | 'voided' | 'refunded'
   updated_at?: string
   void_reason?: string
   voided_at?: string
