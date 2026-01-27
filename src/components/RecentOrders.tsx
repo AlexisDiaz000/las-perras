@@ -178,46 +178,71 @@ export function RecentOrders() {
         ) : filteredOrders.length === 0 ? (
           <div className="brand-card p-6 text-secondary-300">No hay pedidos hoy.</div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {BOARD_COLUMNS.map(col => (
-              <div key={col.key} className="brand-card p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="text-xs font-semibold uppercase tracking-widest text-secondary-300">{col.title}</div>
-                  <div className="text-xs text-secondary-400">{(grouped[col.key] || []).length}</div>
+              <div key={col.key} className="flex flex-col gap-4">
+                <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                  <div className="text-sm font-semibold uppercase tracking-widest text-secondary-50">{col.title}</div>
+                  <div className="text-xs bg-white/10 px-2 py-1 rounded-full text-secondary-200 font-mono">
+                    {(grouped[col.key] || []).length}
+                  </div>
                 </div>
+                
                 <div className="space-y-3">
-                  {(grouped[col.key] || []).map(sale => (
-                    <button
-                      key={sale.id}
-                      onClick={() => setSelected(sale)}
-                      className="w-full text-left border border-white/10 rounded-lg p-3 bg-white/5 hover:bg-white/10"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <div className="text-sm font-semibold text-secondary-50 truncate">
-                            {getOrderLabel(sale)}
+                  {(grouped[col.key] || []).length === 0 ? (
+                    <div className="text-sm text-secondary-400 italic p-4 text-center border border-dashed border-white/5 rounded-lg">
+                      Vacío
+                    </div>
+                  ) : (
+                    (grouped[col.key] || []).map(sale => (
+                      <button
+                        key={sale.id}
+                        onClick={() => setSelected(sale)}
+                        className="w-full text-left brand-card p-4 hover:bg-white/5 transition-colors group relative overflow-hidden"
+                      >
+                        <div className="absolute top-0 left-0 w-1 h-full bg-primary-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <span className="text-lg font-bold text-white block">{getOrderLabel(sale)}</span>
+                            <span className="text-xs text-secondary-400">
+                              {new Date(sale.created_at).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}
+                            </span>
                           </div>
-                          <div className="text-xs text-secondary-400">
-                            {new Date(sale.created_at).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })} · {STATUS_LABELS[sale.status || 'draft'] || sale.status}
-                          </div>
+                          <span className="text-lg font-semibold text-primary-400">
+                            {formatCurrency(Number(sale.total_amount || 0))}
+                          </span>
                         </div>
-                        <div className="text-right shrink-0">
-                          <div className="text-sm font-semibold text-secondary-50">{formatCurrency(Number(sale.total_amount || 0))}</div>
-                        </div>
-                      </div>
 
-                      {sale.description && (
-                        <div className="mt-2 text-xs text-secondary-300 line-clamp-2">
-                          {sale.description}
+                        {sale.description && (
+                          <div className="mb-3 text-sm text-secondary-300 bg-white/5 p-2 rounded border border-white/5">
+                            "{sale.description}"
+                          </div>
+                        )}
+
+                        <div className="space-y-1">
+                          {renderItemsPreview(sale) && (
+                            <div className="text-sm text-secondary-200">
+                              {renderItemsPreview(sale)}
+                            </div>
+                          )}
                         </div>
-                      )}
-                      {renderItemsPreview(sale) && (
-                        <div className="mt-2 text-xs text-secondary-400">
-                          {renderItemsPreview(sale)}
+
+                        <div className="mt-3 pt-3 border-t border-white/5 flex justify-between items-center">
+                           <span className={`text-xs uppercase tracking-wider px-2 py-1 rounded ${
+                             sale.status === 'preparing' ? 'bg-yellow-500/20 text-yellow-200' :
+                             sale.status === 'delivered' ? 'bg-blue-500/20 text-blue-200' :
+                             'bg-green-500/20 text-green-200'
+                           }`}>
+                             {STATUS_LABELS[sale.status || 'draft']}
+                           </span>
+                           <span className="text-xs text-secondary-400 group-hover:text-white transition-colors">
+                             Ver detalles →
+                           </span>
                         </div>
-                      )}
-                    </button>
-                  ))}
+                      </button>
+                    ))
+                  )}
                 </div>
               </div>
             ))}

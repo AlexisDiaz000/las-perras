@@ -23,7 +23,7 @@ BEGIN
   -- Transiciones permitidas
   IF old_status = 'draft' AND new_status IN ('preparing','voided') THEN
     allowed := TRUE;
-  ELSIF old_status = 'preparing' AND new_status IN ('ready','voided') THEN
+  ELSIF old_status = 'preparing' AND new_status IN ('ready','delivered','voided') THEN
     allowed := TRUE;
   ELSIF old_status = 'ready' AND new_status IN ('delivered','voided') THEN
     allowed := TRUE;
