@@ -17,21 +17,29 @@ export default function Inventory() {
   const [movementType, setMovementType] = useState<'in' | 'out'>('in')
   const [movementQuantity, setMovementQuantity] = useState('')
   const [movementReason, setMovementReason] = useState('')
-  const [editingItem, setEditingItem] = useState<InventoryItem | null>(null)
-  const [newItem, setNewItem] = useState<{
+  const [editingItem, setEditingItem] = useState<{
+    id: string
     name: string
     category: typeof INVENTORY_CATEGORIES[number]
     unit: typeof UNITS[number]
     current_stock: number
-    min_threshold: number
-    unit_cost: number
+    min_threshold: string
+    unit_cost: string
+  } | null>(null)
+  const [newItem, setNewItem] = useState<{
+    name: string
+    category: typeof INVENTORY_CATEGORIES[number]
+    unit: typeof UNITS[number]
+    current_stock: string
+    min_threshold: string
+    unit_cost: string
   }>({
     name: '',
     category: INVENTORY_CATEGORIES[0],
     unit: UNITS[0],
-    current_stock: 0,
-    min_threshold: 10,
-    unit_cost: 0
+    current_stock: '',
+    min_threshold: '',
+    unit_cost: ''
   })
 
   useEffect(() => {
@@ -56,15 +64,20 @@ export default function Inventory() {
 
   const handleCreateItem = async () => {
     try {
-      await inventoryService.createItem(newItem as any)
+      await inventoryService.createItem({
+        ...newItem,
+        current_stock: parseFloat(newItem.current_stock) || 0,
+        min_threshold: parseFloat(newItem.min_threshold) || 0,
+        unit_cost: parseFloat(newItem.unit_cost) || 0
+      } as any)
       setShowAddItem(false)
       setNewItem({
         name: '',
         category: INVENTORY_CATEGORIES[0],
         unit: UNITS[0],
-        current_stock: 0,
-        min_threshold: 10,
-        unit_cost: 0
+        current_stock: '',
+        min_threshold: '',
+        unit_cost: ''
       })
       loadData()
     } catch (error) {
@@ -77,7 +90,11 @@ export default function Inventory() {
     if (!editingItem) return
     
     try {
-      await inventoryService.updateItem(editingItem.id, editingItem)
+      await inventoryService.updateItem(editingItem.id, {
+        ...editingItem,
+        min_threshold: parseFloat(editingItem.min_threshold) || 0,
+        unit_cost: parseFloat(editingItem.unit_cost) || 0
+      } as any)
       setEditingItem(null)
       loadData()
     } catch (error) {
@@ -111,11 +128,20 @@ export default function Inventory() {
 
   const getStockStatus = (item: InventoryItem) => {
     if (item.current_stock <= item.min_threshold) {
-      return { color: 'text-red-200 bg-red-500/10 border border-red-500/20', text: 'Bajo' }
+      return { 
+        color: 'text-red-800 bg-red-100 border-red-200 dark:text-red-200 dark:bg-red-500/10 dark:border-red-500/20', 
+        text: 'Bajo' 
+      }
     } else if (item.current_stock <= item.min_threshold * 1.5) {
-      return { color: 'text-yellow-200 bg-yellow-500/10 border border-yellow-500/20', text: 'Medio' }
+      return { 
+        color: 'text-yellow-800 bg-yellow-100 border-yellow-200 dark:text-yellow-200 dark:bg-yellow-500/10 dark:border-yellow-500/20', 
+        text: 'Medio' 
+      }
     } else {
-      return { color: 'text-green-200 bg-green-500/10 border border-green-500/20', text: 'Alto' }
+      return { 
+        color: 'text-green-800 bg-green-100 border-green-200 dark:text-green-200 dark:bg-green-500/10 dark:border-green-500/20', 
+        text: 'Alto' 
+      }
     }
   }
 
@@ -159,24 +185,28 @@ export default function Inventory() {
             {items.map((item) => {
               const status = getStockStatus(item)
               return (
-                <tr key={item.id}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-secondary-50">{item.name}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-secondary-300">{item.category}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-secondary-50">{item.current_stock} {item.unit}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-secondary-300">{item.min_threshold} {item.unit}</td>
+                <tr key={item.id} className="hover:bg-black/5 dark:hover:bg-white/5 transition-colors duration-150">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-secondary-50">{item.name}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-secondary-300">{item.category}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-secondary-50">{item.current_stock} {item.unit}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-secondary-300">{item.min_threshold} {item.unit}</td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${status.color}`}>
                       {status.text}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-secondary-50">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-secondary-50">
                     ${item.unit_cost.toLocaleString('es-CO')}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex space-x-2">
                       <button
-                        onClick={() => setEditingItem(item)}
-                        className="text-secondary-200 hover:text-secondary-50"
+                        onClick={() => setEditingItem({
+                          ...item,
+                          min_threshold: String(item.min_threshold),
+                          unit_cost: String(item.unit_cost)
+                        })}
+                        className="text-gray-400 hover:text-gray-600 dark:text-secondary-200 dark:hover:text-secondary-50 transition-colors"
                       >
                         <PencilIcon className="h-4 w-4" />
                       </button>
@@ -185,7 +215,7 @@ export default function Inventory() {
                           setSelectedItem(item)
                           setShowMovement(true)
                         }}
-                        className="text-secondary-200 hover:text-secondary-50"
+                        className="text-gray-400 hover:text-gray-600 dark:text-secondary-200 dark:hover:text-secondary-50 transition-colors"
                       >
                         <PlusIcon className="h-4 w-4" />
                       </button>
@@ -195,7 +225,7 @@ export default function Inventory() {
                           setMovementType('out')
                           setShowMovement(true)
                         }}
-                        className="text-secondary-200 hover:text-secondary-50"
+                        className="text-gray-400 hover:text-gray-600 dark:text-secondary-200 dark:hover:text-secondary-50 transition-colors"
                       >
                         <MinusIcon className="h-4 w-4" />
                       </button>
@@ -244,21 +274,21 @@ export default function Inventory() {
                 type="number"
                 placeholder="Stock inicial"
                 value={newItem.current_stock}
-                onChange={(e) => setNewItem({...newItem, current_stock: parseFloat(e.target.value) || 0})}
+                onChange={(e) => setNewItem({...newItem, current_stock: e.target.value})}
                 className="brand-input"
               />
               <input
                 type="number"
                 placeholder="Stock mínimo"
                 value={newItem.min_threshold}
-                onChange={(e) => setNewItem({...newItem, min_threshold: parseFloat(e.target.value) || 0})}
+                onChange={(e) => setNewItem({...newItem, min_threshold: e.target.value})}
                 className="brand-input"
               />
               <input
                 type="number"
                 placeholder="Costo unitario"
                 value={newItem.unit_cost}
-                onChange={(e) => setNewItem({...newItem, unit_cost: parseFloat(e.target.value) || 0})}
+                onChange={(e) => setNewItem({...newItem, unit_cost: e.target.value})}
                 className="brand-input"
               />
             </div>
@@ -358,13 +388,13 @@ export default function Inventory() {
               <input
                 type="number"
                 value={editingItem.min_threshold}
-                onChange={(e) => setEditingItem({...editingItem, min_threshold: parseFloat(e.target.value) || 0})}
+                onChange={(e) => setEditingItem({...editingItem, min_threshold: e.target.value})}
                 className="brand-input"
               />
               <input
                 type="number"
                 value={editingItem.unit_cost}
-                onChange={(e) => setEditingItem({...editingItem, unit_cost: parseFloat(e.target.value) || 0})}
+                onChange={(e) => setEditingItem({...editingItem, unit_cost: e.target.value})}
                 className="brand-input"
               />
             </div>
