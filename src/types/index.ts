@@ -3,6 +3,7 @@ export interface User {
   email: string
   role: 'admin' | 'vendor'
   name: string
+  active: boolean
   created_at: string
 }
 

@@ -68,7 +68,46 @@ export const authService = {
     )
     if (userError) throw userError
 
+    // Si el usuario es el administrador principal, asegurar que tenga el rol correcto en el cliente
+    if (userData.email === 'admin@lasperras.com' && userData.role !== 'admin') {
+      return { ...userData, role: 'admin' } as User
+    }
+
+    // Verificar si el usuario está activo
+    if (userData.active === false) { // Usar comparación explícita por si active es null/undefined
+      await supabase.auth.signOut()
+      throw new Error('Este usuario ha sido desactivado por el administrador.')
+    }
+
     return userData as User
+  },
+
+  async getAllUsers() {
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .order('created_at', { ascending: false })
+    
+    if (error) throw error
+    return data as User[]
+  },
+
+  async deleteUser(userId: string) {
+    const { error } = await supabase
+      .from('users')
+      .delete()
+      .eq('id', userId)
+
+    if (error) throw error
+  },
+
+  async toggleUserStatus(userId: string, currentStatus: boolean) {
+    const { error } = await supabase
+      .from('users')
+      .update({ active: !currentStatus })
+      .eq('id', userId)
+
+    if (error) throw error
   },
 
   async createUser(email: string, password: string, name: string, role: 'admin' | 'vendor' = 'vendor') {
@@ -93,7 +132,15 @@ export const authService = {
       .select()
       .single()
 
-    if (userError) throw userError
+    if (userError) {
+      // Si el error es de clave duplicada, significa que el usuario ya existe en public.users
+      // pero tal vez no se creó correctamente en auth o viceversa.
+      // O simplemente estamos tratando de registrar un email que ya existe.
+      if (userError.code === '23505') { // Código PostgreSQL para unique_violation
+        throw new Error('El correo electrónico ya está registrado.')
+      }
+      throw userError
+    }
 
     return userData as User
   },
