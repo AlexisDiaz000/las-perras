@@ -11,6 +11,7 @@ import Inventory from "@/pages/Inventory"
 import Expenses from "@/pages/Expenses"
 import Reports from "@/pages/Reports"
 import Settings from "@/pages/Settings"
+import Products from "@/pages/Products"
 
 function ProtectedRoute({ children, allowedRoles }: { children: React.ReactNode, allowedRoles?: string[] }) {
   const { user, isInitializing } = useAuthStore()
@@ -109,6 +110,12 @@ function AppRoutes() {
       <Route path="/inventory" element={
         <ProtectedRoute>
           <Inventory />
+        </ProtectedRoute>
+      } />
+
+      <Route path="/products" element={
+        <ProtectedRoute allowedRoles={['admin']}>
+          <Products />
         </ProtectedRoute>
       } />
       

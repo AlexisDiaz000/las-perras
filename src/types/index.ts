@@ -82,6 +82,28 @@ export interface DashboardMetrics {
   expenses_by_category: { category: string; total: number }[]
 }
 
+export interface Product {
+  id: string
+  name: string
+  description?: string
+  price: number
+  category: 'Perros Sencillos' | 'Perros Especiales' | 'Bebidas' | 'Adicionales' | 'Otros'
+  image_url?: string
+  active: boolean
+  requires_protein_choice: boolean
+  ingredients?: ProductIngredient[]
+  created_at: string
+}
+
+export interface ProductIngredient {
+  id: string
+  product_id: string
+  inventory_item_id: string
+  quantity: number
+  is_optional: boolean
+  inventory_item?: InventoryItem
+}
+
 export interface CartItem {
   hotdog_type: string
   quantity: number

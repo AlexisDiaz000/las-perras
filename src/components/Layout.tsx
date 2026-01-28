@@ -22,6 +22,7 @@ const navigation = [
   { name: 'Punto de Venta', href: '/pos', icon: CurrencyDollarIcon, roles: ['admin', 'vendor'] },
   { name: 'Pedidos', href: '/orders', icon: ClipboardDocumentListIcon, roles: ['admin', 'vendor'] },
   { name: 'Inventario', href: '/inventory', icon: ArchiveBoxIcon, roles: ['admin'] },
+  { name: 'Productos', href: '/products', icon: ClipboardDocumentListIcon, roles: ['admin'] },
   { name: 'Gastos', href: '/expenses', icon: BanknotesIcon, roles: ['admin'] },
   { name: 'Reportes', href: '/reports', icon: ChartBarIcon, roles: ['admin'] },
   { name: 'Configuración', href: '/settings', icon: Cog6ToothIcon, roles: ['admin'] },

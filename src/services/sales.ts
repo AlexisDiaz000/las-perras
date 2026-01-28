@@ -20,46 +20,65 @@ async function consumeInventoryForSale(saleId: string, sellerId: string, items: 
   const movementGroup = crypto.randomUUID()
 
   for (const item of items) {
-    const config = HOTDOG_TYPES[item.hotdog_type]
-    const baseIngredients = [...config.ingredients]
+    // 1. Obtener los ingredientes del producto desde la base de datos (Receta Dinámica)
+    // Se asume que item.product_id existe. Si usamos el sistema antiguo (hardcoded), esto fallará, 
+    // pero la idea es migrar al nuevo sistema.
+    // Para compatibilidad híbrida, podríamos chequear si tiene UUID o nombre.
+    
+    // Si el item viene del POS nuevo, tendrá un product_id o un nombre que coincida con la tabla products
+    // Buscamos el producto y sus ingredientes
+    const { data: productData, error } = await supabase
+      .from('products')
+      .select(`
+        id,
+        ingredients:product_ingredients(
+          inventory_item_id,
+          quantity,
+          is_optional,
+          inventory_item:inventory_items(name)
+        )
+      `)
+      .eq('name', item.hotdog_type) // Usamos el nombre como enlace por ahora
+      .single()
 
-    if ((config as any).requiresProteinChoice) {
-      const protein = item.modifiers?.protein
-      if (!protein) {
-        throw new Error(`Falta seleccionar proteína para ${item.hotdog_type}`)
-      }
-      baseIngredients.push(protein)
+    if (error || !productData) {
+      console.warn(`[Inventory] Producto "${item.hotdog_type}" no tiene receta configurada en BD. Se omite descuento.`)
+      continue
     }
 
-    const noSauce = Boolean(item.modifiers?.noSauce)
-    const extraSauce = Boolean(item.modifiers?.extraSauce)
+    const recipeIngredients = productData.ingredients
 
-    for (const ingredient of baseIngredients) {
-      const consumption = INGREDIENT_CONSUMPTION[ingredient as keyof typeof INGREDIENT_CONSUMPTION]
-      if (!consumption) continue
+    // 2. Procesar Modificadores (Sin Salsa, Extra Salsa)
+    // Identificamos qué ingredientes son "Salsas" (esto podría ser una categoría en el futuro, por ahora usamos nombres conocidos)
+    const SAUCES_KEYWORDS = ['Salsa', 'Mayonesa', 'Mostaza', 'BBQ']
 
-      let ingredientMultiplier = 1
+    for (const ingredient of recipeIngredients) {
+      let finalQuantity = Number(ingredient.quantity)
+      const ingredientName = ingredient.inventory_item?.name || ''
 
-      const multipliers = (config as any).multipliers as Record<string, number> | undefined
-      if (multipliers && multipliers[ingredient]) ingredientMultiplier = multipliers[ingredient]
-
-      if (SAUCES.includes(ingredient as any)) {
-        if (noSauce) ingredientMultiplier = 0
-        else ingredientMultiplier = extraSauce ? 2 : 1
+      // Lógica de Modificadores
+      const isSauce = SAUCES_KEYWORDS.some(k => ingredientName.includes(k))
+      
+      if (isSauce) {
+        if (item.modifiers?.noSauce) {
+          finalQuantity = 0
+        } else if (item.modifiers?.extraSauce) {
+          finalQuantity *= 2 // Doble porción
+        }
       }
 
-      const totalQty = consumption.quantity * item.quantity * ingredientMultiplier
-      if (totalQty === 0) continue
-      const invItem = await inventoryService.getItemByName(ingredient)
-      if (!invItem) {
-        console.warn(`[Inventory] Ingrediente no encontrado en BD: "${ingredient}". No se descontará stock.`)
-        continue
-      }
+      // Si la cantidad es 0, no descontamos
+      if (finalQuantity <= 0) continue
+
+      // Multiplicar por la cantidad de productos vendidos (ej. 2 Perros = 2x ingredientes)
+      const totalDeduction = finalQuantity * item.quantity
+
+      // 3. Crear el movimiento
       await inventoryService.createMovement({
-        item_id: invItem.id,
+        item_id: ingredient.inventory_item_id,
         type: 'out',
-        quantity: totalQty,
-        reason: `Venta ${item.hotdog_type}`,
+        quantity: totalDeduction,
+        reason: `Venta: ${item.hotdog_type}`,
         user_id: sellerId,
         sale_id: saleId,
         movement_group: movementGroup
