@@ -92,5 +92,5 @@ export const UNITS = [
 
 export const PAYMENT_METHODS = [
   { value: 'cash', label: 'Efectivo' },
-  { value: 'card', label: 'Tarjeta' }
+  { value: 'card', label: 'Transferencia' }
 ] as const

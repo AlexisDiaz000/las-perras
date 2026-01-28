@@ -28,10 +28,14 @@ export default function Reports() {
 
     try {
       setLoading(true)
+      
+      const startWithTime = `${startDate}T00:00:00-05:00`
+      const endWithTime = `${endDate}T23:59:59-05:00`
+
       const [metrics, salesData, expensesData] = await Promise.all([
-        dashboardService.getMetrics(startDate, endDate),
-        dashboardService.getSalesDataForChart(startDate, endDate),
-        dashboardService.getExpensesDataForChart(startDate, endDate)
+        dashboardService.getMetrics(startWithTime, endWithTime),
+        dashboardService.getSalesDataForChart(startWithTime, endWithTime),
+        dashboardService.getExpensesDataForChart(startWithTime, endWithTime)
       ])
 
       setReportData({

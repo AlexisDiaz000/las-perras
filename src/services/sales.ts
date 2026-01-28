@@ -2,6 +2,7 @@ import { supabase } from '../lib/supabase'
 import { InventoryMovement, Sale, SaleItem } from '../types'
 import { HOTDOG_TYPES, INGREDIENT_CONSUMPTION } from '../constants'
 import { inventoryService } from './inventory'
+import { getColombiaDate } from '../lib/dateUtils'
 
 type ProteinChoice = 'Desmechada de Res' | 'Carne de Pollo' | 'Carne de Cerdo'
 
@@ -282,7 +283,7 @@ export const salesService = {
 
   async getSalesByHotdogType(startDate?: string, endDate?: string): Promise<{ hotdog_type: string; total: number; count: number }[]> {
     if (!startDate || !endDate) {
-      const today = new Date().toISOString().split('T')[0]
+      const today = getColombiaDate()
       startDate = startDate || today
       endDate = endDate || today
     }

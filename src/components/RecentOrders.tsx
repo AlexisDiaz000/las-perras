@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { salesService } from '../services/sales'
+import { getColombiaDate } from '../lib/dateUtils'
 import { Sale } from '../types'
 import { useAuthStore } from '../stores/auth'
 
@@ -38,15 +39,17 @@ export function RecentOrders() {
   }, [search])
 
   const [dateRange, setDateRange] = useState({
-    start: new Date().toISOString().split('T')[0],
-    end: new Date().toISOString().split('T')[0]
+    start: getColombiaDate(),
+    end: getColombiaDate()
   })
 
   const loadOrders = async () => {
     setLoading(true)
     try {
-      const start = `${dateRange.start}T00:00:00`
-      const end = `${dateRange.end}T23:59:59`
+      // Agregar offset de Colombia (-05:00) para que la consulta a BD (que está en UTC)
+      // incluya las horas de la tarde/noche que en UTC ya son el día siguiente.
+      const start = `${dateRange.start}T00:00:00-05:00`
+      const end = `${dateRange.end}T23:59:59-05:00`
       const data = await salesService.getSalesWithItems(start, end)
       setOrders(data)
     } catch (error) {
@@ -242,39 +245,39 @@ export function RecentOrders() {
                         
                         <div className="flex justify-between items-start mb-2">
                           <div>
-                            <span className="text-lg font-bold text-white block">{getOrderLabel(sale)}</span>
-                            <span className="text-xs text-secondary-400">
+                            <span className="text-lg font-bold text-gray-900 dark:text-white block">{getOrderLabel(sale)}</span>
+                            <span className="text-xs text-gray-500 dark:text-secondary-400">
                               {new Date(sale.created_at).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}
                             </span>
                           </div>
-                          <span className="text-lg font-semibold text-primary-400">
+                          <span className="text-lg font-semibold text-primary-600 dark:text-primary-400">
                             {formatCurrency(Number(sale.total_amount || 0))}
                           </span>
                         </div>
 
                         {sale.description && (
-                          <div className="mb-3 text-sm text-secondary-300 bg-white/5 p-2 rounded border border-white/5">
+                          <div className="mb-3 text-sm text-gray-600 dark:text-secondary-300 bg-gray-100 dark:bg-white/5 p-2 rounded border border-gray-200 dark:border-white/5">
                             "{sale.description}"
                           </div>
                         )}
 
                         <div className="space-y-1">
                           {renderItemsPreview(sale) && (
-                            <div className="text-sm text-secondary-200">
+                            <div className="text-sm text-gray-600 dark:text-secondary-200">
                               {renderItemsPreview(sale)}
                             </div>
                           )}
                         </div>
 
-                        <div className="mt-3 pt-3 border-t border-white/5 flex justify-between items-center">
+                        <div className="mt-3 pt-3 border-t border-gray-200 dark:border-white/5 flex justify-between items-center">
                            <span className={`text-xs uppercase tracking-wider px-2 py-1 rounded ${
-                             sale.status === 'preparing' ? 'bg-yellow-500/20 text-yellow-200' :
-                             sale.status === 'delivered' ? 'bg-blue-500/20 text-blue-200' :
-                             'bg-green-500/20 text-green-200'
+                             sale.status === 'preparing' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-500/20 dark:text-yellow-200' :
+                             sale.status === 'delivered' ? 'bg-blue-100 text-blue-800 dark:bg-blue-500/20 dark:text-blue-200' :
+                             'bg-green-100 text-green-800 dark:bg-green-500/20 dark:text-green-200'
                            }`}>
                              {STATUS_LABELS[sale.status || 'draft']}
                            </span>
-                           <span className="text-xs text-secondary-400 group-hover:text-white transition-colors">
+                           <span className="text-xs text-gray-500 dark:text-secondary-400 group-hover:text-primary-600 dark:group-hover:text-white transition-colors">
                              Ver detalles →
                            </span>
                         </div>

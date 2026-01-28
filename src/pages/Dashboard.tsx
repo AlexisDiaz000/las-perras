@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { dashboardService } from '../services/dashboard'
+import { getColombiaDate } from '../lib/dateUtils'
 import { DashboardMetrics } from '../types'
 import { 
   CurrencyDollarIcon, 
@@ -8,49 +9,81 @@ import {
   ExclamationTriangleIcon
 } from '@heroicons/react/24/outline'
 import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
   Tooltip,
-  Legend,
-  ArcElement,
-} from 'chart.js'
-import { Bar, Doughnut } from 'react-chartjs-2'
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  Legend
+} from 'recharts'
 
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-  ArcElement
-)
+function formatCurrency(amount: number) {
+  return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(amount)
+}
 
 export default function Dashboard() {
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null)
-  const [salesChartData, setSalesChartData] = useState<any>(null)
-  const [expensesChartData, setExpensesChartData] = useState<any>(null)
+  const [salesChartData, setSalesChartData] = useState<any[]>([])
+  const [expensesChartData, setExpensesChartData] = useState<any[]>([])
   const [lowStockItems, setLowStockItems] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [dateRange, setDateRange] = useState({
-    start: new Date().toISOString().split('T')[0],
-    end: new Date().toISOString().split('T')[0]
+    start: getColombiaDate(),
+    end: getColombiaDate()
   })
+
+  const [isDark, setIsDark] = useState(document.documentElement.classList.contains('dark'))
+
+  useEffect(() => {
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.attributeName === 'class') {
+          setIsDark(document.documentElement.classList.contains('dark'))
+        }
+      })
+    })
+    observer.observe(document.documentElement, { attributes: true })
+    return () => observer.disconnect()
+  }, [])
 
   useEffect(() => {
     loadData()
-  }, [dateRange])
+  }, [dateRange, isDark])
+
+  // Paletas de colores
+  // Paleta sobria solicitada: #2E3D50, #8894A2, #C4762B, #D7B791, #FEEECD
+  // Ajuste: #FEEECD es muy claro para fondos blancos, lo usaremos con precaución o borde.
+  const SOBER_PALETTE = ['#2E3D50', '#C4762B', '#8894A2', '#D7B791', '#A69279'] // Reemplacé el crema muy claro por un tierra más visible
+  
+  const chartColors = isDark ? {
+    text: '#F4F4F5',
+    grid: 'rgba(255,255,255,0.08)',
+    bars: SOBER_PALETTE,
+    pie: SOBER_PALETTE
+  } : {
+    text: '#1F2937',
+    grid: 'rgba(0,0,0,0.1)',
+    bars: SOBER_PALETTE,
+    pie: SOBER_PALETTE
+  }
 
   const loadData = async () => {
     try {
       setLoading(true)
+      // Ajustar fechas para incluir el rango completo del día en Colombia (UTC-5)
+      // Esto asegura que las ventas de la noche (que en UTC son el día siguiente) se incluyan
+      const startWithTime = `${dateRange.start}T00:00:00-05:00`
+      const endWithTime = `${dateRange.end}T23:59:59-05:00`
+
       const [metricsData, salesData, expensesData, lowStockData] = await Promise.all([
-        dashboardService.getMetrics(dateRange.start, dateRange.end),
-        dashboardService.getSalesDataForChart(dateRange.start, dateRange.end),
-        dashboardService.getExpensesDataForChart(dateRange.start, dateRange.end),
+        dashboardService.getMetrics(startWithTime, endWithTime),
+        dashboardService.getSalesDataForChart(startWithTime, endWithTime),
+        dashboardService.getExpensesDataForChart(startWithTime, endWithTime),
         dashboardService.getLowStockItems()
       ])
 
@@ -59,29 +92,22 @@ export default function Dashboard() {
 
       // Preparar datos para gráfico de ventas
       if (salesData && salesData.length > 0) {
-        setSalesChartData({
-          labels: salesData.map(item => item.hotdog_type),
-          datasets: [{
-            label: 'Ventas ($)',
-            data: salesData.map(item => item.total),
-            backgroundColor: ['#F4F4F5', '#E4E4E7', '#D4D4D8', '#A1A1AA', '#71717A', '#52525B'],
-            borderColor: ['#FAFAFA'],
-            borderWidth: 1,
-          }]
-        })
+        setSalesChartData(salesData.map(item => ({
+          name: item.hotdog_type,
+          value: item.total
+        })))
+      } else {
+        setSalesChartData([])
       }
 
       // Preparar datos para gráfico de gastos
       if (expensesData && expensesData.length > 0) {
-        setExpensesChartData({
-          labels: expensesData.map(item => item.category),
-          datasets: [{
-            label: 'Gastos ($)',
-            data: expensesData.map(item => item.total),
-            backgroundColor: ['#F4F4F5', '#E4E4E7', '#D4D4D8', '#A1A1AA', '#71717A', '#52525B'],
-            borderWidth: 1,
-          }]
-        })
+        setExpensesChartData(expensesData.map(item => ({
+          name: item.category,
+          value: item.total
+        })))
+      } else {
+        setExpensesChartData([])
       }
     } catch (error) {
       console.error('Error loading dashboard data:', error)
@@ -210,62 +236,89 @@ export default function Dashboard() {
       {/* Gráficos */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Gráfico de Ventas por Tipo de Perro */}
-        <div className="brand-card p-6">
+        <div className="brand-card p-6 flex flex-col h-[400px]">
           <h3 className="brand-heading text-xl mb-4">Ventas por Tipo</h3>
-          {salesChartData ? (
-            <Bar data={salesChartData} options={{
-              responsive: true,
-              plugins: {
-                legend: {
-                  position: 'top' as const,
-                  labels: { color: '#F4F4F5' as any }
-                },
-                title: {
-                  display: true,
-                  text: 'Ventas por Tipo'
-                }
-              },
-              scales: {
-                y: {
-                  beginAtZero: true,
-                  grid: { color: 'rgba(255,255,255,0.08)' as any },
-                  ticks: {
-                    color: '#D4D4D8' as any,
-                    callback: function(value) {
-                      return '$' + value.toLocaleString('es-CO')
-                    }
-                  }
-                },
-                x: {
-                  ticks: { color: '#D4D4D8' as any },
-                  grid: { color: 'rgba(255,255,255,0.04)' as any },
-                }
-              }
-            }} />
+          {salesChartData.length > 0 ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={salesChartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} vertical={false} />
+                <XAxis 
+                  dataKey="name" 
+                  stroke={chartColors.text}
+                  fontSize={12}
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <YAxis 
+                  stroke={chartColors.text}
+                  fontSize={12}
+                  tickLine={false}
+                  axisLine={false}
+                  tickFormatter={(value) => `$${value}`}
+                />
+                <Tooltip
+                  cursor={{ fill: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }}
+                  contentStyle={{
+                    backgroundColor: isDark ? '#18181B' : '#FFFFFF',
+                    borderColor: isDark ? '#27272A' : '#E5E7EB',
+                    borderRadius: '8px',
+                    color: isDark ? '#F4F4F5' : '#1F2937'
+                  }}
+                  formatter={(value: number) => [formatCurrency(value), 'Ventas']}
+                />
+                <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                  {salesChartData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={chartColors.bars[index % chartColors.bars.length]} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
           ) : (
-            <div className="text-center text-secondary-400 py-8">No hay datos de ventas</div>
+            <div className="flex-1 flex items-center justify-center text-secondary-400">
+              No hay datos de ventas
+            </div>
           )}
         </div>
 
         {/* Gráfico de Gastos por Categoría */}
-        <div className="brand-card p-6">
+        <div className="brand-card p-6 flex flex-col h-[400px]">
           <h3 className="brand-heading text-xl mb-4">Gastos por Categoría</h3>
-          {expensesChartData ? (
-            <Doughnut data={expensesChartData} options={{
-              responsive: true,
-              plugins: {
-                legend: {
-                  position: 'bottom' as const,
-                  labels: { color: '#F4F4F5' as any }
-                },
-                title: {
-                  display: true,
-                  text: 'Distribución de Gastos'
-                }
-              }
-            }} />
+          {expensesChartData.length > 0 ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={expensesChartData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={80}
+                  paddingAngle={5}
+                  dataKey="value"
+                >
+                  {expensesChartData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={chartColors.pie[index % chartColors.pie.length]} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: isDark ? '#18181B' : '#FFFFFF',
+                    borderColor: isDark ? '#27272A' : '#E5E7EB',
+                    borderRadius: '8px',
+                    color: isDark ? '#F4F4F5' : '#1F2937'
+                  }}
+                  formatter={(value: number) => [formatCurrency(value), 'Gasto']}
+                />
+                <Legend 
+                  verticalAlign="bottom" 
+                  height={36}
+                  formatter={(value) => <span style={{ color: chartColors.text }}>{value}</span>}
+                />
+              </PieChart>
+            </ResponsiveContainer>
           ) : (
-            <div className="text-center text-secondary-400 py-8">No hay datos de gastos</div>
+            <div className="flex-1 flex items-center justify-center text-secondary-400">
+              No hay datos de gastos
+            </div>
           )}
         </div>
       </div>

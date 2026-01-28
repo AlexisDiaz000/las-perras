@@ -33,6 +33,7 @@ export default function POS() {
   const { user } = useAuthStore()
   const [stage, setStage] = useState<OrderStage>('draft')
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card'>('cash')
+  const [bankName, setBankName] = useState('')
   const [description, setDescription] = useState('')
   const [cart, setCart] = useState<CartLine[]>([])
   const [saleId, setSaleId] = useState<string | null>(null)
@@ -127,6 +128,7 @@ export default function POS() {
     setStage('draft')
     setSaleId(null)
     setDescription('')
+    setBankName('')
     setMessage(null)
     setLoading(false)
   }
@@ -160,8 +162,24 @@ export default function POS() {
       }
       return
     }
+
+    // Validar banco si es transferencia
+    if (paymentMethod === 'card' && !bankName.trim()) {
+      setMessage('Por favor ingresa el nombre del banco o plataforma')
+      return
+    }
+
     setLoading(true)
     setMessage(null)
+    
+    // Construir descripción final
+    let finalDescription = description.trim()
+    if (paymentMethod === 'card' && bankName.trim()) {
+      finalDescription = finalDescription 
+        ? `${finalDescription} - Transferencia: ${bankName.trim()}`
+        : `Transferencia: ${bankName.trim()}`
+    }
+
     try {
       const created = await createSaleAndConsumeInventory(
         {
@@ -169,7 +187,7 @@ export default function POS() {
           payment_method: paymentMethod,
           seller_id: user.id,
           status: 'preparing',
-          description: description.trim() ? description.trim() : null,
+          description: finalDescription || null,
         } as any,
         buildSaleItems() as any
       )
@@ -244,7 +262,11 @@ export default function POS() {
             <h2 className="brand-heading text-xl mb-4">Perros Sencillas</h2>
             <div className="flex overflow-x-auto pb-4 gap-4 md:grid md:grid-cols-3 md:overflow-visible md:pb-0 snap-x">
               {DOGS_SIMPLE.map((name) => (
-                <button key={name} onClick={() => addToCart(name)} className="brand-card p-4 text-left hover:bg-white/5 min-w-[200px] md:min-w-0 snap-center">
+                <button 
+                  key={name} 
+                  onClick={() => addToCart(name)} 
+                  className="brand-card p-4 text-left hover:bg-white/5 min-w-[200px] md:min-w-0 snap-center transition-all duration-200 active:scale-95 hover:brightness-110 active:brightness-90"
+                >
                   <div className="brand-heading text-lg">{name}</div>
                   <div className="text-sm text-secondary-300 mt-1">{formatCurrency(HOTDOG_TYPES[name].price)}</div>
                 </button>
@@ -256,7 +278,11 @@ export default function POS() {
             <h2 className="brand-heading text-xl mb-4">Perros Especiales</h2>
             <div className="flex overflow-x-auto pb-4 gap-4 md:grid md:grid-cols-3 md:overflow-visible md:pb-0 snap-x">
               {DOGS_SPECIAL.map((name) => (
-                <button key={name} onClick={() => addToCart(name)} className="brand-card p-4 text-left hover:bg-white/5 min-w-[200px] md:min-w-0 snap-center">
+                <button 
+                  key={name} 
+                  onClick={() => addToCart(name)} 
+                  className="brand-card p-4 text-left hover:bg-white/5 min-w-[200px] md:min-w-0 snap-center transition-all duration-200 active:scale-95 hover:brightness-110 active:brightness-90"
+                >
                   <div className="brand-heading text-lg">{name}</div>
                   <div className="text-sm text-secondary-300 mt-1">{formatCurrency(HOTDOG_TYPES[name].price)}</div>
                   {(HOTDOG_TYPES as any)[name].requiresProteinChoice && (
@@ -271,7 +297,11 @@ export default function POS() {
             <h2 className="brand-heading text-xl mb-4">Bebidas</h2>
             <div className="flex overflow-x-auto pb-4 gap-4 md:grid md:grid-cols-3 md:overflow-visible md:pb-0 snap-x">
               {DRINKS.map((name) => (
-                <button key={name} onClick={() => addToCart(name)} className="brand-card p-4 text-left hover:bg-white/5 min-w-[200px] md:min-w-0 snap-center">
+                <button 
+                  key={name} 
+                  onClick={() => addToCart(name)} 
+                  className="brand-card p-4 text-left hover:bg-white/5 min-w-[200px] md:min-w-0 snap-center transition-all duration-200 active:scale-95 hover:brightness-110 active:brightness-90"
+                >
                   <div className="brand-heading text-lg">{name}</div>
                   <div className="text-sm text-secondary-300 mt-1">{formatCurrency(HOTDOG_TYPES[name].price)}</div>
                 </button>
@@ -356,6 +386,18 @@ export default function POS() {
                   ))}
                 </select>
               </div>
+
+              {paymentMethod === 'card' && (
+                <div className="animate-fade-in">
+                  <label className="block text-xs font-semibold text-secondary-200 uppercase tracking-widest mb-2">Banco / Plataforma</label>
+                  <input
+                    className="brand-input"
+                    value={bankName}
+                    onChange={(e) => setBankName(e.target.value)}
+                    placeholder="Ej: Nequi, Bancolombia, Daviplata..."
+                  />
+                </div>
+              )}
 
               <div>
                 <button disabled={!cart.length || stage !== 'draft' || loading} onClick={markPreparing} className="brand-button w-full text-xs sm:text-sm px-2 py-3">

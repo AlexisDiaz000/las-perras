@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Expense } from '../types'
 import { expensesService } from '../services/expenses'
+import { getColombiaDate } from '../lib/dateUtils'
 import { EXPENSE_CATEGORIES } from '../constants'
 import { useAuthStore } from '../stores/auth'
 import { PlusIcon, PencilIcon, TrashIcon, DocumentArrowUpIcon } from '@heroicons/react/24/outline'
@@ -20,7 +21,7 @@ export default function Expenses() {
     amount: number
     receipt_url: string
   }>({
-    expense_date: new Date().toISOString().split('T')[0],
+    expense_date: getColombiaDate(),
     description: '',
     category: EXPENSE_CATEGORIES[0],
     amount: 0,
@@ -51,7 +52,7 @@ export default function Expenses() {
       })
       setShowAddExpense(false)
       setNewExpense({
-        expense_date: new Date().toISOString().split('T')[0],
+        expense_date: getColombiaDate(),
         description: '',
         category: EXPENSE_CATEGORIES[0],
         amount: 0,
