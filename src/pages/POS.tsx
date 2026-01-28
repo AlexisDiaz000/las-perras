@@ -163,7 +163,7 @@ export default function POS() {
     setLoading(true)
     setMessage(null)
     try {
-      const created = await salesService.createSale(
+      const created = await createSaleAndConsumeInventory(
         {
           total_amount: totals.total,
           payment_method: paymentMethod,

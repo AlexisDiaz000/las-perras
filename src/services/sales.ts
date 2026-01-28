@@ -50,7 +50,10 @@ async function consumeInventoryForSale(saleId: string, sellerId: string, items: 
       const totalQty = consumption.quantity * item.quantity * ingredientMultiplier
       if (totalQty === 0) continue
       const invItem = await inventoryService.getItemByName(ingredient)
-      if (!invItem) continue
+      if (!invItem) {
+        console.warn(`[Inventory] Ingrediente no encontrado en BD: "${ingredient}". No se descontará stock.`)
+        continue
+      }
       await inventoryService.createMovement({
         item_id: invItem.id,
         type: 'out',

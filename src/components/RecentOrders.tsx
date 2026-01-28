@@ -28,14 +28,25 @@ export function RecentOrders() {
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [selected, setSelected] = useState<Sale | null>(null)
   const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [payMethod, setPayMethod] = useState<'cash' | 'card'>('cash')
+
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search), 300)
+    return () => clearTimeout(timer)
+  }, [search])
+
+  const [dateRange, setDateRange] = useState({
+    start: new Date().toISOString().split('T')[0],
+    end: new Date().toISOString().split('T')[0]
+  })
 
   const loadOrders = async () => {
     setLoading(true)
     try {
-      const today = new Date().toISOString().split('T')[0]
-      const start = `${today}T00:00:00`
-      const end = `${today}T23:59:59`
+      const start = `${dateRange.start}T00:00:00`
+      const end = `${dateRange.end}T23:59:59`
       const data = await salesService.getSalesWithItems(start, end)
       setOrders(data)
     } catch (error) {
@@ -49,7 +60,7 @@ export function RecentOrders() {
     loadOrders()
     const interval = setInterval(loadOrders, 30000)
     return () => clearInterval(interval)
-  }, [])
+  }, [dateRange])
 
   const updateStatus = async (saleId: string, status: Sale['status']) => {
     setActionLoading(saleId)
@@ -117,32 +128,43 @@ export function RecentOrders() {
     }
   }, [selected])
 
+  const getOrderLabel = (sale: Sale) => {
+    try {
+      if (typeof sale.order_number === 'number') return `#${sale.order_number}`
+      if (sale.id && typeof sale.id === 'string') return `#${sale.id.slice(0, 8)}`
+      return '#???'
+    } catch {
+      return '#ERR'
+    }
+  }
+
   const filteredOrders = useMemo(() => {
-    const q = search.trim().toLowerCase()
+    const q = debouncedSearch.trim().toLowerCase()
     if (!q) return orders
     return orders.filter(s => {
-      const label = getOrderLabel(s).toLowerCase()
-      const desc = String(s.description || '').toLowerCase()
-      const num = String(s.order_number ?? '').toLowerCase()
-      return label.includes(q) || desc.includes(q) || num.includes(q) || s.id.toLowerCase().includes(q)
+      if (!s) return false
+      try {
+        const label = getOrderLabel(s).toLowerCase()
+        const desc = String(s.description || '').toLowerCase()
+        const num = String(s.order_number ?? '').toLowerCase()
+        return label.includes(q) || desc.includes(q) || num.includes(q) || (s.id && s.id.toLowerCase().includes(q))
+      } catch {
+        return false
+      }
     })
-  }, [orders, search])
+  }, [orders, debouncedSearch])
 
   const grouped = useMemo(() => {
     const map: Record<string, Sale[]> = {}
     for (const col of BOARD_COLUMNS) map[col.key] = []
     for (const sale of filteredOrders) {
+      if (!sale) continue
       const key = (sale.status || 'draft') as string
       if (!map[key]) map[key] = []
       map[key].push(sale)
     }
     return map
   }, [filteredOrders])
-
-  const getOrderLabel = (sale: Sale) => {
-    if (typeof sale.order_number === 'number') return `#${sale.order_number}`
-    return `#${sale.id.slice(0, 8)}`
-  }
 
   const renderItemsPreview = (sale: Sale) => {
     const items = sale.items || []
@@ -162,9 +184,25 @@ export function RecentOrders() {
           </div>
           <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
             <input
+              type="date"
+              className="brand-input w-full sm:w-auto"
+              value={dateRange.start}
+              onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
+            />
+            <span className="hidden sm:inline text-secondary-400">-</span>
+            <input
+              type="date"
+              className="brand-input w-full sm:w-auto"
+              value={dateRange.end}
+              onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
+            />
+            <input
               className="brand-input sm:w-[22rem]"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') e.preventDefault()
+              }}
               placeholder="Buscar # pedido, descripción o id..."
             />
             <button onClick={loadOrders} className="brand-button">

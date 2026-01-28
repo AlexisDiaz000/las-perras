@@ -4,10 +4,11 @@ import { PARTNER1_PERCENTAGE, PARTNER2_PERCENTAGE, DAILY_FIXED_EXPENSES } from '
 
 export const dashboardService = {
   async getMetrics(startDate: string, endDate: string): Promise<DashboardMetrics> {
-    // Obtener ventas totales
+    // Obtener ventas totales (pagadas o entregadas)
     const { data: salesData, error: salesError } = await supabase
       .from('sales')
-      .select('total_amount')
+      .select('total_amount, status')
+      .in('status', ['paid', 'delivered']) // Incluir delivered por si no han cobrado aún
       .gte('created_at', startDate)
       .lte('created_at', endDate)
 
