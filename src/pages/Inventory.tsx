@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 import { InventoryItem, InventoryMovement } from '../types'
 import { inventoryService } from '../services/inventory'
 import { INVENTORY_CATEGORIES, UNITS } from '../constants'
-import { PlusIcon, MinusIcon, PencilIcon, TrashIcon, ClockIcon } from '@heroicons/react/24/outline'
+import { PlusIcon, MinusIcon, PencilIcon, TrashIcon, ClockIcon, ClipboardDocumentCheckIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline'
 import { useAuthStore } from '../stores/auth'
 
 export default function Inventory() {
@@ -13,6 +13,13 @@ export default function Inventory() {
   const [loading, setLoading] = useState(true)
   const [showAddItem, setShowAddItem] = useState(false)
   const [showMovement, setShowMovement] = useState(false)
+  
+  // New States for Waste and Stocktake
+  const [showWasteModal, setShowWasteModal] = useState(false)
+  const [showStocktakeModal, setShowStocktakeModal] = useState(false)
+  const [stocktakeData, setStocktakeData] = useState<Record<string, string>>({})
+  const [wasteData, setWasteData] = useState({ itemId: '', quantity: '', reason: '' })
+
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null)
   const [movementType, setMovementType] = useState<'in' | 'out'>('in')
   const [movementQuantity, setMovementQuantity] = useState('')
@@ -103,6 +110,57 @@ export default function Inventory() {
     }
   }
 
+  const handleRegisterWaste = async () => {
+    if (!wasteData.itemId || !wasteData.quantity || !wasteData.reason) return
+
+    try {
+      await inventoryService.registerWaste(
+        wasteData.itemId,
+        parseFloat(wasteData.quantity),
+        wasteData.reason,
+        user?.id || ''
+      )
+      setShowWasteModal(false)
+      setWasteData({ itemId: '', quantity: '', reason: '' })
+      loadData()
+      alert('Merma registrada exitosamente')
+    } catch (error) {
+      console.error('Error registering waste:', error)
+      alert('Error al registrar la merma')
+    }
+  }
+
+  const handleStocktake = async () => {
+    if (!window.confirm('¿Está seguro de realizar el cierre de inventario? Esto generará movimientos de ajuste automáticos.')) return
+
+    try {
+      const adjustments = items.map(item => {
+        const realStock = stocktakeData[item.id] ? parseFloat(stocktakeData[item.id]) : item.current_stock
+        return {
+          itemId: item.id,
+          systemStock: item.current_stock,
+          realStock,
+          userId: user?.id || ''
+        }
+      }).filter(adj => adj.realStock !== adj.systemStock) // Solo procesar diferencias
+
+      if (adjustments.length === 0) {
+        alert('No hay diferencias para ajustar.')
+        setShowStocktakeModal(false)
+        return
+      }
+
+      await inventoryService.processStocktake(adjustments)
+      setShowStocktakeModal(false)
+      setStocktakeData({})
+      loadData()
+      alert(`Se han generado ${adjustments.length} ajustes de inventario exitosamente.`)
+    } catch (error) {
+      console.error('Error processing stocktake:', error)
+      alert('Error al procesar el cierre de inventario')
+    }
+  }
+
   const handleCreateMovement = async () => {
     if (!selectedItem || !movementQuantity || !movementReason) return
 
@@ -158,14 +216,153 @@ export default function Inventory() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <h1 className="brand-heading text-3xl">Inventario</h1>
-        <button
-          onClick={() => setShowAddItem(true)}
-          className="brand-button"
-        >
-          <PlusIcon className="h-5 w-5 mr-2" />
-          Agregar Item
-        </button>
+        <div className="flex space-x-3">
+          <button
+            onClick={() => setShowWasteModal(true)}
+            className="bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 px-4 py-2 rounded-lg flex items-center transition-colors"
+          >
+            <ExclamationTriangleIcon className="h-5 w-5 mr-2" />
+            Registrar Merma
+          </button>
+          <button
+            onClick={() => setShowStocktakeModal(true)}
+            className="bg-blue-500/10 hover:bg-blue-500/20 text-blue-500 border border-blue-500/20 px-4 py-2 rounded-lg flex items-center transition-colors"
+          >
+            <ClipboardDocumentCheckIcon className="h-5 w-5 mr-2" />
+            Cierre de Inventario
+          </button>
+          <button
+            onClick={() => setShowAddItem(true)}
+            className="brand-button"
+          >
+            <PlusIcon className="h-5 w-5 mr-2" />
+            Agregar Item
+          </button>
+        </div>
       </div>
+
+      {/* Modal para Registrar Merma */}
+      {showWasteModal && (
+        <div className="fixed inset-0 bg-black/80 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 w-96">
+            <div className="brand-card p-5">
+              <h3 className="brand-heading text-xl mb-4 text-red-500 flex items-center">
+                <ExclamationTriangleIcon className="h-6 w-6 mr-2" />
+                Registrar Merma
+              </h3>
+              <div className="space-y-4">
+                <select
+                  value={wasteData.itemId}
+                  onChange={(e) => setWasteData({...wasteData, itemId: e.target.value})}
+                  className="brand-input"
+                >
+                  <option value="">Seleccione un producto</option>
+                  {items.map(item => (
+                    <option key={item.id} value={item.id}>{item.name} ({item.current_stock} {item.unit})</option>
+                  ))}
+                </select>
+                <input
+                  type="number"
+                  placeholder="Cantidad perdida"
+                  value={wasteData.quantity}
+                  onChange={(e) => setWasteData({...wasteData, quantity: e.target.value})}
+                  className="brand-input"
+                />
+                <input
+                  type="text"
+                  placeholder="Motivo (ej. Caducado, Caída, Quemado)"
+                  value={wasteData.reason}
+                  onChange={(e) => setWasteData({...wasteData, reason: e.target.value})}
+                  className="brand-input"
+                />
+              </div>
+              <div className="flex justify-end space-x-3 mt-6">
+                <button
+                  onClick={() => setShowWasteModal(false)}
+                  className="px-4 py-2 text-secondary-200 hover:text-secondary-50 uppercase tracking-widest"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleRegisterWaste}
+                  className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors font-semibold uppercase tracking-wider"
+                >
+                  Registrar Pérdida
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal para Cierre de Inventario (Stocktake) */}
+      {showStocktakeModal && (
+        <div className="fixed inset-0 bg-black/80 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
+          <div className="brand-card p-6 max-w-4xl w-full mx-4 max-h-[90vh] flex flex-col">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="brand-heading text-2xl flex items-center text-blue-400">
+                <ClipboardDocumentCheckIcon className="h-8 w-8 mr-3" />
+                Cierre de Inventario Físico
+              </h3>
+              <button onClick={() => setShowStocktakeModal(false)} className="text-secondary-400 hover:text-white">
+                ✕
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto mb-6 pr-2">
+              <table className="min-w-full divide-y divide-white/10">
+                <thead className="bg-white/5 sticky top-0">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-secondary-300 uppercase">Producto</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-secondary-300 uppercase">Sistema</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-secondary-300 uppercase">Real (Físico)</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-secondary-300 uppercase">Diferencia</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/10">
+                  {items.map((item) => {
+                    const realVal = stocktakeData[item.id] !== undefined ? parseFloat(stocktakeData[item.id]) : item.current_stock
+                    const diff = realVal - item.current_stock
+                    return (
+                      <tr key={item.id} className="hover:bg-white/5">
+                        <td className="px-4 py-3 text-sm font-medium text-secondary-50">{item.name}</td>
+                        <td className="px-4 py-3 text-sm text-secondary-300">{item.current_stock} {item.unit}</td>
+                        <td className="px-4 py-2">
+                          <input
+                            type="number"
+                            className="bg-black/20 border border-white/10 rounded px-2 py-1 text-white w-24 focus:border-blue-500 outline-none"
+                            placeholder={item.current_stock.toString()}
+                            value={stocktakeData[item.id] || ''}
+                            onChange={(e) => setStocktakeData({...stocktakeData, [item.id]: e.target.value})}
+                          />
+                        </td>
+                        <td className={`px-4 py-3 text-sm font-bold ${diff < 0 ? 'text-red-400' : diff > 0 ? 'text-green-400' : 'text-secondary-400'}`}>
+                          {diff > 0 ? '+' : ''}{diff} {item.unit}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="flex justify-end space-x-4 pt-4 border-t border-white/10">
+              <button
+                onClick={() => setShowStocktakeModal(false)}
+                className="px-6 py-2 text-secondary-200 hover:text-secondary-50 uppercase tracking-widest"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleStocktake}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors font-semibold uppercase tracking-wider"
+              >
+                Confirmar y Ajustar Inventario
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Tabla de Inventario */}
       <div className="brand-card overflow-hidden">

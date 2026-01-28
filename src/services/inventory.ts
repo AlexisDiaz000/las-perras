@@ -74,8 +74,39 @@ export const inventoryService = {
 
     if (error) throw error
     return data as InventoryMovement[]
-  }
-  ,
+  },
+
+  async registerWaste(itemId: string, quantity: number, reason: string, userId: string) {
+    return this.createMovement({
+      item_id: itemId,
+      type: 'out',
+      quantity,
+      reason: `Merma: ${reason}`,
+      user_id: userId
+    })
+  },
+
+  async processStocktake(adjustments: { itemId: string; systemStock: number; realStock: number; userId: string }[]) {
+    const promises = adjustments.map(async (adj) => {
+      const difference = adj.realStock - adj.systemStock
+      
+      if (difference === 0) return null
+
+      return this.createMovement({
+        item_id: adj.itemId,
+        type: difference > 0 ? 'in' : 'out',
+        quantity: Math.abs(difference),
+        reason: difference > 0 
+          ? 'Ajuste de Inventario: Sobrante' 
+          : 'Ajuste de Inventario: Faltante',
+        user_id: adj.userId
+      })
+    })
+
+    const results = await Promise.all(promises)
+    return results.filter(Boolean)
+  },
+
   async getItemByName(name: string): Promise<InventoryItem | null> {
     const { data, error } = await supabase
       .from('inventory_items')
