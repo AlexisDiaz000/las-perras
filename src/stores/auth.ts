@@ -14,7 +14,7 @@ interface AuthState {
   clearAuthError: () => void
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   isLoading: false,
   isInitializing: true,
@@ -53,7 +53,12 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   checkAuth: async () => {
-    set({ isInitializing: true, initError: null })
+    const currentState = get()
+    // Solo forzar estado de carga inicial si NO hay usuario cargado
+    if (!currentState.user) {
+      set({ isInitializing: true, initError: null })
+    }
+    
     try {
       const user = await authService.getCurrentUser()
       set({ user, isInitializing: false })

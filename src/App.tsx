@@ -52,7 +52,10 @@ function AppRoutes() {
       }
     }
     
-    const { data: sub } = authService.onAuthStateChange(async (event) => {
+    const { data: sub } = authService.onAuthStateChange(async (event, session) => {
+      // Si el evento es TOKEN_REFRESHED, generalmente no necesitamos recargar el usuario completo
+      // si ya lo tenemos en memoria.
+      
       if (event === 'SIGNED_OUT') {
         useAuthStore.setState({
           user: null,
@@ -63,8 +66,13 @@ function AppRoutes() {
         })
         return
       }
-      if (event === 'SIGNED_IN') {
-        await checkAuth()
+      
+      if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+        // Solo llamamos a checkAuth si NO tenemos usuario o si el ID cambió
+        const currentUser = useAuthStore.getState().user
+        if (!currentUser || currentUser.id !== session?.user.id) {
+           await checkAuth()
+        }
       }
     })
 
