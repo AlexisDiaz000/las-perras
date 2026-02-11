@@ -42,15 +42,52 @@ async function consumeInventoryForSale(saleId: string, sellerId: string, items: 
       .single()
 
     if (error || !productData) {
-      console.warn(`[Inventory] Producto "${item.hotdog_type}" no tiene receta configurada en BD. Se omite descuento.`)
+      // Intento de fallback: buscar por coincidencia parcial si el nombre no es exacto
+      // Esto ayuda si "Coca-Cola 400ml" en POS es "Coca-Cola Personal 400ml" en BD
+      console.warn(`[Inventory] Producto exacto "${item.hotdog_type}" no encontrado. Intentando búsqueda flexible...`)
+      
+      const { data: flexibleData } = await supabase
+        .from('products')
+        .select(`
+          id,
+          ingredients:product_ingredients(
+            inventory_item_id,
+            quantity,
+            is_optional,
+            inventory_item:inventory_items(name)
+          )
+        `)
+        .ilike('name', `%${item.hotdog_type}%`)
+        .limit(1)
+        .single()
+
+      if (flexibleData) {
+        console.log(`[Inventory] Encontrado producto flexible: "${item.hotdog_type}" -> ID: ${flexibleData.id}`)
+        const recipeIngredients = flexibleData.ingredients
+        // Reutilizar lógica de descuento
+        await processIngredientsDeduction(recipeIngredients, item, saleId, sellerId, movementGroup)
+        continue
+      }
+
+      console.error(`[Inventory] FALLO CRÍTICO: Producto "${item.hotdog_type}" no tiene receta. No se descontará inventario.`)
       continue
     }
 
     const recipeIngredients = productData.ingredients
+    await processIngredientsDeduction(recipeIngredients, item, saleId, sellerId, movementGroup)
+  }
+}
 
+async function processIngredientsDeduction(
+  recipeIngredients: any[], 
+  item: POSItemInput, 
+  saleId: string, 
+  sellerId: string, 
+  movementGroup: string
+) {
     // 2. Procesar Modificadores (Sin Salsa, Extra Salsa)
     // Identificamos qué ingredientes son "Salsas" (esto podría ser una categoría en el futuro, por ahora usamos nombres conocidos)
-    const SAUCES_KEYWORDS = ['Salsa', 'Mayonesa', 'Mostaza', 'BBQ']
+    const SAUCES_KEYWORDS = ['Salsa', 'Mayonesa', 'Mostaza', 'BBQ', 'Aderezo']
 
     for (const ingredient of recipeIngredients) {
       let finalQuantity = Number(ingredient.quantity)
@@ -74,17 +111,20 @@ async function consumeInventoryForSale(saleId: string, sellerId: string, items: 
       const totalDeduction = finalQuantity * item.quantity
 
       // 3. Crear el movimiento
-      await inventoryService.createMovement({
-        item_id: ingredient.inventory_item_id,
-        type: 'out',
-        quantity: totalDeduction,
-        reason: `Venta: ${item.hotdog_type}`,
-        user_id: sellerId,
-        sale_id: saleId,
-        movement_group: movementGroup
-      })
+      try {
+        await inventoryService.createMovement({
+          item_id: ingredient.inventory_item_id,
+          type: 'out',
+          quantity: totalDeduction,
+          reason: `Venta: ${item.hotdog_type}`,
+          user_id: sellerId,
+          sale_id: saleId,
+          movement_group: movementGroup
+        })
+      } catch (err) {
+        console.error(`[Inventory] Error descontando ${ingredientName}:`, err)
+      }
     }
-  }
 }
 
 export const salesService = {

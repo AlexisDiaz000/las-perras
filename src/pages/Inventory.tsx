@@ -40,13 +40,16 @@ export default function Inventory() {
     current_stock: string
     min_threshold: string
     unit_cost: string
+    // Campo auxiliar para cálculo automático
+    total_cost_input: string
   }>({
     name: '',
     category: INVENTORY_CATEGORIES[0],
     unit: UNITS[0],
     current_stock: '',
     min_threshold: '',
-    unit_cost: ''
+    unit_cost: '',
+    total_cost_input: ''
   })
 
   useEffect(() => {
@@ -84,7 +87,8 @@ export default function Inventory() {
         unit: UNITS[0],
         current_stock: '',
         min_threshold: '',
-        unit_cost: ''
+        unit_cost: '',
+        total_cost_input: ''
       })
       loadData()
     } catch (error) {
@@ -481,13 +485,54 @@ export default function Inventory() {
                 onChange={(e) => setNewItem({...newItem, min_threshold: e.target.value})}
                 className="brand-input"
               />
-              <input
-                type="number"
-                placeholder="Costo unitario"
-                value={newItem.unit_cost}
-                onChange={(e) => setNewItem({...newItem, unit_cost: e.target.value})}
-                className="brand-input"
-              />
+              
+              <div className="p-3 bg-white/5 rounded-lg border border-white/10 space-y-3">
+                <label className="block text-xs font-semibold text-secondary-300 uppercase tracking-widest">
+                  Costo del Inventario Inicial
+                </label>
+                
+                <div>
+                  <input
+                    type="number"
+                    placeholder="Valor total pagado por el stock inicial"
+                    value={newItem.total_cost_input}
+                    onChange={(e) => {
+                      const total = parseFloat(e.target.value) || 0
+                      const stock = parseFloat(newItem.current_stock) || 0
+                      const unitCost = stock > 0 ? total / stock : 0
+                      
+                      setNewItem({
+                        ...newItem, 
+                        total_cost_input: e.target.value,
+                        unit_cost: unitCost > 0 ? unitCost.toFixed(2) : '' // Guardar con 2 decimales si es posible
+                      })
+                    }}
+                    className="brand-input mb-1"
+                  />
+                  <p className="text-xs text-secondary-400">
+                    Ej: Si compraste un paquete de 1000g a $20.000, pon 20000.
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-between text-sm pt-2 border-t border-white/5">
+                  <span className="text-secondary-300">Costo Unitario Calculado:</span>
+                  <span className="font-bold text-primary-400">
+                    ${newItem.unit_cost ? parseFloat(newItem.unit_cost).toLocaleString('es-CO') : '0'} / {newItem.unit || 'unidad'}
+                  </span>
+                </div>
+                
+                {/* Input oculto o de solo lectura para validación manual si el usuario quiere ajustar decimales */}
+                <div className="flex items-center gap-2 mt-2">
+                   <label className="text-xs text-secondary-500 whitespace-nowrap">Ajuste manual unitario:</label>
+                   <input
+                    type="number"
+                    placeholder="0.00"
+                    value={newItem.unit_cost}
+                    onChange={(e) => setNewItem({...newItem, unit_cost: e.target.value})}
+                    className="bg-transparent border-b border-white/10 text-right text-xs text-secondary-300 w-20 focus:outline-none focus:border-primary-500"
+                  />
+                </div>
+              </div>
             </div>
             <div className="flex justify-end space-x-3 mt-6">
               <button
