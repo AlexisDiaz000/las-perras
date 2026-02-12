@@ -221,26 +221,26 @@ export default function Inventory() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h1 className="brand-heading text-3xl">Inventario</h1>
-        <div className="flex space-x-3">
+        <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 w-full sm:w-auto">
           <button
             onClick={() => setShowWasteModal(true)}
-            className="bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 px-4 py-2 rounded-lg flex items-center transition-colors"
+            className="bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 px-4 py-2 rounded-lg flex items-center justify-center transition-colors w-full sm:w-auto"
           >
             <ExclamationTriangleIcon className="h-5 w-5 mr-2" />
             Registrar Merma
           </button>
           <button
             onClick={() => setShowStocktakeModal(true)}
-            className="bg-blue-500/10 hover:bg-blue-500/20 text-blue-500 border border-blue-500/20 px-4 py-2 rounded-lg flex items-center transition-colors"
+            className="bg-blue-500/10 hover:bg-blue-500/20 text-blue-500 border border-blue-500/20 px-4 py-2 rounded-lg flex items-center justify-center transition-colors w-full sm:w-auto"
           >
             <ClipboardDocumentCheckIcon className="h-5 w-5 mr-2" />
             Cierre de Inventario
           </button>
           <button
             onClick={() => setShowAddItem(true)}
-            className="brand-button"
+            className="brand-button w-full sm:w-auto flex justify-center"
           >
             <PlusIcon className="h-5 w-5 mr-2" />
             Agregar Item
@@ -250,8 +250,8 @@ export default function Inventory() {
 
       {/* Modal para Registrar Merma */}
       {showWasteModal && (
-        <div className="fixed inset-0 bg-black/80 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 w-96">
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="relative w-full max-w-md mx-auto">
             <div className="brand-card p-5">
               <h3 className="brand-heading text-xl mb-4 text-red-500 flex items-center">
                 <ExclamationTriangleIcon className="h-6 w-6 mr-2" />
@@ -372,7 +372,7 @@ export default function Inventory() {
       )}
 
       {/* Tabla de Inventario */}
-      <div className="brand-card overflow-hidden">
+      <div className="brand-card overflow-hidden overflow-x-auto">
         <table className="min-w-full divide-y divide-white/10">
           <thead className="bg-transparent">
             <tr>
@@ -444,8 +444,8 @@ export default function Inventory() {
 
       {/* Modal para Agregar Item */}
       {showAddItem && (
-        <div className="fixed inset-0 bg-black/80 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 w-96">
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="relative w-full max-w-md mx-auto">
             <div className="brand-card p-5">
             <h3 className="brand-heading text-2xl mb-4">Agregar Nuevo Item</h3>
             <div className="space-y-4">
@@ -558,8 +558,8 @@ export default function Inventory() {
 
       {/* Modal para Movimiento */}
       {showMovement && selectedItem && (
-        <div className="fixed inset-0 bg-black/80 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 w-96">
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="relative w-full max-w-md mx-auto">
             <div className="brand-card p-5">
             <h3 className="brand-heading text-xl mb-4">
               {movementType === 'in' ? 'Agregar' : 'Descontar'} Stock - {selectedItem.name}
@@ -601,8 +601,8 @@ export default function Inventory() {
 
       {/* Modal para Editar */}
       {editingItem && (
-        <div className="fixed inset-0 bg-black/80 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 w-96">
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="relative w-full max-w-md mx-auto">
             <div className="brand-card p-5">
             <h3 className="brand-heading text-2xl mb-4">Editar Item</h3>
             <div className="space-y-4">

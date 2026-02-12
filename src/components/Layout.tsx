@@ -211,40 +211,29 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </div>
 
         <div className="lg:pl-72">
-          <div className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-[color:var(--app-border)] bg-[color:var(--brand-surface)] backdrop-blur px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8 lg:hidden">
-            <button type="button" className="-m-2.5 p-2.5 text-[color:var(--app-text)] lg:hidden" onClick={() => setSidebarOpen(true)}>
-              <span className="sr-only">Abrir menú</span>
-              <Bars3Icon className="h-6 w-6" aria-hidden="true" />
-            </button>
+          <div className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-[color:var(--app-border)] bg-[color:var(--brand-surface)] backdrop-blur px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8 lg:hidden justify-between">
+            <div className="flex items-center gap-x-4">
+              <button type="button" className="-m-2.5 p-2.5 text-[color:var(--app-text)] lg:hidden" onClick={() => setSidebarOpen(true)}>
+                <span className="sr-only">Abrir menú</span>
+                <Bars3Icon className="h-6 w-6" aria-hidden="true" />
+              </button>
+              <h1 className="brand-logo text-xl lg:hidden">Las Perras</h1>
+            </div>
 
-            <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
-              <div className="flex items-center gap-x-4 lg:gap-x-6 ml-auto">
-                <div className="flex items-center gap-x-3 py-3 text-sm font-semibold leading-6 text-[color:var(--app-text)] min-w-0">
-                   <div className="h-8 w-8 rounded-full bg-[color:var(--app-hover-strong)] flex items-center justify-center text-[color:var(--app-text)]">
-                      {user?.name?.[0]?.toUpperCase() || 'U'}
-                    </div>
-                  <span className="sr-only">Tu perfil</span>
-                  <span aria-hidden="true" className="truncate max-w-[10rem]">{user?.name}</span>
-                  <button
-                    onClick={toggleTheme}
-                    className="ml-1 p-1 hover:bg-[color:var(--app-hover)] rounded-full text-[color:var(--app-muted-2)] hover:text-[color:var(--app-text)] transition-colors"
-                    title={isDark ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro'}
-                  >
-                    {isDark ? <SunIcon className="h-5 w-5" /> : <MoonIcon className="h-5 w-5" />}
-                  </button>
-                  <button
-                    onClick={handleSignOut}
-                    className="p-1 hover:bg-[color:var(--app-hover)] rounded-full text-[color:var(--app-muted-2)] hover:text-[color:var(--app-text)] transition-colors"
-                    title="Cerrar Sesión"
-                  >
-                    <ArrowLeftOnRectangleIcon className="h-5 w-5" />
-                  </button>
-                </div>
+            <div className="flex items-center gap-x-3">
+              <button
+                onClick={toggleTheme}
+                className="p-2 hover:bg-[color:var(--app-hover)] rounded-full text-[color:var(--app-muted-2)] hover:text-[color:var(--app-text)] transition-colors"
+              >
+                {isDark ? <SunIcon className="h-5 w-5" /> : <MoonIcon className="h-5 w-5" />}
+              </button>
+              <div className="h-8 w-8 rounded-full bg-[color:var(--app-hover-strong)] flex items-center justify-center text-[color:var(--app-text)] text-sm font-bold">
+                {user?.name?.[0]?.toUpperCase() || 'U'}
               </div>
             </div>
           </div>
 
-          <main className="py-10">
+          <main className="py-6 lg:py-10">
             <div className="px-4 sm:px-6 lg:px-8">
               {children}
             </div>
