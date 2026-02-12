@@ -10,6 +10,7 @@ export default function Expenses() {
   const { user } = useAuthStore()
   const [expenses, setExpenses] = useState<Expense[]>([])
   const [loading, setLoading] = useState(true)
+  const [isUploading, setIsUploading] = useState(false)
   const [showAddExpense, setShowAddExpense] = useState(false)
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null)
   const [filterCategory, setFilterCategory] = useState('')
@@ -18,13 +19,13 @@ export default function Expenses() {
     expense_date: string
     description: string
     category: typeof EXPENSE_CATEGORIES[number]
-    amount: number
+    amount: number | ''
     receipt_url: string
   }>({
     expense_date: getColombiaDate(),
     description: '',
     category: EXPENSE_CATEGORIES[0],
-    amount: 0,
+    amount: '',
     receipt_url: ''
   })
 
@@ -48,6 +49,7 @@ export default function Expenses() {
     try {
       await expensesService.createExpense({
         ...newExpense,
+        amount: newExpense.amount === '' ? 0 : newExpense.amount,
         user_id: user?.id || ''
       })
       setShowAddExpense(false)
@@ -55,7 +57,7 @@ export default function Expenses() {
         expense_date: getColombiaDate(),
         description: '',
         category: EXPENSE_CATEGORIES[0],
-        amount: 0,
+        amount: '',
         receipt_url: ''
       })
       loadData()
@@ -90,13 +92,19 @@ export default function Expenses() {
     }
   }
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
-    if (file) {
-      // En una implementación real, aquí se subiría el archivo a Supabase Storage
-      // Por ahora, simulamos la URL
-      const simulatedUrl = `https://example.com/receipts/${file.name}`
-      setNewExpense({...newExpense, receipt_url: simulatedUrl})
+    if (!file) return
+
+    try {
+      setIsUploading(true)
+      const url = await expensesService.uploadReceipt(file)
+      setNewExpense(prev => ({ ...prev, receipt_url: url }))
+    } catch (error) {
+      console.error('Error uploading receipt:', error)
+      alert('Error al subir el comprobante')
+    } finally {
+      setIsUploading(false)
     }
   }
 
@@ -238,65 +246,70 @@ export default function Expenses() {
 
       {/* Modal para Agregar Gasto */}
       {showAddExpense && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Agregar Nuevo Gasto</h3>
-            <div className="space-y-4">
-              <input
-                type="date"
-                value={newExpense.expense_date}
-                onChange={(e) => setNewExpense({...newExpense, expense_date: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-red-500 focus:border-red-500"
-              />
-              <input
-                type="text"
-                placeholder="Descripción del gasto"
-                value={newExpense.description}
-                onChange={(e) => setNewExpense({...newExpense, description: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-red-500 focus:border-red-500"
-              />
-              <select
-                value={newExpense.category}
-                onChange={(e) => setNewExpense({...newExpense, category: e.target.value as typeof EXPENSE_CATEGORIES[number]})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-red-500 focus:border-red-500"
-              >
-                {EXPENSE_CATEGORIES.map(category => (
-                  <option key={category} value={category}>{category}</option>
-                ))}
-              </select>
-              <input
-                type="number"
-                placeholder="Monto"
-                value={newExpense.amount}
-                onChange={(e) => setNewExpense({...newExpense, amount: parseFloat(e.target.value) || 0})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-red-500 focus:border-red-500"
-              />
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Comprobante (opcional)</label>
+        <div className="fixed inset-0 bg-black/80 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 w-96">
+            <div className="brand-card p-6">
+              <h3 className="brand-heading text-xl mb-4">Agregar Nuevo Gasto</h3>
+              <div className="space-y-4">
                 <input
-                  type="file"
-                  accept="image/*,.pdf"
-                  onChange={handleFileUpload}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-red-500 focus:border-red-500"
+                  type="date"
+                  value={newExpense.expense_date}
+                  onChange={(e) => setNewExpense({...newExpense, expense_date: e.target.value})}
+                  className="brand-input"
                 />
-                {newExpense.receipt_url && (
-                  <p className="text-sm text-green-600 mt-1">Comprobante cargado</p>
-                )}
+                <input
+                  type="text"
+                  placeholder="Descripción del gasto"
+                  value={newExpense.description}
+                  onChange={(e) => setNewExpense({...newExpense, description: e.target.value})}
+                  className="brand-input"
+                />
+                <select
+                  value={newExpense.category}
+                  onChange={(e) => setNewExpense({...newExpense, category: e.target.value as typeof EXPENSE_CATEGORIES[number]})}
+                  className="brand-input"
+                >
+                  {EXPENSE_CATEGORIES.map(category => (
+                    <option key={category} value={category}>{category}</option>
+                  ))}
+                </select>
+                <input
+                  type="number"
+                  placeholder="Monto"
+                  value={newExpense.amount}
+                  onChange={(e) => setNewExpense({...newExpense, amount: e.target.value === '' ? '' : parseFloat(e.target.value)})}
+                  className="brand-input"
+                />
+                <div>
+                  <label className="block text-xs font-semibold text-secondary-200 mb-2 uppercase tracking-widest">
+                    Comprobante (opcional)
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/*,.pdf"
+                    onChange={handleFileUpload}
+                    className="brand-input text-sm"
+                  />
+                  {newExpense.receipt_url && (
+                    <p className="text-xs text-green-500 mt-1 uppercase tracking-wider font-semibold">Comprobante cargado</p>
+                  )}
+                </div>
               </div>
-            </div>
-            <div className="flex justify-end space-x-3 mt-6">
-              <button
-                onClick={() => setShowAddExpense(false)}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleCreateExpense}
-                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
-              >
-                Crear
-              </button>
+              <div className="flex justify-end space-x-3 mt-6">
+                <button
+                  onClick={() => setShowAddExpense(false)}
+                  className="px-4 py-2 text-secondary-200 hover:text-secondary-50 uppercase tracking-widest font-semibold"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleCreateExpense}
+                  disabled={isUploading}
+                  className="brand-button"
+                >
+                  {isUploading ? 'Subiendo...' : 'Crear'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -304,53 +317,55 @@ export default function Expenses() {
 
       {/* Modal para Editar Gasto */}
       {editingExpense && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Editar Gasto</h3>
-            <div className="space-y-4">
-              <input
-                type="date"
-                value={editingExpense.expense_date}
-                onChange={(e) => setEditingExpense({...editingExpense, expense_date: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-red-500 focus:border-red-500"
-              />
-              <input
-                type="text"
-                placeholder="Descripción del gasto"
-                value={editingExpense.description}
-                onChange={(e) => setEditingExpense({...editingExpense, description: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-red-500 focus:border-red-500"
-              />
-              <select
-                value={editingExpense.category}
-                onChange={(e) => setEditingExpense({...editingExpense, category: e.target.value as typeof EXPENSE_CATEGORIES[number]})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-red-500 focus:border-red-500"
-              >
-                {EXPENSE_CATEGORIES.map(category => (
-                  <option key={category} value={category}>{category}</option>
-                ))}
-              </select>
-              <input
-                type="number"
-                placeholder="Monto"
-                value={editingExpense.amount}
-                onChange={(e) => setEditingExpense({...editingExpense, amount: parseFloat(e.target.value) || 0})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-red-500 focus:border-red-500"
-              />
-            </div>
-            <div className="flex justify-end space-x-3 mt-6">
-              <button
-                onClick={() => setEditingExpense(null)}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleUpdateExpense}
-                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
-              >
-                Actualizar
-              </button>
+        <div className="fixed inset-0 bg-black/80 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 w-96">
+            <div className="brand-card p-6">
+              <h3 className="brand-heading text-xl mb-4">Editar Gasto</h3>
+              <div className="space-y-4">
+                <input
+                  type="date"
+                  value={editingExpense.expense_date}
+                  onChange={(e) => setEditingExpense({...editingExpense, expense_date: e.target.value})}
+                  className="brand-input"
+                />
+                <input
+                  type="text"
+                  placeholder="Descripción del gasto"
+                  value={editingExpense.description}
+                  onChange={(e) => setEditingExpense({...editingExpense, description: e.target.value})}
+                  className="brand-input"
+                />
+                <select
+                  value={editingExpense.category}
+                  onChange={(e) => setEditingExpense({...editingExpense, category: e.target.value as typeof EXPENSE_CATEGORIES[number]})}
+                  className="brand-input"
+                >
+                  {EXPENSE_CATEGORIES.map(category => (
+                    <option key={category} value={category}>{category}</option>
+                  ))}
+                </select>
+                <input
+                  type="number"
+                  placeholder="Monto"
+                  value={editingExpense.amount}
+                  onChange={(e) => setEditingExpense({...editingExpense, amount: parseFloat(e.target.value) || 0})}
+                  className="brand-input"
+                />
+              </div>
+              <div className="flex justify-end space-x-3 mt-6">
+                <button
+                  onClick={() => setEditingExpense(null)}
+                  className="px-4 py-2 text-secondary-200 hover:text-secondary-50 uppercase tracking-widest font-semibold"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleUpdateExpense}
+                  className="brand-button"
+                >
+                  Actualizar
+                </button>
+              </div>
             </div>
           </div>
         </div>

@@ -65,6 +65,26 @@ export const expensesService = {
     if (error) throw error
   },
 
+  async uploadReceipt(file: File): Promise<string> {
+    const fileExt = file.name.split('.').pop()
+    const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`
+    const filePath = `${fileName}`
+
+    const { error: uploadError } = await supabase.storage
+      .from('receipts')
+      .upload(filePath, file)
+
+    if (uploadError) {
+      throw uploadError
+    }
+
+    const { data } = supabase.storage
+      .from('receipts')
+      .getPublicUrl(filePath)
+
+    return data.publicUrl
+  },
+
   async getExpensesByCategory(startDate?: string, endDate?: string): Promise<{ category: string; total: number }[]> {
     let query = supabase
       .from('expenses')
