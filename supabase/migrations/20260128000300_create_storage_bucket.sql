@@ -4,7 +4,7 @@ values ('receipts', 'receipts', true)
 on conflict (id) do nothing;
 
 -- Enable RLS
-alter table storage.objects enable row level security;
+-- alter table storage.objects enable row level security;
 
 -- Policy to allow authenticated users to upload files
 create policy "Authenticated users can upload receipts"
