@@ -74,8 +74,11 @@ export default function Inventory() {
 
   const handleCreateItem = async () => {
     try {
+      // Excluir total_cost_input antes de enviar
+      const { total_cost_input, ...itemToCreate } = newItem
+      
       await inventoryService.createItem({
-        ...newItem,
+        ...itemToCreate,
         current_stock: parseFloat(newItem.current_stock) || 0,
         min_threshold: parseFloat(newItem.min_threshold) || 0,
         unit_cost: parseFloat(newItem.unit_cost) || 0
@@ -91,9 +94,9 @@ export default function Inventory() {
         total_cost_input: ''
       })
       loadData()
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating item:', error)
-      alert('Error al crear el item')
+      alert(`Error al crear el item: ${error.message || 'Error desconocido'}`)
     }
   }
 
