@@ -71,12 +71,15 @@ export default function Expenses() {
     if (!editingExpense) return
     
     try {
-      await expensesService.updateExpense(editingExpense.id, editingExpense)
+      // Excluir el objeto user y campos que no deben actualizarse
+      const { user, created_at, ...updates } = editingExpense
+      
+      await expensesService.updateExpense(editingExpense.id, updates)
       setEditingExpense(null)
       loadData()
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating expense:', error)
-      alert('Error al actualizar el gasto')
+      alert(`Error al actualizar el gasto: ${error.message || 'Error desconocido'}`)
     }
   }
 
