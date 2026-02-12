@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { dashboardService } from '../services/dashboard'
-import { Bar, Line } from 'react-chartjs-2'
+import { Bar } from 'react-chartjs-2'
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend } from 'chart.js'
+import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
 
 ChartJS.register(
   CategoryScale,
@@ -51,46 +53,116 @@ export default function Reports() {
     }
   }
 
-  const exportToCSV = () => {
-    if (!reportData) return
-
-    const { metrics, salesData, expensesData } = reportData
-
-    let csvContent = "data:text/csv;charset=utf-8,"
-    csvContent += "Resumen Financiero\n"
-    csvContent += `Ventas Totales,${metrics.total_sales}\n`
-    csvContent += `Gastos Totales,${metrics.total_expenses}\n`
-    csvContent += `Ganancia Neta,${metrics.net_profit}\n`
-    csvContent += `Socio 1 (70%),${metrics.partner1_share}\n`
-    csvContent += `Socio 2 (30%),${metrics.partner2_share}\n\n`
-
-    csvContent += "Ventas por Tipo de Perro\n"
-    csvContent += "Tipo,Cantidad,Total\n"
-    salesData.forEach((item: any) => {
-      csvContent += `${item.hotdog_type},${item.count},${item.total}\n`
-    })
-
-    csvContent += "\nGastos por Categoría\n"
-    csvContent += "Categoría,Total\n"
-    expensesData.forEach((item: any) => {
-      csvContent += `${item.category},${item.total}\n`
-    })
-
-    const encodedUri = encodeURI(csvContent)
-    const link = document.createElement("a")
-    link.setAttribute("href", encodedUri)
-    link.setAttribute("download", `reporte_${startDate}_a_${endDate}.csv`)
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-  }
-
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-CO', {
       style: 'currency',
       currency: 'COP',
       minimumFractionDigits: 0
     }).format(amount)
+  }
+
+  const exportToPDF = () => {
+    if (!reportData) return
+
+    const doc = new jsPDF()
+    const { metrics, salesData, expensesData } = reportData
+
+    // Config
+    const pageWidth = doc.internal.pageSize.width
+    const margin = 15
+    let currentY = 20
+
+    // Title
+    doc.setFontSize(22)
+    doc.setTextColor(40, 40, 40)
+    doc.text('LAS PERRAS', pageWidth / 2, currentY, { align: 'center' })
+    
+    currentY += 10
+    doc.setFontSize(14)
+    doc.setTextColor(100, 100, 100)
+    doc.text('REPORTE FINANCIERO', pageWidth / 2, currentY, { align: 'center' })
+    
+    currentY += 10
+    doc.setFontSize(10)
+    doc.text(`Generado: ${new Date().toLocaleDateString()}`, margin, currentY)
+    doc.text(`Período: ${startDate} al ${endDate}`, pageWidth - margin, currentY, { align: 'right' })
+
+    currentY += 15
+
+    // Section 1: Financial Summary
+    doc.setFontSize(14)
+    doc.setTextColor(0, 0, 0)
+    doc.text('Resumen Financiero', margin, currentY)
+    
+    autoTable(doc, {
+      startY: currentY + 5,
+      head: [['Concepto', 'Valor']],
+      body: [
+        ['Ventas Totales', formatCurrency(metrics.total_sales)],
+        ['Gastos Totales', formatCurrency(metrics.total_expenses)],
+        ['Ganancia Neta', formatCurrency(metrics.net_profit)],
+        ['Socio 1 (70%)', formatCurrency(metrics.partner1_share)],
+        ['Socio 2 (30%)', formatCurrency(metrics.partner2_share)],
+      ],
+      theme: 'grid',
+      headStyles: { fillColor: [20, 20, 20] },
+      columnStyles: {
+        0: { fontStyle: 'bold' },
+        1: { halign: 'right' }
+      }
+    })
+
+    // @ts-ignore
+    currentY = doc.lastAutoTable.finalY + 15
+
+    // Section 2: Sales Details
+    doc.text('Detalle de Ventas', margin, currentY)
+    
+    autoTable(doc, {
+      startY: currentY + 5,
+      head: [['Producto', 'Cantidad', 'Total']],
+      body: salesData.map((item: any) => [
+        item.hotdog_type,
+        item.count,
+        formatCurrency(item.total)
+      ]),
+      theme: 'striped',
+      headStyles: { fillColor: [50, 50, 50] },
+      columnStyles: {
+        2: { halign: 'right' }
+      }
+    })
+
+    // @ts-ignore
+    currentY = doc.lastAutoTable.finalY + 15
+
+    // Section 3: Expenses Details
+    doc.text('Detalle de Gastos', margin, currentY)
+
+    autoTable(doc, {
+      startY: currentY + 5,
+      head: [['Categoría', 'Total']],
+      body: expensesData.map((item: any) => [
+        item.category,
+        formatCurrency(item.total)
+      ]),
+      theme: 'striped',
+      headStyles: { fillColor: [50, 50, 50] },
+      columnStyles: {
+        1: { halign: 'right' }
+      }
+    })
+
+    // Footer
+    const pageCount = doc.internal.pages.length - 1
+    for(let i = 1; i <= pageCount; i++) {
+        doc.setPage(i)
+        doc.setFontSize(8)
+        doc.setTextColor(150)
+        doc.text(`Página ${i} de ${pageCount}`, pageWidth / 2, doc.internal.pageSize.height - 10, { align: 'center' })
+    }
+
+    doc.save(`reporte_las_perras_${startDate}_${endDate}.pdf`)
   }
 
   const salesChartOptions = {
@@ -253,10 +325,13 @@ export default function Reports() {
           {/* Export Button */}
           <div className="brand-card p-6 text-center">
             <button
-              onClick={exportToCSV}
-              className="brand-button"
+              onClick={exportToPDF}
+              className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-bold uppercase tracking-widest shadow-lg transition-colors flex items-center justify-center mx-auto"
             >
-              Exportar a CSV
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              Descargar Reporte PDF
             </button>
           </div>
         </div>
