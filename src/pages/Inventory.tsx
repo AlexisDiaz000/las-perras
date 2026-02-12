@@ -1,10 +1,34 @@
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { InventoryItem, InventoryMovement } from '../types'
 import { inventoryService } from '../services/inventory'
 import { INVENTORY_CATEGORIES, UNITS } from '../constants'
-import { PlusIcon, MinusIcon, PencilIcon, TrashIcon, ClockIcon, ClipboardDocumentCheckIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline'
+import { 
+  PlusIcon, 
+  MinusIcon, 
+  PencilIcon, 
+  TrashIcon, 
+  ClockIcon, 
+  ClipboardDocumentCheckIcon, 
+  ExclamationTriangleIcon,
+  FunnelIcon,
+  ShoppingCartIcon,
+  ArrowPathIcon,
+  ChevronDownIcon,
+  ChevronUpIcon
+} from '@heroicons/react/24/outline'
 import { useAuthStore } from '../stores/auth'
+
+type FilterType = 'all' | 'manual' | 'sale' | 'waste'
+
+interface GroupedMovement {
+  id: string // usar timestamp + reason como ID único del grupo
+  date: string
+  reason: string
+  type: 'sale' | 'manual' | 'waste'
+  items: InventoryMovement[]
+  totalItems: number
+}
 
 export default function Inventory() {
   const { user } = useAuthStore()
@@ -13,6 +37,8 @@ export default function Inventory() {
   const [loading, setLoading] = useState(true)
   const [showAddItem, setShowAddItem] = useState(false)
   const [showMovement, setShowMovement] = useState(false)
+  const [filterType, setFilterType] = useState<FilterType>('all')
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
   
   // New States for Waste and Stocktake
   const [showWasteModal, setShowWasteModal] = useState(false)
@@ -70,6 +96,63 @@ export default function Inventory() {
     } finally {
       setLoading(false)
     }
+  }
+
+  // Lógica de agrupación y filtrado de movimientos
+  const groupedMovements = useMemo(() => {
+    // 1. Filtrar primero
+    const filtered = movements.filter(m => {
+      const reasonLower = m.reason.toLowerCase()
+      if (filterType === 'sale') return reasonLower.includes('venta') || reasonLower.includes('sale')
+      if (filterType === 'waste') return reasonLower.includes('merma') || reasonLower.includes('waste') || reasonLower.includes('pérdida')
+      if (filterType === 'manual') return !reasonLower.includes('venta') && !reasonLower.includes('sale') && !reasonLower.includes('merma') && !reasonLower.includes('waste') && !reasonLower.includes('pérdida')
+      return true
+    })
+
+    // 2. Agrupar por (Razón + Minuto exacto)
+    // Esto asume que los items de una misma venta se crean con milisegundos de diferencia, 
+    // pero compartirán el mismo minuto y la misma razón (ej: "Venta #123")
+    const groups: Record<string, GroupedMovement> = {}
+
+    filtered.forEach(m => {
+      const dateObj = new Date(m.created_at)
+      // Clave de agrupación: "YYYY-MM-DD HH:MM - Razón"
+      const timeKey = `${dateObj.getFullYear()}-${dateObj.getMonth()}-${dateObj.getDate()} ${dateObj.getHours()}:${dateObj.getMinutes()}`
+      const groupKey = `${timeKey}|${m.reason}`
+
+      if (!groups[groupKey]) {
+        let type: 'sale' | 'manual' | 'waste' = 'manual'
+        const r = m.reason.toLowerCase()
+        if (r.includes('venta') || r.includes('sale')) type = 'sale'
+        else if (r.includes('merma') || r.includes('waste')) type = 'waste'
+
+        groups[groupKey] = {
+          id: groupKey,
+          date: m.created_at,
+          reason: m.reason,
+          type,
+          items: [],
+          totalItems: 0
+        }
+      }
+      groups[groupKey].items.push(m)
+      groups[groupKey].totalItems++
+    })
+
+    // 3. Convertir a array y ordenar por fecha descendente
+    return Object.values(groups).sort((a, b) => 
+      new Date(b.date).getTime() - new Date(a.date).getTime()
+    )
+  }, [movements, filterType])
+
+  const toggleGroup = (groupId: string) => {
+    const newExpanded = new Set(expandedGroups)
+    if (newExpanded.has(groupId)) {
+      newExpanded.delete(groupId)
+    } else {
+      newExpanded.add(groupId)
+    }
+    setExpandedGroups(newExpanded)
   }
 
   const handleCreateItem = async () => {
@@ -664,27 +747,126 @@ export default function Inventory() {
 
       {/* Historial de Movimientos */}
       <div className="brand-card p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="brand-heading text-xl">Historial de Movimientos</h2>
-          <ClockIcon className="h-5 w-5 text-secondary-400" />
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
+          <h2 className="brand-heading text-xl flex items-center">
+            <ClockIcon className="h-6 w-6 mr-2 text-secondary-400" />
+            Historial de Movimientos
+          </h2>
+          
+          {/* Filtros */}
+          <div className="flex items-center space-x-2 bg-white/5 rounded-lg p-1 border border-white/10 w-full sm:w-auto overflow-x-auto">
+            <button
+              onClick={() => setFilterType('all')}
+              className={`px-3 py-1.5 rounded-md text-xs font-semibold uppercase tracking-widest transition-colors whitespace-nowrap ${
+                filterType === 'all' ? 'bg-secondary-50 text-brand-surface' : 'text-secondary-300 hover:text-white'
+              }`}
+            >
+              Todos
+            </button>
+            <button
+              onClick={() => setFilterType('manual')}
+              className={`px-3 py-1.5 rounded-md text-xs font-semibold uppercase tracking-widest transition-colors flex items-center whitespace-nowrap ${
+                filterType === 'manual' ? 'bg-blue-500 text-white' : 'text-secondary-300 hover:text-blue-400'
+              }`}
+            >
+              <PencilIcon className="h-3 w-3 mr-1" />
+              Manuales
+            </button>
+            <button
+              onClick={() => setFilterType('sale')}
+              className={`px-3 py-1.5 rounded-md text-xs font-semibold uppercase tracking-widest transition-colors flex items-center whitespace-nowrap ${
+                filterType === 'sale' ? 'bg-green-500 text-white' : 'text-secondary-300 hover:text-green-400'
+              }`}
+            >
+              <ShoppingCartIcon className="h-3 w-3 mr-1" />
+              Ventas
+            </button>
+            <button
+              onClick={() => setFilterType('waste')}
+              className={`px-3 py-1.5 rounded-md text-xs font-semibold uppercase tracking-widest transition-colors flex items-center whitespace-nowrap ${
+                filterType === 'waste' ? 'bg-red-500 text-white' : 'text-secondary-300 hover:text-red-400'
+              }`}
+            >
+              <ExclamationTriangleIcon className="h-3 w-3 mr-1" />
+              Mermas
+            </button>
+          </div>
         </div>
-        <div className="space-y-2 max-h-64 overflow-y-auto">
-          {movements.map((movement) => (
-            <div key={movement.id} className="flex justify-between items-center p-3 border border-white/10 rounded-lg bg-white/5">
-              <div>
-                <div className="font-medium text-secondary-50">{movement.item?.name}</div>
-                <div className="text-sm text-secondary-300">{movement.reason}</div>
-              </div>
-              <div className="text-right">
-                <div className="font-medium text-secondary-50">
-                  {movement.type === 'in' ? '+' : '-'}{movement.quantity} {movement.item?.unit}
-                </div>
-                <div className="text-xs text-secondary-400">
-                  {new Date(movement.created_at).toLocaleDateString('es-CO')}
-                </div>
-              </div>
+
+        <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
+          {groupedMovements.length === 0 ? (
+            <div className="text-center py-10 text-secondary-400 border border-dashed border-white/10 rounded-lg">
+              No hay movimientos registrados con este filtro.
             </div>
-          ))}
+          ) : (
+            groupedMovements.map((group) => {
+              const isExpanded = expandedGroups.has(group.id)
+              const icon = group.type === 'sale' ? <ShoppingCartIcon className="h-5 w-5 text-green-400" />
+                : group.type === 'waste' ? <ExclamationTriangleIcon className="h-5 w-5 text-red-400" />
+                : <ArrowPathIcon className="h-5 w-5 text-blue-400" />
+              
+              const borderColor = group.type === 'sale' ? 'border-green-500/20' 
+                : group.type === 'waste' ? 'border-red-500/20'
+                : 'border-blue-500/20'
+
+              const bgColor = group.type === 'sale' ? 'bg-green-500/5' 
+                : group.type === 'waste' ? 'bg-red-500/5'
+                : 'bg-blue-500/5'
+
+              return (
+                <div key={group.id} className={`border rounded-lg overflow-hidden transition-all ${borderColor} ${bgColor}`}>
+                  <button 
+                    onClick={() => toggleGroup(group.id)}
+                    className="w-full flex items-center justify-between p-4 hover:bg-white/5 transition-colors"
+                  >
+                    <div className="flex items-center space-x-4 text-left">
+                      <div className={`p-2 rounded-full bg-white/5`}>
+                        {icon}
+                      </div>
+                      <div>
+                        <div className="font-semibold text-secondary-50 text-sm sm:text-base">
+                          {group.reason}
+                        </div>
+                        <div className="text-xs text-secondary-400 mt-1 flex items-center">
+                          <ClockIcon className="h-3 w-3 mr-1" />
+                          {new Date(group.date).toLocaleString('es-CO')}
+                          <span className="mx-2">•</span>
+                          <span className="font-medium text-secondary-300">
+                            {group.totalItems} {group.totalItems === 1 ? 'item afectado' : 'items afectados'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-secondary-400">
+                      {isExpanded ? <ChevronUpIcon className="h-5 w-5" /> : <ChevronDownIcon className="h-5 w-5" />}
+                    </div>
+                  </button>
+
+                  {/* Detalle expandible */}
+                  {isExpanded && (
+                    <div className="border-t border-white/10 bg-black/20 p-4 space-y-2 animate-fade-in">
+                      <div className="grid grid-cols-12 text-xs font-semibold text-secondary-400 uppercase tracking-widest mb-2 px-2">
+                        <div className="col-span-6">Producto</div>
+                        <div className="col-span-6 text-right">Cantidad</div>
+                      </div>
+                      {group.items.map((movement) => (
+                        <div key={movement.id} className="grid grid-cols-12 text-sm items-center hover:bg-white/5 p-2 rounded transition-colors">
+                          <div className="col-span-6 font-medium text-secondary-200">
+                            {movement.item?.name}
+                          </div>
+                          <div className={`col-span-6 text-right font-bold ${
+                            movement.type === 'in' ? 'text-green-400' : 'text-red-400'
+                          }`}>
+                            {movement.type === 'in' ? '+' : '-'}{movement.quantity} {movement.item?.unit}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )
+            })
+          )}
         </div>
       </div>
     </div>
