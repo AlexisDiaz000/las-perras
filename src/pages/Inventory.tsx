@@ -758,7 +758,9 @@ export default function Inventory() {
             <button
               onClick={() => setFilterType('all')}
               className={`px-3 py-1.5 rounded-md text-xs font-semibold uppercase tracking-widest transition-colors whitespace-nowrap ${
-                filterType === 'all' ? 'bg-secondary-50 text-brand-surface' : 'text-secondary-300 hover:text-white'
+                filterType === 'all' 
+                  ? 'bg-secondary-50 text-secondary-900' 
+                  : 'text-secondary-300 hover:text-white'
               }`}
             >
               Todos
