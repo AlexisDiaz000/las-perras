@@ -121,7 +121,7 @@ const MENU_DATA = [
       { name: 'Pollo Desmechado', quantity: 80, unit: 'gramos' }, // Doble porción
       { name: 'Maíz Tierno', quantity: 30, unit: 'gramos' },
       { name: 'Huevo Codorniz', quantity: 2, unit: 'unidades' },
-      { name: 'Queso', quantity: 80, unit: 'gramos' }, // Extra queso
+      // { name: 'Queso', quantity: 80, unit: 'gramos' }, // REMOVIDO POR REGLA DE NEGOCIO
       { name: 'Papa Fosforito', quantity: 30, unit: 'gramos' },
       { name: 'Cebolla', quantity: 25, unit: 'gramos' },
       { name: 'Salsa', quantity: 25, unit: 'gramos' }
