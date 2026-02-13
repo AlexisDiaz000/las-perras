@@ -11,8 +11,8 @@ import {
   Cog6ToothIcon,
   XMarkIcon,
   ArrowLeftOnRectangleIcon,
-  MoonIcon,
-  SunIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon
 } from '@heroicons/react/24/outline'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/auth'
@@ -34,6 +34,7 @@ function classNames(...classes: string[]) {
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [collapsed, setCollapsed] = useState(false)
   const location = useLocation()
   const navigate = useNavigate()
   const { user, signOut } = useAuthStore()
@@ -57,6 +58,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     document.documentElement.classList.toggle('dark', nextIsDark)
     localStorage.setItem('theme', nextIsDark ? 'dark' : 'light')
     setIsDark(nextIsDark)
+  }
+
+  const toggleSidebar = () => {
+    setCollapsed(!collapsed)
   }
 
   return (
@@ -145,10 +150,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </Dialog>
         </Transition.Root>
 
-        <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col">
-          <div className="flex grow flex-col gap-y-5 overflow-y-auto border-r border-[color:var(--app-border)] bg-[color:var(--brand-surface)] px-6 pb-4">
-            <div className="flex h-16 shrink-0 items-center">
-              <h1 className="brand-logo text-3xl">Las Perras</h1>
+        <div className={`hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex ${collapsed ? 'lg:w-20' : 'lg:w-72'} lg:flex-col transition-all duration-300 ease-in-out`}>
+          <div className="flex grow flex-col gap-y-5 overflow-y-auto border-r border-[color:var(--app-border)] bg-[color:var(--brand-surface)] px-4 pb-4">
+            <div className={`flex h-16 shrink-0 items-center ${collapsed ? 'justify-center' : 'justify-between'}`}>
+              {!collapsed && <h1 className="brand-logo text-3xl">Las Perras</h1>}
+              <button onClick={toggleSidebar} className="p-1 rounded-md hover:bg-white/10 text-secondary-400">
+                {collapsed ? <ChevronRightIcon className="h-6 w-6" /> : <ChevronLeftIcon className="h-6 w-6" />}
+              </button>
             </div>
             <nav className="flex flex-1 flex-col">
               <ul role="list" className="flex flex-1 flex-col gap-y-7">
@@ -162,8 +170,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                             location.pathname === item.href
                               ? 'bg-[color:var(--app-hover-strong)] text-[color:var(--app-text)]'
                               : 'text-[color:var(--app-muted-2)] hover:text-[color:var(--app-text)] hover:bg-[color:var(--app-hover)]',
-                            'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold uppercase tracking-widest'
+                            'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold uppercase tracking-widest',
+                            collapsed ? 'justify-center' : ''
                           )}
+                          title={collapsed ? item.name : ''}
                         >
                           <item.icon
                             className={classNames(
@@ -172,7 +182,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                             )}
                             aria-hidden="true"
                           />
-                          {item.name}
+                          {!collapsed && item.name}
                         </Link>
                       </li>
                     ))}
@@ -180,29 +190,52 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 </li>
                 
                 <li className="mt-auto">
-                  <div className="flex items-center gap-x-3 py-3 text-sm font-semibold leading-6 text-[color:var(--app-text)] border-t border-[color:var(--app-border)] pt-4">
-                    <div className="h-8 w-8 rounded-full bg-[color:var(--app-hover-strong)] flex items-center justify-center text-[color:var(--app-text)]">
+                  <div className={`flex items-center gap-x-3 py-3 text-sm font-semibold leading-6 text-[color:var(--app-text)] border-t border-[color:var(--app-border)] pt-4 ${collapsed ? 'flex-col justify-center' : ''}`}>
+                    <div className="h-8 w-8 rounded-full bg-[color:var(--app-hover-strong)] flex items-center justify-center text-[color:var(--app-text)] shrink-0">
                       {user?.name?.[0]?.toUpperCase() || 'U'}
                     </div>
-                    <span className="sr-only">Tu perfil</span>
-                    <div className="flex flex-col min-w-0">
-                      <span aria-hidden="true" className="truncate">{user?.name}</span>
-                      <span className="text-xs text-[color:var(--app-muted-3)] font-normal capitalize">{user?.role}</span>
-                    </div>
-                    <button
-                      onClick={toggleTheme}
-                      className="ml-auto p-2 hover:bg-[color:var(--app-hover)] rounded-full text-[color:var(--app-muted-2)] hover:text-[color:var(--app-text)] transition-colors"
-                      title={isDark ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro'}
-                    >
-                      {isDark ? <SunIcon className="h-5 w-5" /> : <MoonIcon className="h-5 w-5" />}
-                    </button>
-                    <button
-                      onClick={handleSignOut}
-                      className="p-2 hover:bg-[color:var(--app-hover)] rounded-full text-[color:var(--app-muted-2)] hover:text-[color:var(--app-text)] transition-colors"
-                      title="Cerrar Sesión"
-                    >
-                      <ArrowLeftOnRectangleIcon className="h-5 w-5" />
-                    </button>
+                    {!collapsed && (
+                      <div className="flex flex-col min-w-0">
+                        <span aria-hidden="true" className="truncate">{user?.name}</span>
+                        <span className="text-xs text-[color:var(--app-muted-3)] font-normal capitalize">{user?.role}</span>
+                      </div>
+                    )}
+                    {!collapsed && (
+                      <>
+                        <button
+                          onClick={toggleTheme}
+                          className="ml-auto p-2 hover:bg-[color:var(--app-hover)] rounded-full text-[color:var(--app-muted-2)] hover:text-[color:var(--app-text)] transition-colors"
+                          title={isDark ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro'}
+                        >
+                          {isDark ? <SunIcon className="h-5 w-5" /> : <MoonIcon className="h-5 w-5" />}
+                        </button>
+                        <button
+                          onClick={handleSignOut}
+                          className="p-2 hover:bg-[color:var(--app-hover)] rounded-full text-[color:var(--app-muted-2)] hover:text-[color:var(--app-text)] transition-colors"
+                          title="Cerrar Sesión"
+                        >
+                          <ArrowLeftOnRectangleIcon className="h-5 w-5" />
+                        </button>
+                      </>
+                    )}
+                    {collapsed && (
+                      <div className="flex flex-col gap-2 mt-2">
+                         <button
+                          onClick={toggleTheme}
+                          className="p-2 hover:bg-[color:var(--app-hover)] rounded-full text-[color:var(--app-muted-2)] hover:text-[color:var(--app-text)] transition-colors"
+                          title={isDark ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro'}
+                        >
+                          {isDark ? <SunIcon className="h-5 w-5" /> : <MoonIcon className="h-5 w-5" />}
+                        </button>
+                        <button
+                          onClick={handleSignOut}
+                          className="p-2 hover:bg-[color:var(--app-hover)] rounded-full text-[color:var(--app-muted-2)] hover:text-[color:var(--app-text)] transition-colors"
+                          title="Cerrar Sesión"
+                        >
+                          <ArrowLeftOnRectangleIcon className="h-5 w-5" />
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </li>
               </ul>
@@ -210,7 +243,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </div>
         </div>
 
-        <div className="lg:pl-72">
+        <div className={`lg:pl-${collapsed ? '20' : '72'} transition-all duration-300 ease-in-out`}>
           <div className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-[color:var(--app-border)] bg-[color:var(--brand-surface)] backdrop-blur px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8 lg:hidden justify-between">
             <div className="flex items-center gap-x-4">
               <button type="button" className="-m-2.5 p-2.5 text-[color:var(--app-text)] lg:hidden" onClick={() => setSidebarOpen(true)}>
