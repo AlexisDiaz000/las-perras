@@ -12,7 +12,9 @@ import {
   XMarkIcon,
   ArrowLeftOnRectangleIcon,
   ChevronLeftIcon,
-  ChevronRightIcon
+  ChevronRightIcon,
+  SunIcon,
+  MoonIcon
 } from '@heroicons/react/24/outline'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/auth'
