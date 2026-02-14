@@ -75,6 +75,61 @@ async function consumeInventoryForSale(saleId: string, sellerId: string, items: 
 
     const recipeIngredients = productData.ingredients
     await processIngredientsDeduction(recipeIngredients, item, saleId, sellerId, movementGroup)
+
+    // 4. Procesar Proteína Dinámica (Si el usuario eligió una)
+    if (item.modifiers?.protein) {
+      await processProteinDeduction(item.modifiers.protein, item.quantity, saleId, sellerId, movementGroup)
+    }
+  }
+}
+
+async function processProteinDeduction(
+  proteinName: string,
+  quantityMultiplier: number,
+  saleId: string,
+  sellerId: string,
+  movementGroup: string
+) {
+  // Mapeo de nombres del POS a nombres del Inventario
+  // POS: 'Desmechada de Res' | 'Carne de Pollo' | 'Carne de Cerdo'
+  // Inventario: 'Carne Desmechada', 'Pollo Desmechado', 'Cerdo Desmechado' (aproximado)
+  
+  let searchTerm = ''
+  if (proteinName.includes('Res') || proteinName.includes('Carne')) searchTerm = 'Carne Desmechada' // O 'Carne'
+  if (proteinName.includes('Pollo')) searchTerm = 'Pollo Desmechado'
+  if (proteinName.includes('Cerdo')) searchTerm = 'Cerdo Desmechado'
+
+  if (!searchTerm) return
+
+  // Buscar el item de inventario
+  const { data: inventoryItem } = await supabase
+    .from('inventory_items')
+    .select('id, name')
+    .ilike('name', `%${searchTerm}%`)
+    .limit(1)
+    .single()
+
+  if (inventoryItem) {
+    try {
+      // Cantidad estándar por porción de proteína: 30g (ajustable)
+      const PORTION_SIZE = 30 
+      const totalQuantity = PORTION_SIZE * quantityMultiplier
+
+      await inventoryService.createMovement({
+        item_id: inventoryItem.id,
+        type: 'out',
+        quantity: totalQuantity,
+        reason: `Venta (Proteína): ${proteinName}`,
+        user_id: sellerId,
+        sale_id: saleId,
+        movement_group: movementGroup
+      })
+      console.log(`[Inventory] Descontado ${totalQuantity}g de ${inventoryItem.name}`)
+    } catch (err) {
+      console.error(`[Inventory] Error descontando proteína dinámica ${inventoryItem.name}:`, err)
+    }
+  } else {
+    console.warn(`[Inventory] No se encontró item de inventario para la proteína: ${proteinName} (Buscado: ${searchTerm})`)
   }
 }
 
