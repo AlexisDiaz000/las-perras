@@ -111,8 +111,8 @@ async function processProteinDeduction(
 
   if (inventoryItem) {
     try {
-      // Cantidad estándar por porción de proteína: 30g (ajustable)
-      const PORTION_SIZE = 30 
+      // Cantidad estándar por porción de proteína: 50g (ajustable)
+      const PORTION_SIZE = 50 
       const totalQuantity = PORTION_SIZE * quantityMultiplier
 
       await inventoryService.createMovement({
