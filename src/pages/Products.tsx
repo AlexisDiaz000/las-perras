@@ -23,6 +23,31 @@ export default function Products() {
     ingredients: [] as { inventory_item_id: string, quantity: string, is_optional: boolean }[]
   })
 
+  // Sugerencia automática de inventario
+  useEffect(() => {
+    if (!formData.name || editingProduct) return
+
+    // Buscar coincidencia exacta o muy cercana en inventario
+    const match = inventoryItems.find(item => 
+      item.name.toLowerCase() === formData.name.toLowerCase() ||
+      item.name.toLowerCase().includes(formData.name.toLowerCase()) ||
+      formData.name.toLowerCase().includes(item.name.toLowerCase())
+    )
+
+    if (match && formData.ingredients.length === 0) {
+      // Sugerir agregar el ingrediente automáticamente
+      // (Podríamos hacerlo automático o mostrar un botón, lo haré automático si está vacío para facilitar)
+      setFormData(prev => ({
+        ...prev,
+        ingredients: [{
+          inventory_item_id: match.id,
+          quantity: '1', // Asumir 1 por defecto
+          is_optional: false
+        }]
+      }))
+    }
+  }, [formData.name, inventoryItems, editingProduct])
+
   useEffect(() => {
     loadData()
   }, [])
@@ -62,6 +87,14 @@ export default function Products() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    // Validación de costo $0
+    if (formData.ingredients.length === 0) {
+      if (!window.confirm('ADVERTENCIA: Estás creando un producto SIN RECETA.\n\nEsto significa que al venderlo:\n1. NO descontará nada del inventario.\n2. Su COSTO será $0 (ganancia falsa del 100%).\n\n¿Estás seguro de continuar sin enlazar ingredientes?')) {
+        return
+      }
+    }
+
     try {
       const productPayload = {
         name: formData.name,
