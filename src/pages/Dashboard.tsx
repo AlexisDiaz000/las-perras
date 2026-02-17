@@ -6,7 +6,8 @@ import {
   CurrencyDollarIcon, 
   ShoppingCartIcon, 
   ChartBarIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  ArchiveBoxIcon
 } from '@heroicons/react/24/outline'
 import {
   BarChart,
@@ -154,7 +155,7 @@ export default function Dashboard() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
         <div className="brand-card p-6">
           <div className="flex items-center">
             <div className="flex-shrink-0">
@@ -164,6 +165,20 @@ export default function Dashboard() {
               <p className="text-xs font-semibold text-secondary-300 uppercase tracking-widest">Ventas Totales</p>
               <p className="text-2xl font-bold text-secondary-50">
                 {formatCurrency(metrics?.total_sales || 0)}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="brand-card p-6">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <ArchiveBoxIcon className="h-8 w-8 text-secondary-200" />
+            </div>
+            <div className="ml-4">
+              <p className="text-xs font-semibold text-secondary-300 uppercase tracking-widest">Costo Insumos</p>
+              <p className="text-2xl font-bold text-secondary-50">
+                {formatCurrency(metrics?.cogs || 0)}
               </p>
             </div>
           </div>

@@ -68,6 +68,7 @@ export const dashboardService = {
     return {
       total_sales: totalSales,
       total_expenses: totalExpenses,
+      cogs: cogs, // Devolver el costo de mercancía vendida
       net_profit: Math.max(0, netProfit), // No permitir ganancias negativas
       partner1_share: Math.max(0, partner1Share),
       partner2_share: Math.max(0, partner2Share),

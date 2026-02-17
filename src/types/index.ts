@@ -75,6 +75,7 @@ export interface Expense {
 export interface DashboardMetrics {
   total_sales: number
   total_expenses: number
+  cogs: number // Cost of Goods Sold (Costo de Mercancía Vendida)
   net_profit: number
   partner1_share: number
   partner2_share: number
