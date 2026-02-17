@@ -155,74 +155,74 @@ export default function Dashboard() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-        <div className="brand-card p-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <CurrencyDollarIcon className="h-8 w-8 text-secondary-200" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 sm:gap-6">
+        <div className="brand-card p-4 sm:p-6 flex flex-col justify-between">
+          <div className="flex items-start justify-between">
+            <div className="flex-shrink-0 p-2 bg-white/5 rounded-lg">
+              <CurrencyDollarIcon className="h-6 w-6 text-secondary-200" />
             </div>
-            <div className="ml-4">
-              <p className="text-xs font-semibold text-secondary-300 uppercase tracking-widest">Ventas Totales</p>
-              <p className="text-2xl font-bold text-secondary-50">
-                {formatCurrency(metrics?.total_sales || 0)}
-              </p>
-            </div>
+          </div>
+          <div className="mt-4">
+            <p className="text-xs font-semibold text-secondary-300 uppercase tracking-widest break-words">Ventas Totales</p>
+            <p className="text-xl sm:text-2xl font-bold text-secondary-50 truncate" title={formatCurrency(metrics?.total_sales || 0)}>
+              {formatCurrency(metrics?.total_sales || 0)}
+            </p>
           </div>
         </div>
 
-        <div className="brand-card p-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <ArchiveBoxIcon className="h-8 w-8 text-secondary-200" />
+        <div className="brand-card p-4 sm:p-6 flex flex-col justify-between">
+          <div className="flex items-start justify-between">
+            <div className="flex-shrink-0 p-2 bg-white/5 rounded-lg">
+              <ArchiveBoxIcon className="h-6 w-6 text-secondary-200" />
             </div>
-            <div className="ml-4">
-              <p className="text-xs font-semibold text-secondary-300 uppercase tracking-widest">Costo Insumos</p>
-              <p className="text-2xl font-bold text-secondary-50">
-                {formatCurrency(metrics?.cogs || 0)}
-              </p>
-            </div>
+          </div>
+          <div className="mt-4">
+            <p className="text-xs font-semibold text-secondary-300 uppercase tracking-widest break-words">Costo Insumos</p>
+            <p className="text-xl sm:text-2xl font-bold text-secondary-50 truncate" title={formatCurrency(metrics?.cogs || 0)}>
+              {formatCurrency(metrics?.cogs || 0)}
+            </p>
           </div>
         </div>
 
-        <div className="brand-card p-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <CurrencyDollarIcon className="h-8 w-8 text-secondary-200" />
+        <div className="brand-card p-4 sm:p-6 flex flex-col justify-between">
+          <div className="flex items-start justify-between">
+            <div className="flex-shrink-0 p-2 bg-white/5 rounded-lg">
+              <CurrencyDollarIcon className="h-6 w-6 text-secondary-200" />
             </div>
-            <div className="ml-4">
-              <p className="text-xs font-semibold text-secondary-300 uppercase tracking-widest">Gastos Totales</p>
-              <p className="text-2xl font-bold text-secondary-50">
-                {formatCurrency(metrics?.total_expenses || 0)}
-              </p>
-            </div>
+          </div>
+          <div className="mt-4">
+            <p className="text-xs font-semibold text-secondary-300 uppercase tracking-widest break-words">Gastos Totales</p>
+            <p className="text-xl sm:text-2xl font-bold text-secondary-50 truncate" title={formatCurrency(metrics?.total_expenses || 0)}>
+              {formatCurrency(metrics?.total_expenses || 0)}
+            </p>
           </div>
         </div>
 
-        <div className="brand-card p-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <ChartBarIcon className="h-8 w-8 text-secondary-200" />
+        <div className="brand-card p-4 sm:p-6 flex flex-col justify-between">
+          <div className="flex items-start justify-between">
+            <div className="flex-shrink-0 p-2 bg-white/5 rounded-lg">
+              <ChartBarIcon className="h-6 w-6 text-secondary-200" />
             </div>
-            <div className="ml-4">
-              <p className="text-xs font-semibold text-secondary-300 uppercase tracking-widest">Ganancia Neta</p>
-              <p className="text-2xl font-bold text-secondary-50">
-                {formatCurrency(metrics?.net_profit || 0)}
-              </p>
-            </div>
+          </div>
+          <div className="mt-4">
+            <p className="text-xs font-semibold text-secondary-300 uppercase tracking-widest break-words">Ganancia Neta</p>
+            <p className="text-xl sm:text-2xl font-bold text-secondary-50 truncate" title={formatCurrency(metrics?.net_profit || 0)}>
+              {formatCurrency(metrics?.net_profit || 0)}
+            </p>
           </div>
         </div>
 
-        <div className="brand-card p-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <ShoppingCartIcon className="h-8 w-8 text-secondary-200" />
+        <div className="brand-card p-4 sm:p-6 flex flex-col justify-between">
+          <div className="flex items-start justify-between">
+            <div className="flex-shrink-0 p-2 bg-white/5 rounded-lg">
+              <ShoppingCartIcon className="h-6 w-6 text-secondary-200" />
             </div>
-            <div className="ml-4">
-              <p className="text-xs font-semibold text-secondary-300 uppercase tracking-widest">Socios (70%/30%)</p>
-              <p className="text-lg font-bold text-secondary-50">
-                {formatCurrency(metrics?.partner1_share || 0)} / {formatCurrency(metrics?.partner2_share || 0)}
-              </p>
-            </div>
+          </div>
+          <div className="mt-4">
+            <p className="text-xs font-semibold text-secondary-300 uppercase tracking-widest break-words">Socios (70%/30%)</p>
+            <p className="text-base sm:text-lg font-bold text-secondary-50 truncate" title={`${formatCurrency(metrics?.partner1_share || 0)} / ${formatCurrency(metrics?.partner2_share || 0)}`}>
+              {formatCurrency(metrics?.partner1_share || 0)} / {formatCurrency(metrics?.partner2_share || 0)}
+            </p>
           </div>
         </div>
       </div>
