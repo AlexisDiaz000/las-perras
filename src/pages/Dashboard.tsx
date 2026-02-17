@@ -264,6 +264,9 @@ export default function Dashboard() {
                     borderRadius: '8px',
                     color: isDark ? '#F4F4F5' : '#1F2937'
                   }}
+                  itemStyle={{
+                    color: isDark ? '#F4F4F5' : '#1F2937'
+                  }}
                   formatter={(value: number) => [formatCurrency(value), 'Ventas']}
                 />
                 <Bar dataKey="value" radius={[4, 4, 0, 0]}>
@@ -304,6 +307,9 @@ export default function Dashboard() {
                     backgroundColor: isDark ? '#18181B' : '#FFFFFF',
                     borderColor: isDark ? '#27272A' : '#E5E7EB',
                     borderRadius: '8px',
+                    color: isDark ? '#F4F4F5' : '#1F2937'
+                  }}
+                  itemStyle={{
                     color: isDark ? '#F4F4F5' : '#1F2937'
                   }}
                   formatter={(value: number) => [formatCurrency(value), 'Gasto']}
