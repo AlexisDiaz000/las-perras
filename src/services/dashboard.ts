@@ -27,13 +27,29 @@ export const dashboardService = {
 
     const totalExpenses = expensesData.reduce((sum, expense) => sum + expense.amount, 0)
 
-    // Calcular ganancia neta según la fórmula especificada:
-    // Ganancia Neta = (Total Ventas / 2) - (Gastos Diarios de Servicios + Transporte + Empleados)
-    const serviceExpenses = expensesData
-      .filter(expense => ['Servicios', 'Transporte', 'Personal'].includes(expense.category))
-      .reduce((sum, expense) => sum + expense.amount, 0)
+    // 1. Obtener Costo de Mercancía Vendida (CMV)
+    // Sumar el costo de todos los movimientos de inventario tipo 'out' asociados a ventas en este rango
+    const { data: inventoryMovements, error: inventoryError } = await supabase
+      .from('inventory_movements')
+      .select(`
+        quantity,
+        item:inventory_items (unit_cost)
+      `)
+      .eq('type', 'out')
+      .gte('created_at', startDate)
+      .lte('created_at', endDate)
 
-    const netProfit = (totalSales / 2) - (serviceExpenses + DAILY_FIXED_EXPENSES)
+    if (inventoryError) throw inventoryError
+
+    const cogs = (inventoryMovements || []).reduce((sum, mov: any) => {
+      const cost = mov.item?.unit_cost || 0
+      return sum + (cost * mov.quantity)
+    }, 0)
+
+    // Calcular ganancia neta REAL:
+    // Ganancia Neta = Ventas Totales - (Costo Mercancía Vendida + Gastos Operativos Totales)
+    // Nota: totalExpenses ya incluye todos los gastos registrados (servicios, nómina, etc.)
+    const netProfit = totalSales - (cogs + totalExpenses)
 
     // Calcular distribución entre socios
     const partner1Share = netProfit * PARTNER1_PERCENTAGE
