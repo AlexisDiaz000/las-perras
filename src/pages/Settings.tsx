@@ -4,6 +4,7 @@ import { useSettingsStore } from '../stores/settings'
 import { authService } from '../services/auth'
 import { User } from '../types'
 import { PlusIcon, TrashIcon, NoSymbolIcon, CheckCircleIcon } from '@heroicons/react/24/outline'
+import ImageCropper from '../components/ImageCropper'
 
 export default function Settings() {
   const { user } = useAuthStore()
@@ -14,6 +15,7 @@ export default function Settings() {
   const [appNameInput, setAppNameInput] = useState('')
   const [logoInput, setLogoInput] = useState<string | null>(null)
   const [isSavingApp, setIsSavingApp] = useState(false)
+  const [imageToCrop, setImageToCrop] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     email: '',
     name: '',
@@ -36,17 +38,24 @@ export default function Settings() {
     const file = e.target.files?.[0]
     if (!file) return
 
-    // Validate size (max 2MB)
-    if (file.size > 2 * 1024 * 1024) {
-      alert('La imagen no debe superar los 2MB')
+    // Validate size (max 5MB for initial upload before crop)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('La imagen no debe superar los 5MB')
       return
     }
 
     const reader = new FileReader()
     reader.onloadend = () => {
-      setLogoInput(reader.result as string)
+      setImageToCrop(reader.result as string)
     }
     reader.readAsDataURL(file)
+    // Clear input so same file can be selected again if needed
+    e.target.value = ''
+  }
+
+  const handleCropComplete = (croppedBase64: string) => {
+    setLogoInput(croppedBase64)
+    setImageToCrop(null)
   }
 
   const handleUpdateSettings = async (e: React.FormEvent) => {
@@ -230,6 +239,15 @@ export default function Settings() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* Image Cropper Modal */}
+      {imageToCrop && (
+        <ImageCropper
+          imageSrc={imageToCrop}
+          onCropComplete={handleCropComplete}
+          onCancel={() => setImageToCrop(null)}
+        />
       )}
 
       {/* User Form Modal */}
