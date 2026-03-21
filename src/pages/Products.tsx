@@ -310,16 +310,14 @@ export default function Products() {
                           </div>
                         </div>
                       ) : (
-                        <div className="text-center">
+                        <label className="text-center w-full h-full flex flex-col items-center justify-center cursor-pointer">
                           <PhotoIcon className="mx-auto h-12 w-12 text-secondary-500" />
                           <div className="mt-4 flex text-sm leading-6 text-secondary-400 justify-center">
-                            <label className="relative cursor-pointer rounded-md bg-transparent font-semibold text-primary-400 hover:text-primary-300">
-                              <span>Subir un archivo</span>
-                              <input type="file" className="sr-only" accept="image/*" onChange={handleImageChange} />
-                            </label>
+                            <span className="font-semibold text-primary-400 hover:text-primary-300">Subir un archivo</span>
+                            <input type="file" className="sr-only" accept="image/*" onChange={handleImageChange} />
                           </div>
                           <p className="text-xs leading-5 text-secondary-500 mt-1">PNG, JPG, WEBP hasta 5MB</p>
-                        </div>
+                        </label>
                       )}
                     </div>
                   </div>
@@ -454,6 +452,16 @@ export default function Products() {
             </div>
           </div>
         </div>
+      )}
+      {/* Image Cropper Modal */}
+      {imageToCrop && (
+        <ImageCropper
+          imageSrc={imageToCrop}
+          onCropComplete={handleCropComplete}
+          onCancel={() => setImageToCrop(null)}
+          aspect={4/3}
+          cropShape="rect"
+        />
       )}
     </div>
   )

@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useState } from 'react'
-import { Dialog, Transition } from '@headlessui/react'
+import { Dialog, Transition, Popover } from '@headlessui/react'
 import {
   Bars3Icon,
   HomeIcon,
@@ -14,16 +14,20 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
   SunIcon,
-  MoonIcon
+  MoonIcon,
+  BellIcon,
+  GlobeAltIcon
 } from '@heroicons/react/24/outline'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/auth'
 import { useSettingsStore } from '../stores/settings'
+import { useNotificationsStore } from '../stores/notifications'
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
   { name: 'Punto de Venta', href: '/pos', icon: CurrencyDollarIcon, roles: ['admin', 'vendor'] },
-  { name: 'Pedidos', href: '/orders', icon: ClipboardDocumentListIcon, roles: ['admin', 'vendor'] },
+  { name: 'Pedidos POS', href: '/orders', icon: ClipboardDocumentListIcon, roles: ['admin', 'vendor'] },
+  { name: 'Pedidos Web', href: '/web-orders', icon: GlobeAltIcon, roles: ['admin', 'vendor'] },
   { name: 'Inventario', href: '/inventory', icon: ArchiveBoxIcon, roles: ['admin'] },
   { name: 'Productos', href: '/products', icon: ClipboardDocumentListIcon, roles: ['admin'] },
   { name: 'Gastos', href: '/expenses', icon: BanknotesIcon, roles: ['admin'] },
@@ -42,13 +46,16 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate()
   const { user, signOut } = useAuthStore()
   const { settings } = useSettingsStore()
+  const { pendingOrders, startListening, stopListening } = useNotificationsStore()
   const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains('dark'))
 
   const appName = settings?.app_name || 'Brutal System'
 
   useEffect(() => {
     setIsDark(document.documentElement.classList.contains('dark'))
-  }, [])
+    startListening()
+    return () => stopListening()
+  }, [startListening, stopListening])
 
   const handleSignOut = async () => {
     await signOut()
@@ -209,10 +216,18 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                       </div>
                     )}
                     {!collapsed && (
-                      <>
+                      <div className="ml-auto flex items-center gap-2">
+                        <Link to="/web-orders" className="relative p-2 hover:bg-[color:var(--app-hover)] rounded-full text-[color:var(--app-muted-2)] hover:text-[color:var(--app-text)] transition-colors outline-none" title="Ver Pedidos Web">
+                          <BellIcon className="h-5 w-5" />
+                          {pendingOrders.length > 0 && (
+                            <span className="absolute top-1 right-1 flex h-3 w-3 items-center justify-center rounded-full bg-red-500 ring-2 ring-[color:var(--brand-surface)] text-[8px] font-bold text-white">
+                              {pendingOrders.length}
+                            </span>
+                          )}
+                        </Link>
                         <button
                           onClick={toggleTheme}
-                          className="ml-auto p-2 hover:bg-[color:var(--app-hover)] rounded-full text-[color:var(--app-muted-2)] hover:text-[color:var(--app-text)] transition-colors"
+                          className="p-2 hover:bg-[color:var(--app-hover)] rounded-full text-[color:var(--app-muted-2)] hover:text-[color:var(--app-text)] transition-colors"
                           title={isDark ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro'}
                         >
                           {isDark ? <SunIcon className="h-5 w-5" /> : <MoonIcon className="h-5 w-5" />}
@@ -224,7 +239,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                         >
                           <ArrowLeftOnRectangleIcon className="h-5 w-5" />
                         </button>
-                      </>
+                      </div>
                     )}
                     {collapsed && (
                       <div className="flex flex-col gap-2 mt-2">

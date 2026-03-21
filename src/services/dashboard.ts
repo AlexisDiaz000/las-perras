@@ -50,16 +50,9 @@ export const dashboardService = {
     // Nota: totalExpenses ya incluye todos los gastos registrados (servicios, nómina, etc.)
     const netProfit = totalSales - (cogs + totalExpenses)
 
-    // Obtener gastos por categoría
-    const { data: expensesByCategoryData, error: expensesByCategoryError } = await supabase
-      .from('expenses')
-      .select(`
-        category,
-        sum(amount) as total
-      `)
-      .gte('expense_date', startDate)
-      .lte('expense_date', endDate)
-
+    // No usar group by ni funciones de agregación complejas directamente en .select() para evitar error 400
+    // Ya lo estamos haciendo en getExpensesDataForChart
+    
     return {
       total_sales: totalSales,
       total_expenses: totalExpenses,

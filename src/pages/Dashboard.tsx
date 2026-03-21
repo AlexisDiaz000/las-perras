@@ -239,94 +239,102 @@ export default function Dashboard() {
         {/* Gráfico de Ventas por Tipo de Perro */}
         <div className="brand-card p-6 flex flex-col h-[400px]">
           <h3 className="brand-heading text-xl mb-4">Ventas por Tipo</h3>
-          {salesChartData.length > 0 ? (
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={salesChartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} vertical={false} />
-                <XAxis 
-                  dataKey="name" 
-                  stroke={chartColors.text}
-                  fontSize={12}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <YAxis 
-                  stroke={chartColors.text}
-                  fontSize={12}
-                  tickLine={false}
-                  axisLine={false}
-                  tickFormatter={(value) => `$${value}`}
-                />
-                <Tooltip
-                  cursor={{ fill: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }}
-                  contentStyle={{
-                    backgroundColor: isDark ? '#18181B' : '#FFFFFF',
-                    borderColor: isDark ? '#27272A' : '#E5E7EB',
-                    borderRadius: '8px',
-                    color: isDark ? '#F4F4F5' : '#1F2937'
-                  }}
-                  itemStyle={{
-                    color: isDark ? '#F4F4F5' : '#1F2937'
-                  }}
-                  formatter={(value: number) => [formatCurrency(value), 'Ventas']}
-                />
-                <Bar dataKey="value" radius={[4, 4, 0, 0]}>
-                  {salesChartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={chartColors.bars[index % chartColors.bars.length]} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="flex-1 flex items-center justify-center text-secondary-400">
-              No hay datos de ventas
+          <div className="flex-1 min-h-[300px] w-full relative">
+            <div className="absolute inset-0">
+              {salesChartData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={salesChartData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} vertical={false} />
+                    <XAxis 
+                      dataKey="name" 
+                      stroke={chartColors.text}
+                      fontSize={12}
+                      tickLine={false}
+                      axisLine={false}
+                    />
+                    <YAxis 
+                      stroke={chartColors.text}
+                      fontSize={12}
+                      tickLine={false}
+                      axisLine={false}
+                      tickFormatter={(value) => `$${value}`}
+                    />
+                    <Tooltip
+                      cursor={{ fill: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }}
+                      contentStyle={{
+                        backgroundColor: isDark ? '#18181B' : '#FFFFFF',
+                        borderColor: isDark ? '#27272A' : '#E5E7EB',
+                        borderRadius: '8px',
+                        color: isDark ? '#F4F4F5' : '#1F2937'
+                      }}
+                      itemStyle={{
+                        color: isDark ? '#F4F4F5' : '#1F2937'
+                      }}
+                      formatter={(value: number) => [formatCurrency(value), 'Ventas']}
+                    />
+                    <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                      {salesChartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={chartColors.bars[index % chartColors.bars.length]} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-full flex items-center justify-center text-secondary-400">
+                  No hay datos de ventas
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
 
         {/* Gráfico de Gastos por Categoría */}
         <div className="brand-card p-6 flex flex-col h-[400px]">
           <h3 className="brand-heading text-xl mb-4">Gastos por Categoría</h3>
-          {expensesChartData.length > 0 ? (
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={expensesChartData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={80}
-                  paddingAngle={5}
-                  dataKey="value"
-                >
-                  {expensesChartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={chartColors.pie[index % chartColors.pie.length]} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: isDark ? '#18181B' : '#FFFFFF',
-                    borderColor: isDark ? '#27272A' : '#E5E7EB',
-                    borderRadius: '8px',
-                    color: isDark ? '#F4F4F5' : '#1F2937'
-                  }}
-                  itemStyle={{
-                    color: isDark ? '#F4F4F5' : '#1F2937'
-                  }}
-                  formatter={(value: number) => [formatCurrency(value), 'Gasto']}
-                />
-                <Legend 
-                  verticalAlign="bottom" 
-                  height={36}
-                  formatter={(value) => <span style={{ color: chartColors.text }}>{value}</span>}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="flex-1 flex items-center justify-center text-secondary-400">
-              No hay datos de gastos
+          <div className="flex-1 min-h-[300px] w-full relative">
+            <div className="absolute inset-0">
+              {expensesChartData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={expensesChartData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={80}
+                      paddingAngle={5}
+                      dataKey="value"
+                    >
+                      {expensesChartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={chartColors.pie[index % chartColors.pie.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: isDark ? '#18181B' : '#FFFFFF',
+                        borderColor: isDark ? '#27272A' : '#E5E7EB',
+                        borderRadius: '8px',
+                        color: isDark ? '#F4F4F5' : '#1F2937'
+                      }}
+                      itemStyle={{
+                        color: isDark ? '#F4F4F5' : '#1F2937'
+                      }}
+                      formatter={(value: number) => [formatCurrency(value), 'Gasto']}
+                    />
+                    <Legend 
+                      verticalAlign="bottom" 
+                      height={36}
+                      formatter={(value) => <span style={{ color: chartColors.text }}>{value}</span>}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-full flex items-center justify-center text-secondary-400">
+                  No hay datos de gastos
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
       </div>
     </div>
