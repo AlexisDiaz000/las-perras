@@ -7,11 +7,12 @@ import { PlusIcon, TrashIcon, NoSymbolIcon, CheckCircleIcon } from '@heroicons/r
 
 export default function Settings() {
   const { user } = useAuthStore()
-  const { settings, updateAppName } = useSettingsStore()
+  const { settings, updateSettings } = useSettingsStore()
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [appNameInput, setAppNameInput] = useState('')
+  const [logoInput, setLogoInput] = useState<string | null>(null)
   const [isSavingApp, setIsSavingApp] = useState(false)
   const [formData, setFormData] = useState({
     email: '',
@@ -27,18 +28,36 @@ export default function Settings() {
   useEffect(() => {
     if (settings) {
       setAppNameInput(settings.app_name)
+      setLogoInput(settings.logo_url || null)
     }
   }, [settings])
 
-  const handleUpdateAppName = async (e: React.FormEvent) => {
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validate size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      alert('La imagen no debe superar los 2MB')
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      setLogoInput(reader.result as string)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const handleUpdateSettings = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!appNameInput.trim()) return
     try {
       setIsSavingApp(true)
-      await updateAppName(appNameInput.trim())
-      alert('Nombre del sistema actualizado exitosamente')
+      await updateSettings(appNameInput.trim(), logoInput)
+      alert('Configuración del sistema actualizada exitosamente')
     } catch (error) {
-      alert('Error al actualizar el nombre del sistema')
+      alert('Error al actualizar la configuración')
     } finally {
       setIsSavingApp(false)
     }
@@ -145,25 +164,69 @@ export default function Settings() {
         <div className="mb-8 brand-card">
           <div className="px-4 py-5 sm:p-6">
             <h3 className="brand-heading text-xl mb-4">Personalización del Sistema</h3>
-            <form onSubmit={handleUpdateAppName} className="flex flex-col sm:flex-row gap-4 items-end">
-              <div className="flex-1 w-full">
-                <label className="block text-xs font-semibold text-secondary-200 uppercase tracking-widest mb-1">Nombre del Negocio</label>
-                <input
-                  type="text"
-                  required
-                  value={appNameInput}
-                  onChange={(e) => setAppNameInput(e.target.value)}
-                  className="brand-input w-full"
-                  placeholder="Ej: Mi Restaurante"
-                />
+            <form onSubmit={handleUpdateSettings} className="space-y-6">
+              
+              {/* Logo Upload */}
+              <div>
+                <label className="block text-xs font-semibold text-secondary-200 uppercase tracking-widest mb-2">
+                  Logo de la Empresa (Opcional)
+                </label>
+                <div className="flex items-center gap-4">
+                  <div className="h-16 w-16 rounded-full bg-[color:var(--app-hover-strong)] flex items-center justify-center overflow-hidden border border-white/10 shrink-0">
+                    {logoInput ? (
+                      <img src={logoInput} alt="Logo" className="h-full w-full object-cover" />
+                    ) : (
+                      <span className="text-secondary-400 text-xs text-center px-1">Sin Logo</span>
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleLogoChange}
+                      className="block w-full text-sm text-secondary-300
+                        file:mr-4 file:py-2 file:px-4
+                        file:rounded-full file:border-0
+                        file:text-sm file:font-semibold
+                        file:bg-primary-500/10 file:text-primary-400
+                        hover:file:bg-primary-500/20
+                        cursor-pointer"
+                    />
+                    {logoInput && (
+                      <button
+                        type="button"
+                        onClick={() => setLogoInput(null)}
+                        className="text-xs text-red-400 hover:text-red-300 self-start"
+                      >
+                        Eliminar logo actual
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <p className="text-xs text-secondary-400 mt-2">Recomendado: Imagen cuadrada, máx. 2MB.</p>
               </div>
-              <button 
-                type="submit" 
-                disabled={isSavingApp || appNameInput === settings?.app_name}
-                className="brand-button w-full sm:w-auto"
-              >
-                {isSavingApp ? 'Guardando...' : 'Guardar Nombre'}
-              </button>
+
+              {/* App Name */}
+              <div className="flex flex-col sm:flex-row gap-4 items-end">
+                <div className="flex-1 w-full">
+                  <label className="block text-xs font-semibold text-secondary-200 uppercase tracking-widest mb-1">Nombre del Negocio</label>
+                  <input
+                    type="text"
+                    required
+                    value={appNameInput}
+                    onChange={(e) => setAppNameInput(e.target.value)}
+                    className="brand-input w-full"
+                    placeholder="Ej: Mi Restaurante"
+                  />
+                </div>
+                <button 
+                  type="submit" 
+                  disabled={isSavingApp || (appNameInput === settings?.app_name && logoInput === settings?.logo_url)}
+                  className="brand-button w-full sm:w-auto"
+                >
+                  {isSavingApp ? 'Guardando...' : 'Guardar Cambios'}
+                </button>
+              </div>
             </form>
           </div>
         </div>

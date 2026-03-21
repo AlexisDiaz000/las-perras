@@ -29,6 +29,11 @@ export default function Login() {
       <div className="max-w-md w-full space-y-8">
         <div className="brand-card p-8">
           <div className="text-center">
+            {settings?.logo_url && (
+              <div className="mx-auto h-24 w-24 mb-4 rounded-full overflow-hidden border-2 border-white/10 shadow-lg bg-[color:var(--app-hover-strong)]">
+                <img src={settings.logo_url} alt="Logo" className="h-full w-full object-cover" />
+              </div>
+            )}
             <h2 className="brand-logo text-6xl leading-none mb-2">{appName}</h2>
             <p className="text-secondary-300 uppercase tracking-widest text-xs">Sistema de Gestión</p>
           </div>

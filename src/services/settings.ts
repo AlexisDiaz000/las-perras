@@ -17,10 +17,10 @@ export const settingsService = {
     return data || { id: 1, app_name: 'Brutal System', updated_at: new Date().toISOString() }
   },
 
-  async updateAppName(appName: string): Promise<AppSettings> {
+  async updateSettings(appName: string, logoUrl?: string | null): Promise<AppSettings> {
     const { data, error } = await supabase
       .from('settings')
-      .update({ app_name: appName, updated_at: new Date().toISOString() })
+      .update({ app_name: appName, logo_url: logoUrl, updated_at: new Date().toISOString() })
       .eq('id', 1)
       .select()
       .single()

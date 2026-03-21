@@ -116,7 +116,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   </Transition.Child>
                   
                   <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-[color:var(--brand-surface)] px-6 pb-4 border-r border-[color:var(--app-border)]">
-                    <div className="flex h-16 shrink-0 items-center">
+                    <div className="flex h-16 shrink-0 items-center gap-3">
+                      {settings?.logo_url && (
+                        <div className="h-8 w-8 rounded-full overflow-hidden shrink-0 border border-white/10">
+                          <img src={settings.logo_url} alt="Logo" className="h-full w-full object-cover" />
+                        </div>
+                      )}
                       <h1 className="brand-logo text-3xl truncate">{appName}</h1>
                     </div>
                     <nav className="flex flex-1 flex-col">
@@ -159,8 +164,15 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <div className={`hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex ${collapsed ? 'lg:w-20' : 'lg:w-72'} lg:flex-col transition-all duration-300 ease-in-out`}>
           <div className="flex grow flex-col gap-y-5 overflow-y-auto border-r border-[color:var(--app-border)] bg-[color:var(--brand-surface)] px-4 pb-4">
             <div className={`flex h-16 shrink-0 items-center ${collapsed ? 'justify-center' : 'justify-between'}`}>
-              {!collapsed && <h1 className="brand-logo text-3xl truncate pr-2">{appName}</h1>}
-              <button onClick={toggleSidebar} className="p-1 rounded-md hover:bg-white/10 text-secondary-400">
+              <div className="flex items-center gap-3 overflow-hidden">
+                {settings?.logo_url && (
+                  <div className="h-8 w-8 rounded-full overflow-hidden shrink-0 border border-white/10">
+                    <img src={settings.logo_url} alt="Logo" className="h-full w-full object-cover" />
+                  </div>
+                )}
+                {!collapsed && <h1 className="brand-logo text-3xl truncate pr-2">{appName}</h1>}
+              </div>
+              <button onClick={toggleSidebar} className="p-1 rounded-md hover:bg-white/10 text-secondary-400 shrink-0">
                 {collapsed ? <ChevronRightIcon className="h-6 w-6" /> : <ChevronLeftIcon className="h-6 w-6" />}
               </button>
             </div>
@@ -251,11 +263,16 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
         <div className={`transition-all duration-300 ease-in-out ${collapsed ? 'lg:pl-20' : 'lg:pl-72'}`}>
           <div className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-[color:var(--app-border)] bg-[color:var(--brand-surface)] backdrop-blur px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8 lg:hidden justify-between">
-            <div className="flex items-center gap-x-4">
-              <button type="button" className="-m-2.5 p-2.5 text-[color:var(--app-text)] lg:hidden" onClick={() => setSidebarOpen(true)}>
+            <div className="flex items-center gap-x-3 overflow-hidden">
+              <button type="button" className="-m-2.5 p-2.5 text-[color:var(--app-text)] lg:hidden shrink-0" onClick={() => setSidebarOpen(true)}>
                 <span className="sr-only">Abrir menú</span>
                 <Bars3Icon className="h-6 w-6" aria-hidden="true" />
               </button>
+              {settings?.logo_url && (
+                <div className="h-8 w-8 rounded-full overflow-hidden shrink-0 border border-white/10 lg:hidden">
+                  <img src={settings.logo_url} alt="Logo" className="h-full w-full object-cover" />
+                </div>
+              )}
               <h1 className="brand-logo text-xl lg:hidden truncate">{appName}</h1>
             </div>
 

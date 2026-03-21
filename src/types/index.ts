@@ -1,6 +1,7 @@
 export interface AppSettings {
   id: number
   app_name: string
+  logo_url?: string | null
   updated_at: string
 }
 

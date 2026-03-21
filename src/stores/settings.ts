@@ -6,7 +6,7 @@ interface SettingsState {
   settings: AppSettings | null
   loading: boolean
   fetchSettings: () => Promise<void>
-  updateAppName: (name: string) => Promise<void>
+  updateSettings: (name: string, logoUrl?: string | null) => Promise<void>
 }
 
 export const useSettingsStore = create<SettingsState>((set) => ({
@@ -22,13 +22,13 @@ export const useSettingsStore = create<SettingsState>((set) => ({
       set({ loading: false })
     }
   },
-  updateAppName: async (name: string) => {
+  updateSettings: async (name: string, logoUrl?: string | null) => {
     try {
-      const data = await settingsService.updateAppName(name)
+      const data = await settingsService.updateSettings(name, logoUrl)
       set({ settings: data })
       document.title = data.app_name
     } catch (error) {
-      console.error('Error in updateAppName:', error)
+      console.error('Error in updateSettings:', error)
       throw error
     }
   }
