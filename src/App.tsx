@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom"
 import { useEffect } from "react"
 import { useAuthStore } from "@/stores/auth"
+import { useSettingsStore } from "@/stores/settings"
 import { authService } from "@/services/auth"
 import Layout from "@/components/Layout"
 import Login from "@/pages/Login"
@@ -42,13 +43,17 @@ function ProtectedRoute({ children, allowedRoles }: { children: React.ReactNode,
 
 function AppRoutes() {
   const { user, checkAuth, isInitializing } = useAuthStore()
+  const { fetchSettings } = useSettingsStore()
 
   useEffect(() => {
     const init = async () => {
       try {
-        await checkAuth()
+        await Promise.all([
+          checkAuth(),
+          fetchSettings()
+        ])
       } catch (e) {
-        console.error("Auth init error:", e)
+        console.error("Init error:", e)
       }
     }
     

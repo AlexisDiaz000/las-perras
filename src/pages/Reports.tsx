@@ -16,7 +16,11 @@ ChartJS.register(
   Legend
 )
 
+import { useSettingsStore } from '../stores/settings'
+
 export default function Reports() {
+  const { settings } = useSettingsStore()
+  const appName = settings?.app_name || 'BRUTAL SYSTEM'
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
   const [reportData, setReportData] = useState<any>(null)
@@ -75,7 +79,7 @@ export default function Reports() {
     // Title
     doc.setFontSize(22)
     doc.setTextColor(40, 40, 40)
-    doc.text('BRUTAL SYSTEM', pageWidth / 2, currentY, { align: 'center' })
+    doc.text(appName.toUpperCase(), pageWidth / 2, currentY, { align: 'center' })
     
     currentY += 10
     doc.setFontSize(14)
@@ -162,7 +166,7 @@ export default function Reports() {
         doc.text(`Página ${i} de ${pageCount}`, pageWidth / 2, doc.internal.pageSize.height - 10, { align: 'center' })
     }
 
-    doc.save(`reporte_brutal_system_${startDate}_${endDate}.pdf`)
+    doc.save(`reporte_${appName.toLowerCase().replace(/\s+/g, '_')}_${startDate}_${endDate}.pdf`)
   }
 
   const salesChartOptions = {

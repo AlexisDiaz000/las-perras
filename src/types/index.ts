@@ -1,3 +1,9 @@
+export interface AppSettings {
+  id: number
+  app_name: string
+  updated_at: string
+}
+
 export interface User {
   id: string
   email: string

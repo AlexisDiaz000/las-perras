@@ -1,14 +1,18 @@
 import { useState, useEffect } from 'react'
 import { useAuthStore } from '../stores/auth'
+import { useSettingsStore } from '../stores/settings'
 import { authService } from '../services/auth'
 import { User } from '../types'
 import { PlusIcon, TrashIcon, NoSymbolIcon, CheckCircleIcon } from '@heroicons/react/24/outline'
 
 export default function Settings() {
   const { user } = useAuthStore()
+  const { settings, updateAppName } = useSettingsStore()
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
+  const [appNameInput, setAppNameInput] = useState('')
+  const [isSavingApp, setIsSavingApp] = useState(false)
   const [formData, setFormData] = useState({
     email: '',
     name: '',
@@ -19,6 +23,26 @@ export default function Settings() {
   useEffect(() => {
     loadUsers()
   }, [])
+
+  useEffect(() => {
+    if (settings) {
+      setAppNameInput(settings.app_name)
+    }
+  }, [settings])
+
+  const handleUpdateAppName = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!appNameInput.trim()) return
+    try {
+      setIsSavingApp(true)
+      await updateAppName(appNameInput.trim())
+      alert('Nombre del sistema actualizado exitosamente')
+    } catch (error) {
+      alert('Error al actualizar el nombre del sistema')
+    } finally {
+      setIsSavingApp(false)
+    }
+  }
 
   const loadUsers = async () => {
     try {
@@ -115,6 +139,35 @@ export default function Settings() {
           </button>
         )}
       </div>
+
+      {/* System Customization */}
+      {user?.role === 'admin' && (
+        <div className="mb-8 brand-card">
+          <div className="px-4 py-5 sm:p-6">
+            <h3 className="brand-heading text-xl mb-4">Personalización del Sistema</h3>
+            <form onSubmit={handleUpdateAppName} className="flex flex-col sm:flex-row gap-4 items-end">
+              <div className="flex-1 w-full">
+                <label className="block text-xs font-semibold text-secondary-200 uppercase tracking-widest mb-1">Nombre del Negocio</label>
+                <input
+                  type="text"
+                  required
+                  value={appNameInput}
+                  onChange={(e) => setAppNameInput(e.target.value)}
+                  className="brand-input w-full"
+                  placeholder="Ej: Mi Restaurante"
+                />
+              </div>
+              <button 
+                type="submit" 
+                disabled={isSavingApp || appNameInput === settings?.app_name}
+                className="brand-button w-full sm:w-auto"
+              >
+                {isSavingApp ? 'Guardando...' : 'Guardar Nombre'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* User Form Modal */}
       {showForm && (

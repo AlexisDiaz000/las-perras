@@ -18,6 +18,7 @@ import {
 } from '@heroicons/react/24/outline'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/auth'
+import { useSettingsStore } from '../stores/settings'
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
@@ -40,7 +41,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation()
   const navigate = useNavigate()
   const { user, signOut } = useAuthStore()
+  const { settings } = useSettingsStore()
   const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains('dark'))
+
+  const appName = settings?.app_name || 'Brutal System'
 
   useEffect(() => {
     setIsDark(document.documentElement.classList.contains('dark'))
@@ -113,7 +117,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   
                   <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-[color:var(--brand-surface)] px-6 pb-4 border-r border-[color:var(--app-border)]">
                     <div className="flex h-16 shrink-0 items-center">
-                      <h1 className="brand-logo text-3xl">Las Perras</h1>
+                      <h1 className="brand-logo text-3xl truncate">{appName}</h1>
                     </div>
                     <nav className="flex flex-1 flex-col">
                       <ul role="list" className="flex flex-1 flex-col gap-y-7">
@@ -155,7 +159,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <div className={`hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex ${collapsed ? 'lg:w-20' : 'lg:w-72'} lg:flex-col transition-all duration-300 ease-in-out`}>
           <div className="flex grow flex-col gap-y-5 overflow-y-auto border-r border-[color:var(--app-border)] bg-[color:var(--brand-surface)] px-4 pb-4">
             <div className={`flex h-16 shrink-0 items-center ${collapsed ? 'justify-center' : 'justify-between'}`}>
-              {!collapsed && <h1 className="brand-logo text-3xl">Brutal System</h1>}
+              {!collapsed && <h1 className="brand-logo text-3xl truncate pr-2">{appName}</h1>}
               <button onClick={toggleSidebar} className="p-1 rounded-md hover:bg-white/10 text-secondary-400">
                 {collapsed ? <ChevronRightIcon className="h-6 w-6" /> : <ChevronLeftIcon className="h-6 w-6" />}
               </button>
@@ -252,7 +256,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 <span className="sr-only">Abrir menú</span>
                 <Bars3Icon className="h-6 w-6" aria-hidden="true" />
               </button>
-              <h1 className="brand-logo text-xl lg:hidden">Las Perras</h1>
+              <h1 className="brand-logo text-xl lg:hidden truncate">{appName}</h1>
             </div>
 
             <div className="flex items-center gap-x-3">
@@ -274,6 +278,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             </div>
           </main>
         </div>
+      </div>
+      
+      {/* Watermark */}
+      <div className="fixed bottom-2 right-4 z-50 pointer-events-none opacity-20">
+        <span className="text-[10px] font-bold text-white uppercase tracking-widest drop-shadow-md">
+          Powered by Brutal System
+        </span>
       </div>
     </>
   )

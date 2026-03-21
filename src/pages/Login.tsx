@@ -1,11 +1,15 @@
 import { useState } from 'react'
 import { useAuthStore } from '../stores/auth'
 import { Navigate } from 'react-router-dom'
+import { useSettingsStore } from '../stores/settings'
 
 export default function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const { user, isLoading, authError, signIn } = useAuthStore()
+  const { settings } = useSettingsStore()
+
+  const appName = settings?.app_name || 'Brutal System'
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -25,7 +29,7 @@ export default function Login() {
       <div className="max-w-md w-full space-y-8">
         <div className="brand-card p-8">
           <div className="text-center">
-            <h2 className="brand-logo text-6xl leading-none mb-2">Brutal System</h2>
+            <h2 className="brand-logo text-6xl leading-none mb-2">{appName}</h2>
             <p className="text-secondary-300 uppercase tracking-widest text-xs">Sistema de Gestión</p>
           </div>
           
@@ -82,10 +86,17 @@ export default function Login() {
           </form>
 
           <div className="mt-6 text-center text-xs text-secondary-400 uppercase tracking-widest">
-            <p>Demo: admin@lasperras.com / admin123</p>
-            <p>vendedor@lasperras.com / vendor123</p>
+              <p>Demo: admin@lasperras.com / admin123</p>
+              <p>vendedor@lasperras.com / vendor123</p>
+            </div>
           </div>
         </div>
+      
+      {/* Watermark */}
+      <div className="fixed bottom-4 right-4 z-50 pointer-events-none opacity-30">
+        <span className="text-xs font-bold text-white uppercase tracking-widest drop-shadow-md">
+          Powered by Brutal System
+        </span>
       </div>
     </div>
   )
