@@ -6,9 +6,11 @@ interface ImageCropperProps {
   imageSrc: string
   onCropComplete: (croppedImageBase64: string) => void
   onCancel: () => void
+  cropShape?: 'round' | 'rect'
+  aspect?: number
 }
 
-export default function ImageCropper({ imageSrc, onCropComplete, onCancel }: ImageCropperProps) {
+export default function ImageCropper({ imageSrc, onCropComplete, onCancel, cropShape = 'round', aspect = 1 }: ImageCropperProps) {
   const [crop, setCrop] = useState({ x: 0, y: 0 })
   const [zoom, setZoom] = useState(1)
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null)
@@ -76,11 +78,11 @@ export default function ImageCropper({ imageSrc, onCropComplete, onCancel }: Ima
           image={imageSrc}
           crop={crop}
           zoom={zoom}
-          aspect={1}
+          aspect={aspect}
           onCropChange={onCropChange}
           onCropComplete={onCropCompleteInternal}
           onZoomChange={setZoom}
-          cropShape="round"
+          cropShape={cropShape}
           showGrid={false}
         />
       </div>

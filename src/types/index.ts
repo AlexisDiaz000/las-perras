@@ -101,6 +101,7 @@ export interface Product {
   category: 'Perros Sencillos' | 'Perros Especiales' | 'Bebidas' | 'Adicionales' | 'Otros'
   image_url?: string
   active: boolean
+  show_in_web: boolean
   requires_protein_choice: boolean
   ingredients?: ProductIngredient[]
   created_at: string
