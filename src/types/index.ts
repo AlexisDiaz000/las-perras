@@ -77,8 +77,6 @@ export interface DashboardMetrics {
   total_expenses: number
   cogs: number // Cost of Goods Sold (Costo de Mercancía Vendida)
   net_profit: number
-  partner1_share: number
-  partner2_share: number
   sales_by_hotdog_type: { hotdog_type: string; total: number; count: number }[]
   expenses_by_category: { category: string; total: number }[]
 }

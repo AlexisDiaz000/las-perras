@@ -1,6 +1,5 @@
 import { supabase } from '../lib/supabase'
 import { DashboardMetrics } from '../types'
-import { PARTNER1_PERCENTAGE, PARTNER2_PERCENTAGE, DAILY_FIXED_EXPENSES } from '../constants'
 
 export const dashboardService = {
   async getMetrics(startDate: string, endDate: string): Promise<DashboardMetrics> {
@@ -51,10 +50,6 @@ export const dashboardService = {
     // Nota: totalExpenses ya incluye todos los gastos registrados (servicios, nómina, etc.)
     const netProfit = totalSales - (cogs + totalExpenses)
 
-    // Calcular distribución entre socios
-    const partner1Share = netProfit * PARTNER1_PERCENTAGE
-    const partner2Share = netProfit * PARTNER2_PERCENTAGE
-
     // Obtener gastos por categoría
     const { data: expensesByCategoryData, error: expensesByCategoryError } = await supabase
       .from('expenses')
@@ -70,8 +65,6 @@ export const dashboardService = {
       total_expenses: totalExpenses,
       cogs: cogs, // Devolver el costo de mercancía vendida
       net_profit: Math.max(0, netProfit), // No permitir ganancias negativas
-      partner1_share: Math.max(0, partner1Share),
-      partner2_share: Math.max(0, partner2Share),
       sales_by_hotdog_type: [], // Se llenará con getSalesDataForChart
       expenses_by_category: [] // Se llenará con getExpensesDataForChart
     }

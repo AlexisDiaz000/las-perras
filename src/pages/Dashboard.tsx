@@ -4,7 +4,6 @@ import { getColombiaDate } from '../lib/dateUtils'
 import { DashboardMetrics } from '../types'
 import { 
   CurrencyDollarIcon, 
-  ShoppingCartIcon, 
   ChartBarIcon,
   ExclamationTriangleIcon,
   ArchiveBoxIcon
@@ -156,7 +155,7 @@ export default function Dashboard() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 sm:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         <div className="brand-card p-4 sm:p-6 flex flex-col justify-between">
           <div className="flex items-start justify-between">
             <div className="flex-shrink-0 p-2 bg-white/5 rounded-lg">
@@ -209,20 +208,6 @@ export default function Dashboard() {
             <p className="text-xs font-semibold text-secondary-300 uppercase tracking-widest break-words">Ganancia Neta</p>
             <p className="text-xl sm:text-2xl font-bold text-secondary-50 truncate" title={formatCurrency(metrics?.net_profit || 0)}>
               {formatCurrency(metrics?.net_profit || 0)}
-            </p>
-          </div>
-        </div>
-
-        <div className="brand-card p-4 sm:p-6 flex flex-col justify-between">
-          <div className="flex items-start justify-between">
-            <div className="flex-shrink-0 p-2 bg-white/5 rounded-lg">
-              <ShoppingCartIcon className="h-6 w-6 text-secondary-200" />
-            </div>
-          </div>
-          <div className="mt-4">
-            <p className="text-xs font-semibold text-secondary-300 uppercase tracking-widest break-words">Socios (70%/30%)</p>
-            <p className="text-base sm:text-lg font-bold text-secondary-50 truncate" title={`${formatCurrency(metrics?.partner1_share || 0)} / ${formatCurrency(metrics?.partner2_share || 0)}`}>
-              {formatCurrency(metrics?.partner1_share || 0)} / {formatCurrency(metrics?.partner2_share || 0)}
             </p>
           </div>
         </div>
