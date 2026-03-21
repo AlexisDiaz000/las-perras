@@ -25,7 +25,7 @@ export default function Login() {
       <div className="max-w-md w-full space-y-8">
         <div className="brand-card p-8">
           <div className="text-center">
-            <h2 className="brand-logo text-6xl leading-none mb-2">Las Perras</h2>
+            <h2 className="brand-logo text-6xl leading-none mb-2">Brutal System</h2>
             <p className="text-secondary-300 uppercase tracking-widest text-xs">Sistema de Gestión</p>
           </div>
           

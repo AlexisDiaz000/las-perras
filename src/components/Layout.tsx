@@ -155,7 +155,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <div className={`hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex ${collapsed ? 'lg:w-20' : 'lg:w-72'} lg:flex-col transition-all duration-300 ease-in-out`}>
           <div className="flex grow flex-col gap-y-5 overflow-y-auto border-r border-[color:var(--app-border)] bg-[color:var(--brand-surface)] px-4 pb-4">
             <div className={`flex h-16 shrink-0 items-center ${collapsed ? 'justify-center' : 'justify-between'}`}>
-              {!collapsed && <h1 className="brand-logo text-3xl">Las Perras</h1>}
+              {!collapsed && <h1 className="brand-logo text-3xl">Brutal System</h1>}
               <button onClick={toggleSidebar} className="p-1 rounded-md hover:bg-white/10 text-secondary-400">
                 {collapsed ? <ChevronRightIcon className="h-6 w-6" /> : <ChevronLeftIcon className="h-6 w-6" />}
               </button>
