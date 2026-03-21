@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { useSettingsStore } from '../stores/settings'
 import { UserCircleIcon, ShoppingBagIcon, TruckIcon } from '@heroicons/react/24/outline'
+import { motion } from 'framer-motion'
 
 export default function Landing() {
   const navigate = useNavigate()
@@ -12,61 +13,97 @@ export default function Landing() {
     <div className="min-h-screen bg-[color:var(--app-bg)] flex flex-col items-center justify-center p-4 relative overflow-hidden">
       {/* Background decorations */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary-500/10 rounded-full blur-3xl mix-blend-multiply dark:mix-blend-screen"></div>
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-red-500/10 rounded-full blur-3xl mix-blend-multiply dark:mix-blend-screen"></div>
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 1.5, ease: "easeOut" }}
+          className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary-500/10 rounded-full blur-3xl mix-blend-multiply dark:mix-blend-screen"
+        />
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 1.5, ease: "easeOut", delay: 0.2 }}
+          className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-red-500/10 rounded-full blur-3xl mix-blend-multiply dark:mix-blend-screen"
+        />
       </div>
 
-      <div className="w-full max-w-2xl bg-[color:var(--brand-surface)] rounded-3xl shadow-2xl border border-[color:var(--app-border)] p-8 md:p-12 relative z-10">
+      {/* Login Button (Absolute position outside the main card) */}
+      <motion.button 
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5 }}
+        onClick={() => navigate('/login')}
+        className="absolute top-6 right-6 z-50 flex items-center gap-2 text-[color:var(--app-muted-2)] hover:text-[color:var(--app-text)] transition-colors group bg-[color:var(--brand-surface)]/80 backdrop-blur-md px-4 py-2 rounded-full border border-[color:var(--app-border)] shadow-sm"
+      >
+        <span className="text-xs font-bold tracking-widest uppercase hidden sm:block">Inicio (Staff)</span>
+        <UserCircleIcon className="w-6 h-6 group-hover:scale-110 transition-transform" />
+      </motion.button>
+
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
+        className="w-full max-w-2xl bg-[color:var(--brand-surface)] rounded-3xl shadow-2xl border border-[color:var(--app-border)] p-8 md:p-12 relative z-10"
+      >
         
-        {/* Header: Logo/Name and Login Button */}
-        <div className="flex justify-between items-center mb-16">
-          <div className="flex items-center gap-4">
+        {/* Header: Logo/Name */}
+        <div className="flex justify-center items-center mb-16">
+          <motion.div 
+            initial={{ scale: 0.9 }}
+            animate={{ scale: 1 }}
+            transition={{ duration: 0.5, type: "spring", bounce: 0.5 }}
+            className="flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left"
+          >
             {settings?.logo_url && (
-              <div className="w-12 h-12 rounded-full overflow-hidden border border-[color:var(--app-border)] shrink-0">
+              <div className="w-20 h-20 sm:w-16 sm:h-16 rounded-full overflow-hidden border-2 border-[color:var(--app-border)] shadow-md shrink-0">
                 <img src={settings.logo_url} alt="Logo" className="w-full h-full object-cover" />
               </div>
             )}
-            <h1 className="brand-logo text-2xl md:text-3xl text-[color:var(--app-text)]">{appName}</h1>
-          </div>
-          
-          <button 
-            onClick={() => navigate('/login')}
-            className="flex items-center gap-2 text-[color:var(--app-muted-2)] hover:text-[color:var(--app-text)] transition-colors group"
-          >
-            <span className="text-sm font-semibold tracking-widest uppercase hidden sm:block">Inicio</span>
-            <UserCircleIcon className="w-8 h-8 group-hover:scale-110 transition-transform" />
-          </button>
+            <h1 className="brand-logo text-4xl md:text-5xl text-[color:var(--app-text)] bg-clip-text text-transparent bg-gradient-to-br from-[color:var(--app-text)] to-[color:var(--app-muted-2)]">
+              {appName}
+            </h1>
+          </motion.div>
         </div>
 
         {/* Main Actions */}
-        <div className="space-y-12 max-w-md mx-auto">
+        <div className="space-y-10 max-w-md mx-auto">
           
           {/* Order Here */}
-          <div className="text-center space-y-4">
+          <motion.div 
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.2 }}
+            className="text-center space-y-4"
+          >
             <h2 className="brand-logo text-3xl md:text-4xl text-[color:var(--app-text)]">Tu pedido aquí!</h2>
             <button 
               onClick={() => navigate('/menu?type=local')}
-              className="w-full py-6 rounded-2xl border-2 border-[color:var(--app-text)] hover:bg-[color:var(--app-hover-strong)] transition-all group flex items-center justify-center gap-4"
+              className="w-full py-6 rounded-2xl border-2 border-[color:var(--app-text)] hover:bg-[color:var(--app-hover-strong)] transition-all group flex items-center justify-center gap-4 shadow-lg hover:shadow-xl hover:-translate-y-1"
             >
               <ShoppingBagIcon className="w-8 h-8 text-[color:var(--app-text)] group-hover:scale-110 transition-transform" />
               <span className="text-xl font-bold text-[color:var(--app-text)] uppercase tracking-wider">Para Comer Aquí</span>
             </button>
-          </div>
+          </motion.div>
 
           {/* Order Delivery */}
-          <div className="text-center space-y-4">
+          <motion.div 
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.3 }}
+            className="text-center space-y-4"
+          >
             <h2 className="brand-logo text-2xl md:text-3xl text-[color:var(--app-text)]">Tu pedido a domicilio</h2>
             <button 
               onClick={() => navigate('/menu?type=delivery')}
-              className="w-full py-5 rounded-2xl border-2 border-[color:var(--app-muted-2)] text-[color:var(--app-muted-2)] hover:border-[color:var(--app-text)] hover:text-[color:var(--app-text)] hover:bg-[color:var(--app-hover)] transition-all group flex items-center justify-center gap-4"
+              className="w-full py-5 rounded-2xl border-2 border-[color:var(--app-muted-2)] text-[color:var(--app-muted-2)] hover:border-[color:var(--app-text)] hover:text-[color:var(--app-text)] hover:bg-[color:var(--app-hover)] transition-all group flex items-center justify-center gap-4 hover:shadow-lg hover:-translate-y-1"
             >
               <TruckIcon className="w-7 h-7 group-hover:translate-x-2 transition-transform" />
               <span className="text-lg font-bold uppercase tracking-wider">A Domicilio</span>
             </button>
-          </div>
+          </motion.div>
 
         </div>
-      </div>
+      </motion.div>
     </div>
   )
 }
