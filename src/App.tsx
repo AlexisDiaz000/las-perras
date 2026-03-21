@@ -14,6 +14,7 @@ import Reports from "@/pages/Reports"
 import Settings from "@/pages/Settings"
 import Products from "@/pages/Products"
 import Landing from "@/pages/Landing"
+import PublicMenu from "@/pages/PublicMenu"
 
 function ProtectedRoute({ children, allowedRoles }: { children: React.ReactNode, allowedRoles?: string[] }) {
   const { user, isInitializing } = useAuthStore()
@@ -152,6 +153,7 @@ function AppRoutes() {
       } />
       
       <Route path="/" element={<Landing />} />
+      <Route path="/menu" element={<PublicMenu />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )

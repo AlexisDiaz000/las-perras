@@ -45,16 +45,21 @@ export interface Sale {
   order_number?: number
   description?: string
   total_amount: number
-  payment_method: 'cash' | 'card'
-  seller_id: string
+  payment_method?: 'cash' | 'card'
+  seller_id?: string
   created_at: string
   seller?: User
-  status?: 'draft' | 'preparing' | 'ready' | 'delivered' | 'paid' | 'voided' | 'refunded'
+  status?: 'draft' | 'pending_approval' | 'preparing' | 'ready' | 'delivered' | 'paid' | 'voided' | 'refunded' | 'rejected'
   updated_at?: string
   void_reason?: string
   voided_at?: string
   voided_by?: string
   items?: SaleItem[]
+  order_type: 'pos' | 'local' | 'delivery'
+  customer_name?: string
+  customer_phone?: string
+  delivery_address?: string
+  delivery_notes?: string
 }
 
 export interface SaleItem {
