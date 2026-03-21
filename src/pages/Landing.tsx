@@ -20,8 +20,9 @@ export default function Landing() {
     // Calculate relative position (-0.5 to 0.5)
     const x = (clientX / innerWidth) - 0.5
     const y = (clientY / innerHeight) - 0.5
-    mouseX.set(x * 100) // Max movement 100px
-    mouseY.set(y * 100)
+    // Increase the multiplier for a more noticeable effect
+    mouseX.set(x * 300) 
+    mouseY.set(y * 300)
   }
 
   return (
@@ -35,15 +36,15 @@ export default function Landing() {
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
           style={{ x: mouseX, y: mouseY }}
-          transition={{ duration: 1.5, ease: "easeOut", x: { type: "spring", stiffness: 50, damping: 20 }, y: { type: "spring", stiffness: 50, damping: 20 } }}
-          className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary-500/10 rounded-full blur-3xl mix-blend-multiply dark:mix-blend-screen"
+          transition={{ duration: 1.5, ease: "easeOut", x: { type: "spring", stiffness: 30, damping: 15 }, y: { type: "spring", stiffness: 30, damping: 15 } }}
+          className="absolute top-[10%] left-[10%] w-[40rem] h-[40rem] bg-primary-500/20 rounded-full blur-[100px] mix-blend-multiply dark:mix-blend-screen"
         />
         <motion.div 
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
-          style={{ x: useMotionTemplate`calc(${mouseX}px * -0.5)`, y: useMotionTemplate`calc(${mouseY}px * -0.5)` }}
-          transition={{ duration: 1.5, ease: "easeOut", delay: 0.2, x: { type: "spring", stiffness: 40, damping: 30 }, y: { type: "spring", stiffness: 40, damping: 30 } }}
-          className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-red-500/10 rounded-full blur-3xl mix-blend-multiply dark:mix-blend-screen"
+          style={{ x: useMotionTemplate`calc(${mouseX}px * -0.8)`, y: useMotionTemplate`calc(${mouseY}px * -0.8)` }}
+          transition={{ duration: 1.5, ease: "easeOut", delay: 0.2, x: { type: "spring", stiffness: 20, damping: 20 }, y: { type: "spring", stiffness: 20, damping: 20 } }}
+          className="absolute bottom-[10%] right-[10%] w-[40rem] h-[40rem] bg-red-500/20 rounded-full blur-[100px] mix-blend-multiply dark:mix-blend-screen"
         />
       </div>
 
@@ -61,11 +62,12 @@ export default function Landing() {
         <UserCircleIcon className="w-6 h-6 group-hover:scale-110 transition-transform" />
       </motion.button>
 
+      {/* Main Card */}
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
-        className="w-full max-w-2xl bg-[color:var(--brand-surface)] rounded-3xl shadow-2xl border border-[color:var(--app-border)] p-8 md:p-12 relative z-10"
+        className="w-full max-w-2xl bg-[color:var(--brand-surface)]/90 backdrop-blur-xl rounded-3xl shadow-2xl border border-[color:var(--app-border)] p-8 md:p-12 relative z-10"
       >
         
         {/* Header: Logo/Name */}
