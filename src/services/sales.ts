@@ -6,7 +6,7 @@ import { getColombiaDate } from '../lib/dateUtils'
 
 type ProteinChoice = 'Desmechada de Res' | 'Carne de Pollo' | 'Carne de Cerdo'
 
-type POSItemInput = Omit<SaleItem, 'id' | 'sale_id'> & {
+export type POSItemInput = Omit<SaleItem, 'id' | 'sale_id'> & {
   modifiers?: {
     protein?: ProteinChoice
     extraSauce?: boolean
@@ -16,7 +16,7 @@ type POSItemInput = Omit<SaleItem, 'id' | 'sale_id'> & {
 
 const SAUCES = ['Salsa BBQ', 'Salsa Mayonesa', 'Salsa Mostaza'] as const
 
-async function consumeInventoryForSale(saleId: string, sellerId: string, items: POSItemInput[]) {
+export async function consumeInventoryForSale(saleId: string, sellerId: string, items: POSItemInput[]) {
   const movementGroup = crypto.randomUUID()
 
   for (const item of items) {

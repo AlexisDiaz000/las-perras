@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react'
 import { useNotificationsStore } from '../stores/notifications'
+import { useAuthStore } from '../stores/auth'
 import { supabase } from '../lib/supabase'
+import { consumeInventoryForSale } from '../services/sales'
 
 export default function WebOrders() {
   const { pendingOrders, fetchPendingOrders } = useNotificationsStore()
+  const { user } = useAuthStore()
   const [orderItems, setOrderItems] = useState<Record<string, any[]>>({})
   const [rejectingOrderId, setRejectingOrderId] = useState<string | null>(null)
   const [rejectReason, setRejectReason] = useState('')
@@ -51,6 +54,12 @@ export default function WebOrders() {
         .eq('id', orderId)
 
       if (error) throw error
+
+      // Descontar inventario al aceptar el pedido
+      const items = orderItems[orderId]
+      if (items && user) {
+        await consumeInventoryForSale(orderId, user.id, items)
+      }
       
       // Force UI update immediately for better UX
       useNotificationsStore.getState().removeOrder(orderId)
@@ -76,7 +85,7 @@ export default function WebOrders() {
       const { error } = await supabase
         .from('sales')
         .update({ 
-          status: 'voided',
+          status: 'rejected',
           void_reason: rejectReason.trim()
         })
         .eq('id', rejectingOrderId)

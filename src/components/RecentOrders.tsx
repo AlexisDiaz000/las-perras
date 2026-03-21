@@ -28,6 +28,10 @@ export function RecentOrders() {
   const [loading, setLoading] = useState(false)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [selected, setSelected] = useState<Sale | null>(null)
+  const [voidingOrder, setVoidingOrder] = useState<Sale | null>(null)
+  const [voidReason, setVoidReason] = useState('')
+  const [refundingOrder, setRefundingOrder] = useState<Sale | null>(null)
+  const [refundReason, setRefundReason] = useState('')
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [payMethod, setPayMethod] = useState<'cash' | 'card'>('cash')
@@ -90,14 +94,18 @@ export function RecentOrders() {
     }
   }
 
-  const handleVoid = async (sale: Sale) => {
-    if (!user) return
-    const reason = prompt('Motivo de anulación:')
-    if (!reason || !reason.trim()) return
-    setActionLoading(sale.id)
+  const handleVoid = async () => {
+    if (!user || !voidingOrder) return
+    if (!voidReason.trim()) {
+      alert('Por favor ingresa un motivo para anular el pedido.')
+      return
+    }
+    setActionLoading(voidingOrder.id)
     try {
-      await salesService.voidSale(sale.id, reason.trim(), user.id, false)
+      await salesService.voidSale(voidingOrder.id, voidReason.trim(), user.id, false)
       await loadOrders()
+      setVoidingOrder(null)
+      setVoidReason('')
       setSelected(null)
     } catch (error: any) {
       alert(error?.message || 'Error al anular pedido')
@@ -106,14 +114,18 @@ export function RecentOrders() {
     }
   }
 
-  const handleRefund = async (sale: Sale) => {
-    if (!user) return
-    const reason = prompt('Motivo de reembolso:')
-    if (!reason || !reason.trim()) return
-    setActionLoading(sale.id)
+  const handleRefund = async () => {
+    if (!user || !refundingOrder) return
+    if (!refundReason.trim()) {
+      alert('Por favor ingresa un motivo para el reembolso.')
+      return
+    }
+    setActionLoading(refundingOrder.id)
     try {
-      await salesService.refundSale(sale.id, reason.trim(), user.id)
+      await salesService.refundSale(refundingOrder.id, refundReason.trim(), user.id)
       await loadOrders()
+      setRefundingOrder(null)
+      setRefundReason('')
       setSelected(null)
     } catch (error: any) {
       alert(error?.message || 'Error al reembolsar')
@@ -377,7 +389,7 @@ export function RecentOrders() {
             <div className="mt-5 flex flex-col sm:flex-row gap-2 justify-end">
               {(selected.status === 'draft' || selected.status === 'preparing' || selected.status === 'delivered') && (
                 <button
-                  onClick={() => handleVoid(selected)}
+                  onClick={() => setVoidingOrder(selected)}
                   disabled={actionLoading === selected.id}
                   className="px-4 py-2 rounded-md border border-white/10 text-secondary-200 hover:bg-white/10 uppercase tracking-widest text-xs"
                 >
@@ -387,7 +399,7 @@ export function RecentOrders() {
 
               {selected.status === 'paid' && (
                 <button
-                  onClick={() => handleRefund(selected)}
+                  onClick={() => setRefundingOrder(selected)}
                   disabled={actionLoading === selected.id}
                   className="px-4 py-2 rounded-md border border-white/10 text-secondary-200 hover:bg-white/10 uppercase tracking-widest text-xs"
                 >
@@ -420,6 +432,90 @@ export function RecentOrders() {
                   Cobrar
                 </button>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal para anular pedido */}
+      {voidingOrder && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[60] p-4">
+          <div className="bg-[color:var(--brand-surface)] rounded-2xl border border-[color:var(--app-border)] p-6 max-w-md w-full shadow-2xl">
+            <h3 className="text-xl font-bold text-[color:var(--app-text)] uppercase tracking-widest mb-4">
+              Anular Pedido {getOrderLabel(voidingOrder)}
+            </h3>
+            <p className="text-sm text-[color:var(--app-muted-2)] mb-4">
+              Por favor, indica el motivo por el cual estás anulando este pedido. Los ingredientes serán retornados al inventario si corresponde.
+            </p>
+            
+            <textarea
+              value={voidReason}
+              onChange={(e) => setVoidReason(e.target.value)}
+              placeholder="Ej: El cliente canceló, error en el registro..."
+              className="w-full bg-[color:var(--app-bg)] border border-[color:var(--app-border)] rounded-xl p-3 text-[color:var(--app-text)] focus:outline-none focus:border-red-500/50 min-h-[100px] resize-none mb-6"
+              autoFocus
+            />
+
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => {
+                  setVoidingOrder(null)
+                  setVoidReason('')
+                }}
+                disabled={actionLoading === voidingOrder.id}
+                className="px-4 py-2 rounded-xl text-sm font-bold text-[color:var(--app-muted-2)] hover:text-[color:var(--app-text)] hover:bg-[color:var(--app-hover)] transition-colors disabled:opacity-50"
+              >
+                CANCELAR
+              </button>
+              <button
+                onClick={handleVoid}
+                disabled={!voidReason.trim() || actionLoading === voidingOrder.id}
+                className="px-6 py-2 rounded-xl text-sm font-bold bg-red-600 text-white hover:bg-red-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {actionLoading === voidingOrder.id ? 'ANULANDO...' : 'CONFIRMAR ANULACIÓN'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal para reembolsar pedido */}
+      {refundingOrder && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[60] p-4">
+          <div className="bg-[color:var(--brand-surface)] rounded-2xl border border-[color:var(--app-border)] p-6 max-w-md w-full shadow-2xl">
+            <h3 className="text-xl font-bold text-[color:var(--app-text)] uppercase tracking-widest mb-4">
+              Reembolsar Pedido {getOrderLabel(refundingOrder)}
+            </h3>
+            <p className="text-sm text-[color:var(--app-muted-2)] mb-4">
+              Por favor, indica el motivo del reembolso. Esto registrará la devolución del dinero.
+            </p>
+            
+            <textarea
+              value={refundReason}
+              onChange={(e) => setRefundReason(e.target.value)}
+              placeholder="Ej: Inconformidad del cliente, cobro doble..."
+              className="w-full bg-[color:var(--app-bg)] border border-[color:var(--app-border)] rounded-xl p-3 text-[color:var(--app-text)] focus:outline-none focus:border-red-500/50 min-h-[100px] resize-none mb-6"
+              autoFocus
+            />
+
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => {
+                  setRefundingOrder(null)
+                  setRefundReason('')
+                }}
+                disabled={actionLoading === refundingOrder.id}
+                className="px-4 py-2 rounded-xl text-sm font-bold text-[color:var(--app-muted-2)] hover:text-[color:var(--app-text)] hover:bg-[color:var(--app-hover)] transition-colors disabled:opacity-50"
+              >
+                CANCELAR
+              </button>
+              <button
+                onClick={handleRefund}
+                disabled={!refundReason.trim() || actionLoading === refundingOrder.id}
+                className="px-6 py-2 rounded-xl text-sm font-bold bg-orange-600 text-white hover:bg-orange-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {actionLoading === refundingOrder.id ? 'REEMBOLSANDO...' : 'CONFIRMAR REEMBOLSO'}
+              </button>
             </div>
           </div>
         </div>
