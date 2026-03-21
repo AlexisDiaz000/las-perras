@@ -1,7 +1,8 @@
 import { useNavigate } from 'react-router-dom'
 import { useSettingsStore } from '../stores/settings'
 import { UserCircleIcon, ShoppingBagIcon, TruckIcon } from '@heroicons/react/24/outline'
-import { motion } from 'framer-motion'
+import { motion, useMotionTemplate, useMotionValue } from 'framer-motion'
+import { MouseEvent } from 'react'
 
 export default function Landing() {
   const navigate = useNavigate()
@@ -9,20 +10,39 @@ export default function Landing() {
   
   const appName = settings?.app_name || 'Brutal System'
 
+  // Mouse tracking for background interaction
+  const mouseX = useMotionValue(0)
+  const mouseY = useMotionValue(0)
+
+  const handleMouseMove = (e: MouseEvent<HTMLDivElement>) => {
+    const { clientX, clientY } = e
+    const { innerWidth, innerHeight } = window
+    // Calculate relative position (-0.5 to 0.5)
+    const x = (clientX / innerWidth) - 0.5
+    const y = (clientY / innerHeight) - 0.5
+    mouseX.set(x * 100) // Max movement 100px
+    mouseY.set(y * 100)
+  }
+
   return (
-    <div className="min-h-screen bg-[color:var(--app-bg)] flex flex-col items-center justify-center p-4 relative overflow-hidden">
-      {/* Background decorations */}
+    <div 
+      className="min-h-screen bg-[color:var(--app-bg)] flex flex-col items-center justify-center p-4 relative overflow-hidden"
+      onMouseMove={handleMouseMove}
+    >
+      {/* Background decorations with interactive movement */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div 
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 1.5, ease: "easeOut" }}
+          style={{ x: mouseX, y: mouseY }}
+          transition={{ duration: 1.5, ease: "easeOut", x: { type: "spring", stiffness: 50, damping: 20 }, y: { type: "spring", stiffness: 50, damping: 20 } }}
           className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary-500/10 rounded-full blur-3xl mix-blend-multiply dark:mix-blend-screen"
         />
         <motion.div 
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 1.5, ease: "easeOut", delay: 0.2 }}
+          style={{ x: useMotionTemplate`calc(${mouseX}px * -0.5)`, y: useMotionTemplate`calc(${mouseY}px * -0.5)` }}
+          transition={{ duration: 1.5, ease: "easeOut", delay: 0.2, x: { type: "spring", stiffness: 40, damping: 30 }, y: { type: "spring", stiffness: 40, damping: 30 } }}
           className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-red-500/10 rounded-full blur-3xl mix-blend-multiply dark:mix-blend-screen"
         />
       </div>
@@ -32,6 +52,8 @@ export default function Landing() {
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5 }}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
         onClick={() => navigate('/login')}
         className="absolute top-6 right-6 z-50 flex items-center gap-2 text-[color:var(--app-muted-2)] hover:text-[color:var(--app-text)] transition-colors group bg-[color:var(--brand-surface)]/80 backdrop-blur-md px-4 py-2 rounded-full border border-[color:var(--app-border)] shadow-sm"
       >
