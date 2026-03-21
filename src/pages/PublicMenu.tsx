@@ -35,6 +35,8 @@ export default function PublicMenu() {
   const [customerName, setCustomerName] = useState('')
   const [customerPhone, setCustomerPhone] = useState('')
   const [deliveryAddress, setDeliveryAddress] = useState('')
+  const [deliveryNeighborhood, setDeliveryNeighborhood] = useState('')
+  const [tableNumber, setTableNumber] = useState('')
   const [step, setStep] = useState<'info' | 'menu'>('info') // First ask for info, then show menu
 
   useEffect(() => {
@@ -139,6 +141,21 @@ export default function PublicMenu() {
                   />
                 </div>
 
+                {orderType === 'local' && (
+                  <div>
+                    <label className="block text-xs font-semibold text-[color:var(--app-muted-2)] uppercase tracking-widest mb-2 flex items-center gap-2">
+                      <MapPinIcon className="w-4 h-4" /> Número de Mesa (Opcional)
+                    </label>
+                    <input
+                      type="text"
+                      value={tableNumber}
+                      onChange={(e) => setTableNumber(e.target.value)}
+                      className="brand-input w-full"
+                      placeholder="Ej: 5"
+                    />
+                  </div>
+                )}
+
                 {orderType === 'delivery' && (
                   <>
                     <div>
@@ -156,6 +173,19 @@ export default function PublicMenu() {
                     </div>
                     <div>
                       <label className="block text-xs font-semibold text-[color:var(--app-muted-2)] uppercase tracking-widest mb-2 flex items-center gap-2">
+                        <MapPinIcon className="w-4 h-4" /> Barrio
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={deliveryNeighborhood}
+                        onChange={(e) => setDeliveryNeighborhood(e.target.value)}
+                        className="brand-input w-full"
+                        placeholder="Ej: El Poblado"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-[color:var(--app-muted-2)] uppercase tracking-widest mb-2 flex items-center gap-2">
                         <MapPinIcon className="w-4 h-4" /> Dirección de Entrega
                       </label>
                       <input
@@ -164,7 +194,7 @@ export default function PublicMenu() {
                         value={deliveryAddress}
                         onChange={(e) => setDeliveryAddress(e.target.value)}
                         className="brand-input w-full"
-                        placeholder="Ej: Calle 123 # 45-67"
+                        placeholder="Ej: Calle 123 # 45-67, Apto 101"
                       />
                     </div>
                   </>
@@ -183,7 +213,7 @@ export default function PublicMenu() {
                <div>
                  <h2 className="text-2xl font-bold">Nuestro Menú</h2>
                  <p className="text-sm text-[color:var(--app-muted-2)]">
-                   Hola, {customerName} • {orderType === 'local' ? 'Para comer aquí' : 'A domicilio'}
+                   Hola, {customerName} • {orderType === 'local' ? `Mesa ${tableNumber || 'N/A'}` : `Envío a ${deliveryNeighborhood}`}
                  </p>
                </div>
             </div>
