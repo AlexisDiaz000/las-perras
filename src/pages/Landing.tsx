@@ -67,7 +67,7 @@ export default function Landing() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
-        className="w-full max-w-2xl bg-[color:var(--brand-surface)]/90 backdrop-blur-xl rounded-3xl shadow-2xl border border-[color:var(--app-border)] p-8 md:p-12 relative z-10"
+        className="w-full max-w-2xl bg-[color:var(--brand-surface)] rounded-3xl shadow-2xl border border-[color:var(--app-border)] p-8 md:p-12 relative z-10"
       >
         
         {/* Header: Logo/Name */}
@@ -128,6 +128,13 @@ export default function Landing() {
 
         </div>
       </motion.div>
+
+      {/* Watermark */}
+      <div className="fixed bottom-4 right-6 z-50 pointer-events-none opacity-40">
+        <span className="text-[10px] font-bold text-[color:var(--app-text)] uppercase tracking-widest drop-shadow-md">
+          Powered by Brutal System
+        </span>
+      </div>
     </div>
   )
 }
