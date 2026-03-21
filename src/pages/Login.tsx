@@ -30,52 +30,48 @@ export default function Login() {
       <div className="hidden lg:flex lg:w-1/2 relative bg-[color:var(--brand-surface)] border-r border-[color:var(--app-border)] items-center justify-center p-12">
         {/* Abstract background elements */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary-900/20 rounded-full blur-3xl mix-blend-screen"></div>
-          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-red-900/20 rounded-full blur-3xl mix-blend-screen"></div>
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary-500/10 rounded-full blur-3xl mix-blend-multiply dark:mix-blend-screen"></div>
+          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-red-500/10 rounded-full blur-3xl mix-blend-multiply dark:mix-blend-screen"></div>
         </div>
 
         <div className="relative z-10 flex flex-col items-center max-w-lg text-center">
           {settings?.logo_url ? (
-            <div className="w-64 h-64 md:w-80 md:h-80 mb-10 rounded-full overflow-hidden border-4 border-white/10 shadow-2xl bg-black">
+            <div className="w-64 h-64 md:w-80 md:h-80 mb-10 rounded-full overflow-hidden border-4 border-[color:var(--app-border)] shadow-2xl bg-[color:var(--brand-surface)] flex items-center justify-center">
               <img src={settings.logo_url} alt="Logo" className="w-full h-full object-cover" />
             </div>
           ) : (
-            <div className="w-64 h-64 md:w-80 md:h-80 mb-10 rounded-full bg-black/50 border-4 border-white/10 flex items-center justify-center">
-              <span className="text-secondary-500 text-2xl font-bold tracking-widest uppercase">Sin Logo</span>
+            <div className="w-64 h-64 md:w-80 md:h-80 mb-10 rounded-full bg-[color:var(--app-hover)] border-4 border-[color:var(--app-border)] flex items-center justify-center">
+              <span className="text-[color:var(--app-muted-2)] text-2xl font-bold tracking-widest uppercase">Sin Logo</span>
             </div>
           )}
-          <h1 className="brand-logo text-6xl md:text-7xl lg:text-8xl mb-4 leading-tight bg-clip-text text-transparent bg-gradient-to-br from-white to-secondary-400">
+          <h1 className="brand-logo text-6xl md:text-7xl lg:text-8xl leading-tight bg-clip-text text-transparent bg-gradient-to-br from-[color:var(--app-text)] to-[color:var(--app-muted-2)] drop-shadow-sm">
             {appName}
           </h1>
-          <p className="text-secondary-400 text-lg tracking-widest uppercase font-semibold">
-            Sistema Integral de Gestión
-          </p>
         </div>
       </div>
 
       {/* Right Column - Login Form */}
-      <div className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8 bg-black">
+      <div className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8 bg-[color:var(--app-bg)] relative">
         <div className="max-w-md w-full space-y-8 relative z-10">
-          <div className="brand-card p-8 sm:p-10 border border-white/5 shadow-2xl">
-            <div className="text-center mb-10">
-              {/* Show logo only on mobile, since desktop has the big one */}
+          <div className="brand-card p-8 sm:p-10 border border-[color:var(--app-border)] shadow-2xl bg-[color:var(--brand-surface)]">
+            {/* Show logo only on mobile, since desktop has the big one */}
               <div className="lg:hidden flex justify-center mb-6">
                  {settings?.logo_url ? (
-                  <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-white/10 shadow-lg bg-black">
+                  <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-[color:var(--app-border)] shadow-lg bg-[color:var(--brand-surface)] flex items-center justify-center">
                     <img src={settings.logo_url} alt="Logo" className="w-full h-full object-cover" />
                   </div>
                 ) : null}
               </div>
-              
-              <h2 className="brand-heading text-4xl mb-2 text-white lg:hidden">{appName}</h2>
-              <h2 className="text-2xl font-bold text-white mb-2 hidden lg:block">Bienvenido de vuelta</h2>
-              <p className="text-secondary-400 uppercase tracking-widest text-xs">Ingresa tus credenciales</p>
-            </div>
+            <div className="text-center mb-10">
+                 <h2 className="brand-heading text-4xl mb-2 text-[color:var(--app-text)] lg:hidden">{appName}</h2>
+                 <h2 className="text-2xl font-bold text-[color:var(--app-text)] mb-2 hidden lg:block">Bienvenido al sistema</h2>
+                 <p className="text-[color:var(--app-muted-2)] uppercase tracking-widest text-xs">Ingresa tus credenciales</p>
+               </div>
             
             <form className="space-y-6" onSubmit={handleSubmit}>
               <div className="space-y-5">
                 <div>
-                  <label htmlFor="email" className="block text-xs font-semibold text-secondary-300 uppercase tracking-widest mb-2">
+                  <label htmlFor="email" className="block text-xs font-semibold text-[color:var(--app-muted-2)] uppercase tracking-widest mb-2">
                     Correo Electrónico
                   </label>
                   <input
@@ -85,13 +81,13 @@ export default function Login() {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="brand-input w-full bg-black/50"
+                    className="brand-input w-full"
                     placeholder="tu@email.com"
                   />
                 </div>
                 
                 <div>
-                  <label htmlFor="password" className="block text-xs font-semibold text-secondary-300 uppercase tracking-widest mb-2">
+                  <label htmlFor="password" className="block text-xs font-semibold text-[color:var(--app-muted-2)] uppercase tracking-widest mb-2">
                     Contraseña
                   </label>
                   <input
@@ -101,7 +97,7 @@ export default function Login() {
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="brand-input w-full bg-black/50"
+                    className="brand-input w-full"
                     placeholder="••••••••"
                   />
                 </div>
@@ -124,9 +120,9 @@ export default function Login() {
               </div>
             </form>
 
-            <div className="mt-8 pt-6 border-t border-white/10 text-center">
-              <p className="text-[10px] text-secondary-500 uppercase tracking-widest mb-2">Cuentas de demostración</p>
-              <div className="flex flex-col gap-1 text-xs text-secondary-400 font-mono bg-black/30 p-3 rounded-lg">
+            <div className="mt-8 pt-6 border-t border-[color:var(--app-border)] text-center">
+              <p className="text-[10px] text-[color:var(--app-muted-2)] uppercase tracking-widest mb-2">Cuentas de demostración</p>
+              <div className="flex flex-col gap-1 text-xs text-[color:var(--app-muted-1)] font-mono bg-[color:var(--app-hover)] p-3 rounded-lg">
                 <p>admin@lasperras.com / admin123</p>
                 <p>vendedor@lasperras.com / vendor123</p>
               </div>
@@ -135,8 +131,8 @@ export default function Login() {
         </div>
         
         {/* Watermark */}
-        <div className="fixed bottom-4 right-6 z-50 pointer-events-none opacity-20">
-          <span className="text-[10px] font-bold text-white uppercase tracking-widest drop-shadow-md">
+        <div className="absolute bottom-4 right-6 z-50 pointer-events-none opacity-40">
+          <span className="text-[10px] font-bold text-[color:var(--app-text)] uppercase tracking-widest">
             Powered by Brutal System
           </span>
         </div>
