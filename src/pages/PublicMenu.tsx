@@ -3,7 +3,6 @@ import { useSearchParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { Product } from '../types'
 import { useSettingsStore } from '../stores/settings'
-import { formatCurrency } from '../utils/format'
 import { 
   ArrowLeftIcon, 
   ShoppingCartIcon, 
@@ -11,6 +10,15 @@ import {
   UserIcon, 
   PhoneIcon 
 } from '@heroicons/react/24/outline'
+
+// Helper function to format currency
+const formatCurrency = (amount: number) => {
+  return new Intl.NumberFormat('es-CO', {
+    style: 'currency',
+    currency: 'COP',
+    minimumFractionDigits: 0
+  }).format(amount)
+}
 
 export default function PublicMenu() {
   const [searchParams] = useSearchParams()
