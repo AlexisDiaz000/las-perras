@@ -5,16 +5,14 @@ import { supabase } from '../lib/supabase'
 import { consumeInventoryForSale } from '../services/sales'
 
 export default function WebOrders() {
-  const { pendingOrders, fetchPendingOrders } = useNotificationsStore()
+  const { pendingOrders } = useNotificationsStore()
   const { user } = useAuthStore()
   const [orderItems, setOrderItems] = useState<Record<string, any[]>>({})
   const [rejectingOrderId, setRejectingOrderId] = useState<string | null>(null)
   const [rejectReason, setRejectReason] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  useEffect(() => {
-    fetchPendingOrders()
-  }, [fetchPendingOrders])
+  // Ya no necesitamos hacer fetchOrders aquí porque el Layout se encarga de mantener el Store actualizado globalmente
 
   // Fetch items for pending orders
   useEffect(() => {

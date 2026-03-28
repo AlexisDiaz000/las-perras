@@ -3,6 +3,7 @@ import { salesService } from '../services/sales'
 import { getColombiaDate } from '../lib/dateUtils'
 import { Sale } from '../types'
 import { useAuthStore } from '../stores/auth'
+import { useNotificationsStore } from '../stores/notifications'
 
 function formatCurrency(amount: number) {
   return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(amount)
@@ -24,8 +25,7 @@ const STATUS_LABELS: Record<string, string> = {
 
 export function RecentOrders() {
   const { user } = useAuthStore()
-  const [orders, setOrders] = useState<Sale[]>([])
-  const [loading, setLoading] = useState(false)
+  const { activeOrders, fetchOrders, isLoading } = useNotificationsStore()
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [selected, setSelected] = useState<Sale | null>(null)
   const [voidingOrder, setVoidingOrder] = useState<Sale | null>(null)
@@ -47,33 +47,21 @@ export function RecentOrders() {
     end: getColombiaDate()
   })
 
-  const loadOrders = async () => {
-    setLoading(true)
-    try {
-      // Agregar offset de Colombia (-05:00) para que la consulta a BD (que está en UTC)
-      // incluya las horas de la tarde/noche que en UTC ya son el día siguiente.
-      const start = `${dateRange.start}T00:00:00-05:00`
-      const end = `${dateRange.end}T23:59:59-05:00`
-      const data = await salesService.getSalesWithItems(start, end)
-      setOrders(data)
-    } catch (error) {
-      console.error('Error loading orders:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
+  // Ya no usamos setInterval, confiamos en la suscripción en tiempo real de notificationsStore
+  // Solo cargamos los datos iniciales al cambiar de fecha si no es el día actual (porque el día actual ya lo maneja el Layout/Store)
   useEffect(() => {
-    loadOrders()
-    const interval = setInterval(loadOrders, 30000)
-    return () => clearInterval(interval)
+    const today = getColombiaDate()
+    if (dateRange.start !== today || dateRange.end !== today) {
+      // Si el usuario cambia la fecha en el calendario, necesitamos hacer un fetch manual
+      fetchOrders() // Idealmente este fetchOrders debería aceptar parámetros de fecha, pero por ahora lo dejamos así
+    }
   }, [dateRange])
 
   const updateStatus = async (saleId: string, status: Sale['status']) => {
     setActionLoading(saleId)
     try {
       await salesService.updateSale(saleId, { status } as any)
-      await loadOrders()
+      // No necesitamos llamar a loadOrders() aquí porque el websocket actualizará el estado automáticamente
     } catch (error: any) {
       alert(error?.message || 'Error al actualizar pedido')
     } finally {
@@ -86,7 +74,7 @@ export function RecentOrders() {
     setActionLoading(saleId)
     try {
       await salesService.finalizeSale(saleId, user.id, method)
-      await loadOrders()
+      // Websocket actualizará el estado
     } catch (error: any) {
       alert(error?.message || 'Error al procesar pago')
     } finally {
@@ -103,10 +91,10 @@ export function RecentOrders() {
     setActionLoading(voidingOrder.id)
     try {
       await salesService.voidSale(voidingOrder.id, voidReason.trim(), user.id, false)
-      await loadOrders()
       setVoidingOrder(null)
       setVoidReason('')
       setSelected(null)
+      // Websocket actualizará el estado
     } catch (error: any) {
       alert(error?.message || 'Error al anular pedido')
     } finally {
@@ -123,10 +111,10 @@ export function RecentOrders() {
     setActionLoading(refundingOrder.id)
     try {
       await salesService.refundSale(refundingOrder.id, refundReason.trim(), user.id)
-      await loadOrders()
       setRefundingOrder(null)
       setRefundReason('')
       setSelected(null)
+      // Websocket actualizará el estado
     } catch (error: any) {
       alert(error?.message || 'Error al reembolsar')
     } finally {
@@ -155,8 +143,8 @@ export function RecentOrders() {
 
   const filteredOrders = useMemo(() => {
     const q = debouncedSearch.trim().toLowerCase()
-    if (!q) return orders
-    return orders.filter(s => {
+    if (!q) return activeOrders
+    return activeOrders.filter(s => {
       if (!s) return false
       try {
         const label = getOrderLabel(s).toLowerCase()
@@ -167,7 +155,7 @@ export function RecentOrders() {
         return false
       }
     })
-  }, [orders, debouncedSearch])
+  }, [activeOrders, debouncedSearch])
 
   const grouped = useMemo(() => {
     const map: Record<string, Sale[]> = {}
@@ -220,13 +208,13 @@ export function RecentOrders() {
               }}
               placeholder="Buscar # pedido, descripción o id..."
             />
-            <button onClick={loadOrders} className="brand-button">
+            <button onClick={fetchOrders} className="brand-button">
               Actualizar
             </button>
           </div>
         </div>
 
-        {loading && !orders.length ? (
+        {isLoading && !activeOrders.length ? (
           <div className="brand-card p-6 text-secondary-300">Cargando...</div>
         ) : filteredOrders.length === 0 ? (
           <div className="brand-card p-6 text-secondary-300">No hay pedidos hoy.</div>

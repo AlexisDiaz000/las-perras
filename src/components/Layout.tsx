@@ -18,7 +18,7 @@ import {
   BellIcon,
   GlobeAltIcon
 } from '@heroicons/react/24/outline'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/auth'
 import { useSettingsStore } from '../stores/settings'
 import { useNotificationsStore } from '../stores/notifications'
@@ -46,16 +46,20 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate()
   const { user, signOut } = useAuthStore()
   const { settings } = useSettingsStore()
-  const { pendingOrders, startListening, stopListening } = useNotificationsStore()
+  const { fetchOrders, pendingOrders, startListening, stopListening } = useNotificationsStore()
   const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains('dark'))
 
   const appName = settings?.app_name || 'Brutal System'
 
   useEffect(() => {
     setIsDark(document.documentElement.classList.contains('dark'))
+    
+    // Iniciar escucha y hacer fetch inicial global
     startListening()
+    fetchOrders()
+    
     return () => stopListening()
-  }, [startListening, stopListening])
+  }, [startListening, stopListening, fetchOrders])
 
   const handleSignOut = async () => {
     await signOut()
