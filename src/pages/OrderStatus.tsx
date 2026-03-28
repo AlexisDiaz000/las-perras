@@ -242,14 +242,21 @@ export default function OrderStatus() {
           
           <div className="space-y-4 mb-6">
             {order.sale_items?.map((item: any, idx: number) => (
-              <div key={idx} className="flex justify-between items-center text-sm">
-                <div className="flex gap-3 items-center">
+              <div key={idx} className="flex justify-between items-start text-sm">
+                <div className="flex gap-3 items-start">
                   <span className="font-bold text-[color:var(--app-text)] bg-[color:var(--app-hover-strong)] px-2 py-1 rounded">
                     {item.quantity}x
                   </span>
-                  <span className="text-[color:var(--app-muted-1)] font-medium">{item.hotdog_type}</span>
+                  <div>
+                    <span className="text-[color:var(--app-muted-1)] font-medium block">{item.hotdog_type}</span>
+                    {item.modifiers?.protein && (
+                      <span className="text-[10px] text-yellow-500 uppercase font-bold tracking-widest block mt-0.5">
+                        + {item.modifiers.protein}
+                      </span>
+                    )}
+                  </div>
                 </div>
-                <span className="font-mono font-medium">${item.total_price.toLocaleString('es-CO')}</span>
+                <span className="font-mono font-medium mt-1">${item.total_price.toLocaleString('es-CO')}</span>
               </div>
             ))}
           </div>

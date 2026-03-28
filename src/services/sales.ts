@@ -95,9 +95,9 @@ async function processProteinDeduction(
   // Inventario: 'Carne Desmechada', 'Pollo Desmechado', 'Cerdo Desmechado' (aproximado)
   
   let searchTerm = ''
-  if (proteinName.includes('Res') || proteinName.includes('Carne')) searchTerm = 'Carne Desmechada' // O 'Carne'
-  if (proteinName.includes('Pollo')) searchTerm = 'Pollo Desmechado'
-  if (proteinName.includes('Cerdo')) searchTerm = 'Cerdo Desmechado'
+  if (proteinName.includes('Res') || proteinName.includes('Carne')) searchTerm = 'Desmechada de Res' 
+  if (proteinName.includes('Pollo')) searchTerm = 'Carne de Pollo'
+  if (proteinName.includes('Cerdo')) searchTerm = 'Carne de Cerdo'
 
   if (!searchTerm) return
 

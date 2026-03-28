@@ -120,8 +120,11 @@ export interface ProductIngredient {
 }
 
 export interface CartItem {
-  hotdog_type: string
-  quantity: number
-  unit_price: number
-  total_price: number
+  id: string // product id
+  name: string // product name
+  price: number // product price
+  cartQuantity: number // quantity in cart
+  modifiers?: {
+    protein?: string
+  }
 }

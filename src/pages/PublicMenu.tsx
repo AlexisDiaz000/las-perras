@@ -28,6 +28,9 @@ const formatCurrency = (amount: number) => {
 
 interface CartItem extends Product {
   cartQuantity: number
+  modifiers?: {
+    protein?: string
+  }
 }
 
 export default function PublicMenu() {
@@ -100,23 +103,30 @@ export default function PublicMenu() {
   }, {} as Record<string, Product[]>)
 
   // Cart Functions
-  const addToCart = (product: Product) => {
+  const addToCart = (product: Product, modifier?: { protein?: string }) => {
     setCart(prevCart => {
-      const existingItem = prevCart.find(item => item.id === product.id)
+      // Check if product exists WITH THE SAME MODIFIERS
+      const existingItem = prevCart.find(item => {
+        if (item.id !== product.id) return false
+        if (!item.modifiers && !modifier) return true
+        if (item.modifiers?.protein === modifier?.protein) return true
+        return false
+      })
+
       if (existingItem) {
         return prevCart.map(item => 
-          item.id === product.id 
+          item === existingItem 
             ? { ...item, cartQuantity: item.cartQuantity + 1 }
             : item
         )
       }
-      return [...prevCart, { ...product, cartQuantity: 1 }]
+      return [...prevCart, { ...product, cartQuantity: 1, modifiers: modifier }]
     })
   }
 
-  const updateCartQuantity = (productId: string, delta: number) => {
-    setCart(prevCart => prevCart.map(item => {
-      if (item.id === productId) {
+  const updateCartItemQuantity = (index: number, delta: number) => {
+    setCart(prevCart => prevCart.map((item, i) => {
+      if (i === index) {
         const newQuantity = Math.max(0, item.cartQuantity + delta)
         return { ...item, cartQuantity: newQuantity }
       }
@@ -127,6 +137,27 @@ export default function PublicMenu() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [orderSuccess, setOrderSuccess] = useState(false)
   const [createdOrderId, setCreatedOrderId] = useState<string | null>(null)
+  
+  // Modifiers Modal State
+  const [selectedProductForModifier, setSelectedProductForModifier] = useState<Product | null>(null)
+  const [selectedProtein, setSelectedProtein] = useState<string>('')
+
+  const handleProductClick = (product: Product) => {
+    if (product.requires_protein_choice) {
+      setSelectedProductForModifier(product)
+      setSelectedProtein('') // reset
+    } else {
+      addToCart(product)
+    }
+  }
+
+  const handleModifierConfirm = () => {
+    if (selectedProductForModifier && selectedProtein) {
+      addToCart(selectedProductForModifier, { protein: selectedProtein })
+      setSelectedProductForModifier(null)
+      setSelectedProtein('')
+    }
+  }
 
   const handleCheckout = async () => {
     if (cart.length === 0) return
@@ -136,7 +167,8 @@ export default function PublicMenu() {
       // Formatear los items del carrito para el RPC
       const itemsForRpc = cart.map(item => ({
         product_id: item.id,
-        quantity: item.cartQuantity
+        quantity: item.cartQuantity,
+        modifiers: item.modifiers || null
       }))
 
       // Llamar a la función segura del servidor (El "Portero")
@@ -373,25 +405,26 @@ export default function PublicMenu() {
                       {items.map(product => (
                         <button 
                           key={product.id} 
-                          onClick={() => addToCart(product)}
-                          className="bg-[#121212] hover:bg-[#1A1A1A] border border-white/5 hover:border-white/10 rounded-xl overflow-hidden text-left transition-all group flex flex-row h-[140px] w-full"
+                          onClick={() => handleProductClick(product)}
+                          className="bg-[#121212] hover:bg-[#1A1A1A] border border-white/5 hover:border-white/10 rounded-xl overflow-hidden text-left transition-all group flex flex-row min-h-[140px] w-full"
                         >
-                          <div className="p-4 flex-1 flex flex-col justify-between">
+                          <div className="p-4 flex-1 flex flex-col justify-start gap-2">
                             <div>
-                              <h3 className="font-bold text-sm md:text-base tracking-wide uppercase line-clamp-1 brand-heading">{product.name}</h3>
+                              <h3 className="font-bold text-sm md:text-base tracking-wide uppercase line-clamp-2 brand-heading leading-tight">{product.name}</h3>
                               <span className="text-gray-400 text-sm mt-1 block">
                                 {formatCurrency(product.price)}
                               </span>
                             </div>
-                            <div>
-                              {product.requires_protein_choice && (
-                                <span className="text-[10px] text-gray-500 uppercase tracking-widest mt-2 block">
-                                  Requiere proteína
+                            
+                            <div className="mt-auto">
+                              {product.description && (
+                                <span className="text-[10px] text-gray-400 uppercase tracking-widest block leading-relaxed opacity-80 mb-2">
+                                  {product.description}
                                 </span>
                               )}
-                              {product.description && !product.requires_protein_choice && (
-                                <span className="text-[10px] text-gray-500 uppercase tracking-widest mt-2 block line-clamp-2">
-                                  {product.description}
+                              {product.requires_protein_choice && (
+                                <span className="text-[10px] text-yellow-500/90 font-bold uppercase tracking-widest inline-block bg-yellow-500/10 px-2 py-1 rounded">
+                                  Requiere proteína
                                 </span>
                               )}
                             </div>
@@ -418,35 +451,42 @@ export default function PublicMenu() {
               )}
             </div>
 
-            {/* Right Column / Floating Button: Checkout Action */}
-            <div className="lg:w-80 shrink-0">
-              {/* Desktop Sticky Cart Summary */}
-              <div className="hidden lg:block sticky top-24 bg-[#121212] rounded-2xl border border-white/10 p-6">
-                <h3 className="font-bold text-lg mb-4 flex items-center justify-between">
-                  Tu Pedido
-                  <span className="bg-white text-black text-xs px-2 py-1 rounded-full">{totalItems}</span>
-                </h3>
-                
-                {cart.length === 0 ? (
-                  <p className="text-gray-500 text-sm text-center py-8">No has agregado nada aún</p>
-                ) : (
-                  <div className="space-y-4 mb-6 max-h-[40vh] overflow-y-auto pr-2 custom-scrollbar">
-                    {cart.map(item => (
-                      <div key={item.id} className="flex justify-between items-start text-sm border-b border-white/5 pb-3">
-                        <div className="flex gap-2">
-                          <span className="text-gray-400">{item.cartQuantity}x</span>
-                          <span className="uppercase text-gray-200">{item.name}</span>
+              {/* Right Column / Floating Button: Checkout Action */}
+              <div className="lg:w-80 shrink-0">
+                {/* Desktop Sticky Cart Summary */}
+                <div className="hidden lg:block sticky top-24 bg-[#121212] rounded-2xl border border-white/10 p-6">
+                  <h3 className="font-bold text-lg mb-4 flex items-center justify-between">
+                    Tu Pedido
+                    <span className="bg-white text-black text-xs px-2 py-1 rounded-full">{totalItems}</span>
+                  </h3>
+                  
+                  {cart.length === 0 ? (
+                    <p className="text-gray-500 text-sm text-center py-8">No has agregado nada aún</p>
+                  ) : (
+                    <div className="space-y-4 mb-6 max-h-[40vh] overflow-y-auto pr-2 custom-scrollbar">
+                      {cart.map((item, index) => (
+                        <div key={index} className="flex justify-between items-start text-sm border-b border-white/5 pb-3">
+                          <div className="flex gap-2">
+                            <span className="text-[color:var(--app-muted-1)]">{item.cartQuantity}x</span>
+                            <div>
+                              <span className="uppercase text-[color:var(--app-text)] font-bold">{item.name}</span>
+                              {item.modifiers?.protein && (
+                                <span className="block text-[10px] text-yellow-500 uppercase mt-0.5">
+                                  + {item.modifiers.protein}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[color:var(--app-muted-1)] font-mono">{formatCurrency(item.price * item.cartQuantity)}</span>
+                            <button onClick={() => updateCartItemQuantity(index, -1)} className="text-danger hover:text-danger-hover p-1">
+                              <TrashIcon className="w-4 h-4" />
+                            </button>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-gray-400">{formatCurrency(item.price * item.cartQuantity)}</span>
-                          <button onClick={() => updateCartQuantity(item.id, -1)} className="text-red-400 hover:text-red-300 p-1">
-                            <TrashIcon className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                      ))}
+                    </div>
+                  )}
 
                 <div className="border-t border-white/10 pt-4 space-y-2 mb-6 text-sm">
                    <div className="flex justify-between text-white font-bold text-lg pt-2">
@@ -488,6 +528,64 @@ export default function PublicMenu() {
         )}
       </main>
 
+      {/* Protein Modifier Modal */}
+      {selectedProductForModifier && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity" onClick={() => setSelectedProductForModifier(null)} />
+          <div className="bg-[#1A1A1A] rounded-2xl border border-white/10 p-6 w-full max-w-sm relative z-10 animate-fade-in shadow-2xl">
+            <button 
+              onClick={() => setSelectedProductForModifier(null)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+            >
+              <XMarkIcon className="w-6 h-6" />
+            </button>
+            
+            <h3 className="text-xl font-bold text-white brand-heading uppercase mb-1">{selectedProductForModifier.name}</h3>
+            <p className="text-sm text-gray-400 mb-6">Elige tu proteína preferida</p>
+
+            <div className="space-y-3 mb-8">
+              {['Carne de Res', 'Pollo', 'Cerdo'].map((protein) => (
+                <label 
+                  key={protein}
+                  className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer transition-all ${
+                    selectedProtein === protein 
+                      ? 'border-yellow-500 bg-yellow-500/10' 
+                      : 'border-white/10 hover:border-white/30 bg-black/30'
+                  }`}
+                >
+                  <input 
+                    type="radio" 
+                    name="proteinChoice" 
+                    value={protein}
+                    checked={selectedProtein === protein}
+                    onChange={(e) => setSelectedProtein(e.target.value)}
+                    className="hidden"
+                  />
+                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                    selectedProtein === protein ? 'border-yellow-500' : 'border-gray-500'
+                  }`}>
+                    {selectedProtein === protein && <div className="w-2.5 h-2.5 bg-yellow-500 rounded-full" />}
+                  </div>
+                  <span className={`font-bold uppercase tracking-widest text-sm ${
+                    selectedProtein === protein ? 'text-yellow-500' : 'text-gray-300'
+                  }`}>
+                    {protein}
+                  </span>
+                </label>
+              ))}
+            </div>
+
+            <button
+              onClick={handleModifierConfirm}
+              disabled={!selectedProtein}
+              className="w-full bg-white text-black font-bold py-4 rounded-xl hover:bg-gray-200 transition-colors uppercase tracking-wider disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Añadir al Carrito
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Mobile Cart Slide-over */}
       {isCartOpen && (
         <div className="fixed inset-0 z-[100] overflow-hidden lg:hidden">
@@ -513,19 +611,24 @@ export default function PublicMenu() {
                   <p>Tu carrito está vacío</p>
                 </div>
               ) : (
-                cart.map(item => (
-                  <div key={item.id} className="flex justify-between items-center border-b border-white/5 pb-4 gap-4">
+                cart.map((item, index) => (
+                  <div key={index} className="flex justify-between items-center border-b border-white/5 pb-4 gap-4">
                     <div className="flex-1 min-w-0">
-                      <h4 className="font-bold text-sm uppercase truncate">{item.name}</h4>
-                      <p className="text-gray-400 text-sm mt-1">{formatCurrency(item.price)}</p>
+                      <h4 className="font-bold text-sm uppercase truncate text-[color:var(--app-text)]">{item.name}</h4>
+                      {item.modifiers?.protein && (
+                        <span className="block text-[10px] text-yellow-500 uppercase mt-0.5">
+                          + {item.modifiers.protein}
+                        </span>
+                      )}
+                      <p className="text-[color:var(--app-muted-1)] text-sm mt-1">{formatCurrency(item.price)}</p>
                     </div>
                     
                     <div className="flex items-center gap-2 bg-black rounded-lg border border-white/10 p-1 shrink-0">
-                      <button onClick={() => updateCartQuantity(item.id, -1)} className="p-2 hover:text-white text-gray-400">
-                        {item.cartQuantity === 1 ? <TrashIcon className="w-4 h-4 text-red-500" /> : <MinusIcon className="w-4 h-4" />}
+                      <button onClick={() => updateCartItemQuantity(index, -1)} className="p-2 hover:text-white text-gray-400">
+                        {item.cartQuantity === 1 ? <TrashIcon className="w-4 h-4 text-danger" /> : <MinusIcon className="w-4 h-4" />}
                       </button>
-                      <span className="w-4 text-center text-sm font-bold">{item.cartQuantity}</span>
-                      <button onClick={() => updateCartQuantity(item.id, 1)} className="p-2 hover:text-white text-gray-400">
+                      <span className="w-4 text-center text-sm font-bold text-[color:var(--app-text)]">{item.cartQuantity}</span>
+                      <button onClick={() => updateCartItemQuantity(index, 1)} className="p-2 hover:text-white text-gray-400">
                         <PlusIcon className="w-4 h-4" />
                       </button>
                     </div>

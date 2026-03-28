@@ -208,7 +208,14 @@ export default function WebOrders() {
                         <li key={idx} className="flex justify-between items-start text-sm">
                           <div className="flex gap-2">
                             <span className="font-bold text-[color:var(--app-muted-2)]">{item.quantity}x</span>
-                            <span className="text-[color:var(--app-text)] uppercase">{item.hotdog_type}</span>
+                            <div>
+                              <span className="text-[color:var(--app-text)] uppercase">{item.hotdog_type}</span>
+                              {item.modifiers?.protein && (
+                                <span className="block text-[10px] text-yellow-500 uppercase mt-0.5 font-bold tracking-widest">
+                                  + {item.modifiers.protein}
+                                </span>
+                              )}
+                            </div>
                           </div>
                           <span className="text-[color:var(--app-muted-2)] font-mono shrink-0 ml-2">
                             ${item.total_price.toLocaleString('es-CO')}

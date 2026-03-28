@@ -173,7 +173,11 @@ export function RecentOrders() {
   const renderItemsPreview = (sale: Sale) => {
     const items = sale.items || []
     if (!items.length) return null
-    const preview = items.slice(0, 3).map(it => `${it.quantity}× ${it.hotdog_type}`).join(' · ')
+    const preview = items.slice(0, 3).map(it => {
+      let text = `${it.quantity}× ${it.hotdog_type}`
+      if (it.modifiers?.protein) text += ` (+${it.modifiers.protein})`
+      return text
+    }).join(' · ')
     const extra = items.length > 3 ? ` · +${items.length - 3} más` : ''
     return `${preview}${extra}`
   }
