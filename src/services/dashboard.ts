@@ -26,12 +26,13 @@ export const dashboardService = {
 
     const totalExpenses = expensesData.reduce((sum, expense) => sum + expense.amount, 0)
 
-    // 1. Obtener Costo de Mercancía Vendida (CMV)
-    // Sumar el costo de todos los movimientos de inventario tipo 'out' asociados a ventas en este rango
+    // 1. Obtener Costo de Mercancía Vendida (CMV) y Costo de Mermas
+    // Sumar el costo de todos los movimientos de inventario tipo 'out' asociados a ventas y mermas en este rango
     const { data: inventoryMovements, error: inventoryError } = await supabase
       .from('inventory_movements')
       .select(`
         quantity,
+        reason,
         item:inventory_items (unit_cost)
       `)
       .eq('type', 'out')
@@ -40,24 +41,32 @@ export const dashboardService = {
 
     if (inventoryError) throw inventoryError
 
-    const cogs = (inventoryMovements || []).reduce((sum, mov: any) => {
+    let cogs = 0
+    let wasteCost = 0
+
+    ;(inventoryMovements || []).forEach((mov: any) => {
       const cost = mov.item?.unit_cost || 0
-      return sum + (cost * mov.quantity)
-    }, 0)
+      const totalCost = cost * mov.quantity
+      
+      // Clasificar si es merma o venta
+      if (mov.reason && mov.reason.toLowerCase().includes('merma')) {
+        wasteCost += totalCost
+      } else {
+        // Todo lo demás (Venta: ..., Ajuste de Inventario: ...) se considera CMV operativo
+        cogs += totalCost
+      }
+    })
 
     // Calcular ganancia neta REAL:
-    // Ganancia Neta = Ventas Totales - (Costo Mercancía Vendida + Gastos Operativos Totales)
-    // Nota: totalExpenses ya incluye todos los gastos registrados (servicios, nómina, etc.)
-    const netProfit = totalSales - (cogs + totalExpenses)
+    // Ganancia Neta = Ventas Totales - (Costo Mercancía Vendida + Costo de Mermas + Gastos Operativos Totales)
+    const netProfit = totalSales - (cogs + wasteCost + totalExpenses)
 
-    // No usar group by ni funciones de agregación complejas directamente en .select() para evitar error 400
-    // Ya lo estamos haciendo en getExpensesDataForChart
-    
     return {
       total_sales: totalSales,
       total_expenses: totalExpenses,
       cogs: cogs, // Devolver el costo de mercancía vendida
-      net_profit: Math.max(0, netProfit), // No permitir ganancias negativas
+      waste_cost: wasteCost, // Devolver el costo de las mermas separadas
+      net_profit: netProfit, // Permitir valores negativos para reflejar pérdidas reales
       sales_by_hotdog_type: [], // Se llenará con getSalesDataForChart
       expenses_by_category: [] // Se llenará con getExpensesDataForChart
     }

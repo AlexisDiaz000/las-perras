@@ -1,0 +1,1 @@
+UPDATE inventory_movements SET quantity = ABS(quantity) WHERE quantity < 0;

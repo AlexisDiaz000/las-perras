@@ -155,7 +155,7 @@ export default function Dashboard() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6">
         <div className="brand-card p-4 sm:p-6 flex flex-col justify-between">
           <div className="flex items-start justify-between">
             <div className="flex-shrink-0 p-2 bg-white/5 rounded-lg">
@@ -177,9 +177,23 @@ export default function Dashboard() {
             </div>
           </div>
           <div className="mt-4">
-            <p className="text-xs font-semibold text-secondary-300 uppercase tracking-widest break-words">Costo Insumos</p>
+            <p className="text-xs font-semibold text-secondary-300 uppercase tracking-widest break-words">Costo Insumos (Ventas)</p>
             <p className="text-xl sm:text-2xl font-bold text-secondary-50 truncate" title={formatCurrency(metrics?.cogs || 0)}>
               {formatCurrency(metrics?.cogs || 0)}
+            </p>
+          </div>
+        </div>
+
+        <div className="brand-card p-4 sm:p-6 flex flex-col justify-between border-l-4 border-l-danger">
+          <div className="flex items-start justify-between">
+            <div className="flex-shrink-0 p-2 bg-danger/10 rounded-lg">
+              <ExclamationTriangleIcon className="h-6 w-6 text-danger" />
+            </div>
+          </div>
+          <div className="mt-4">
+            <p className="text-xs font-semibold text-danger uppercase tracking-widest break-words">Pérdidas x Merma</p>
+            <p className="text-xl sm:text-2xl font-bold text-secondary-50 truncate" title={formatCurrency(metrics?.waste_cost || 0)}>
+              {formatCurrency(metrics?.waste_cost || 0)}
             </p>
           </div>
         </div>
@@ -198,15 +212,27 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="brand-card p-4 sm:p-6 flex flex-col justify-between">
+        <div className={`brand-card p-4 sm:p-6 flex flex-col justify-between ${
+          (metrics?.net_profit || 0) < 0 ? 'border-l-4 border-l-danger' : ''
+        }`}>
           <div className="flex items-start justify-between">
-            <div className="flex-shrink-0 p-2 bg-white/5 rounded-lg">
-              <ChartBarIcon className="h-6 w-6 text-secondary-200" />
+            <div className={`flex-shrink-0 p-2 rounded-lg ${
+              (metrics?.net_profit || 0) < 0 ? 'bg-danger/10' : 'bg-white/5'
+            }`}>
+              <ChartBarIcon className={`h-6 w-6 ${
+                (metrics?.net_profit || 0) < 0 ? 'text-danger' : 'text-secondary-200'
+              }`} />
             </div>
           </div>
           <div className="mt-4">
-            <p className="text-xs font-semibold text-secondary-300 uppercase tracking-widest break-words">Ganancia Neta</p>
-            <p className="text-xl sm:text-2xl font-bold text-secondary-50 truncate" title={formatCurrency(metrics?.net_profit || 0)}>
+            <p className={`text-xs font-semibold uppercase tracking-widest break-words ${
+              (metrics?.net_profit || 0) < 0 ? 'text-danger' : 'text-secondary-300'
+            }`}>
+              Ganancia Neta
+            </p>
+            <p className={`text-xl sm:text-2xl font-bold truncate ${
+              (metrics?.net_profit || 0) < 0 ? 'text-danger' : 'text-secondary-50'
+            }`} title={formatCurrency(metrics?.net_profit || 0)}>
               {formatCurrency(metrics?.net_profit || 0)}
             </p>
           </div>
