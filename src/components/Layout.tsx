@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useState } from 'react'
-import { Dialog, Transition, Popover } from '@headlessui/react'
+import { Dialog, Transition } from '@headlessui/react'
 import {
   Bars3Icon,
   HomeIcon,
@@ -18,7 +18,7 @@ import {
   BellIcon,
   GlobeAltIcon
 } from '@heroicons/react/24/outline'
-import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/auth'
 import { useSettingsStore } from '../stores/settings'
 import { useNotificationsStore } from '../stores/notifications'

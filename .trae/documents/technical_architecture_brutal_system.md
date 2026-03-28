@@ -1,4 +1,4 @@
-# Arquitectura Técnica — Las Perras
+# Arquitectura Técnica — Brutal System
 
 Última actualización: 2026-03-28
 
@@ -113,7 +113,7 @@ erDiagram
   USERS {
     uuid id PK
     text email
-    text role "admin|vendor"
+    text role \"admin|vendor\"
     text name
     bool active
     timestamptz created_at
@@ -122,10 +122,10 @@ erDiagram
   SALES {
     uuid id PK
     numeric total_amount
-    text payment_method "cash|card"
+    text payment_method \"cash|card\"
     uuid seller_id FK
-    text status "draft|pending_approval|preparing|ready|delivered|paid|voided|refunded|rejected"
-    text order_type "pos|local|delivery"
+    text status \"draft|pending_approval|preparing|ready|delivered|paid|voided|refunded|rejected\"
+    text order_type \"pos|local|delivery\"
     text customer_name
     text customer_phone
     text delivery_address
@@ -160,7 +160,7 @@ erDiagram
   INVENTORY_MOVEMENTS {
     uuid id PK
     uuid item_id FK
-    text type "in|out"
+    text type \"in|out\"
     numeric quantity
     text reason
     uuid user_id FK

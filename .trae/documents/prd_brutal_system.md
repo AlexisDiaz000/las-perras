@@ -1,4 +1,4 @@
-# PRD — Las Perras (Sistema POS + Gestión + Pedidos Web)
+# PRD — Brutal System (Sistema POS + Gestión + Pedidos Web)
 
 Última actualización: 2026-03-28
 
@@ -10,7 +10,7 @@
 
 ## 1. Resumen del Producto
 
-“Las Perras” es un sistema web para operación diaria de un local de comida rápida (perros calientes) que integra:
+Brutal System es un sistema web para operación diaria de un local de comida rápida (perros calientes) que integra:
 
 - Venta en mostrador (POS).
 - Gestión de pedidos operativos (“Caja / Pedidos” para preparación → cobro).

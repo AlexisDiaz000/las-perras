@@ -1,57 +1,55 @@
-# React + TypeScript + Vite
+# Brutal System
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Brutal System es un sistema web (SPA) para operación diaria de negocios de comida rápida: punto de venta (POS), control de pedidos, pedidos web (menú público), inventario por insumos con consumo por receta, gastos, KPIs y reportes.
 
-Currently, two official plugins are available:
+## Módulos principales
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- Login y roles (Admin / Vendor)
+- Dashboard (KPIs, gráficos, utilidad y distribución)
+- POS (ventas rápidas)
+- Pedidos / Caja (flujo de preparación → entrega → cobro)
+- Pedidos Web (aprobación/rechazo de pedidos entrantes)
+- Inventario (stock, costos, movimientos y reversos)
+- Productos/Recetas (productos, ingredientes, publicación web)
+- Gastos (categorías y comprobantes)
+- Reportes (exportación y análisis)
 
-## Expanding the ESLint configuration
+## Arquitectura (resumen)
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- Frontend: React 18 + TypeScript + Vite
+- Estilos/UI: Tailwind CSS + Headless UI + Heroicons
+- Estado global: Zustand
+- Backend: Supabase (Auth + PostgreSQL + Storage + Realtime)
+- Pedidos Web públicos: creación mediante RPC segura (para no exponer escrituras directas en tablas)
+- Tiempo real: Realtime (WebSockets) para sincronizar pedidos en operación
 
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+Documentación interna:
+
+- PRD: [.trae/documents/prd_brutal_system.md](.trae/documents/prd_brutal_system.md)
+- Arquitectura técnica: [.trae/documents/technical_architecture_brutal_system.md](.trae/documents/technical_architecture_brutal_system.md)
+
+## Requisitos
+
+- Node.js (recomendado LTS)
+- npm
+
+## Scripts
+
+```bash
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Otros:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default tseslint.config({
-  extends: [
-    // other configs...
-    // Enable lint rules for React
-    reactX.configs['recommended-typescript'],
-    // Enable lint rules for React DOM
-    reactDom.configs.recommended,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+```bash
+npm run build
+npm run lint
+npm run check
 ```
+
+## Supabase
+
+La app usa Supabase como backend. Actualmente el proyecto tiene URL y anon key configurados en código en [supabase.ts](src/lib/supabase.ts).
+
+Para producción, se recomienda mover esta configuración a variables de entorno (por ejemplo `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY`) y evitar hardcodear valores.

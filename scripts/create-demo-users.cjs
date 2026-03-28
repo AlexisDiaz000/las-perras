@@ -10,7 +10,7 @@ const createDemoUsers = async () => {
   try {
     // Crear usuario admin
     const { data: adminAuth, error: adminError } = await supabase.auth.signUp({
-      email: 'admin@lasperras.com',
+      email: 'admin@brutalsystem.com',
       password: 'admin123',
     })
 
@@ -21,7 +21,7 @@ const createDemoUsers = async () => {
       const { error: adminUserError } = await supabase.from('users').insert([
         {
           id: adminAuth.user.id,
-          email: 'admin@lasperras.com',
+          email: 'admin@brutalsystem.com',
           name: 'Administrador Principal',
           role: 'admin'
         }
@@ -36,7 +36,7 @@ const createDemoUsers = async () => {
 
     // Crear usuario vendedor
     const { data: vendorAuth, error: vendorError } = await supabase.auth.signUp({
-      email: 'vendedor@lasperras.com',
+      email: 'vendor@brutalsystem.com',
       password: 'vendor123',
     })
 
@@ -47,7 +47,7 @@ const createDemoUsers = async () => {
       const { error: vendorUserError } = await supabase.from('users').insert([
         {
           id: vendorAuth.user.id,
-          email: 'vendedor@lasperras.com',
+          email: 'vendor@brutalsystem.com',
           name: 'Vendedor 1',
           role: 'vendor'
         }

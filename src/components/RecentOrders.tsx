@@ -55,7 +55,7 @@ export function RecentOrders() {
       // Si el usuario cambia la fecha en el calendario, necesitamos hacer un fetch manual
       fetchOrders() // Idealmente este fetchOrders debería aceptar parámetros de fecha, pero por ahora lo dejamos así
     }
-  }, [dateRange])
+  }, [dateRange, fetchOrders])
 
   const updateStatus = async (saleId: string, status: Sale['status']) => {
     setActionLoading(saleId)

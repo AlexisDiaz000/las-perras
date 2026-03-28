@@ -32,7 +32,6 @@ CREATE POLICY "Admin can create movements" ON public.inventory_movements
 -- Confirmar emails para usuarios de prueba
 UPDATE auth.users SET email_confirmed_at = NOW()
 WHERE email IN (
-  'admin@lasperras.com',
-  'vendedor@lasperras.com',
-  'axel.608@hotmail.com'
+  'admin@brutalsystem.com',
+  'vendor@brutalsystem.com'
 );

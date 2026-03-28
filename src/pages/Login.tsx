@@ -13,10 +13,7 @@ export default function Login() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    try {
-      await signIn(email, password)
-    } catch {
-    }
+    await signIn(email, password)
   }
 
   // Si ya está autenticado, redirigir al dashboard
@@ -131,8 +128,8 @@ export default function Login() {
             <div className="mt-8 pt-6 border-t border-[color:var(--app-border)] text-center">
               <p className="text-[10px] text-[color:var(--app-muted-2)] uppercase tracking-widest mb-2 brand-heading">Cuentas de demostración</p>
               <div className="flex flex-col gap-1 text-xs text-[color:var(--app-muted-1)] font-mono bg-[color:var(--app-hover)] p-3 rounded-lg">
-                <p>admin@lasperras.com / admin123</p>
-                <p>vendedor@lasperras.com / vendor123</p>
+                <p>admin@brutalsystem.com / admin123</p>
+                <p>vendor@brutalsystem.com / vendor123</p>
               </div>
             </div>
           </div>

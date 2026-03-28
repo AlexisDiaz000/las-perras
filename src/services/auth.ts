@@ -68,15 +68,15 @@ export const authService = {
     )
     if (userError) throw userError
 
-    // Si el usuario es el administrador principal, asegurar que tenga el rol correcto en el cliente
-    if (userData.email === 'admin@lasperras.com' && userData.role !== 'admin') {
-      return { ...userData, role: 'admin' } as User
-    }
-
     // Verificar si el usuario está activo
     if (userData.active === false) { // Usar comparación explícita por si active es null/undefined
       await supabase.auth.signOut()
       throw new Error('Este usuario ha sido desactivado por el administrador.')
+    }
+
+    // Si el usuario es el administrador principal, asegurar que tenga el rol correcto en el cliente
+    if (userData.email === 'admin@brutalsystem.com' && userData.role !== 'admin') {
+      return { ...userData, role: 'admin' } as User
     }
 
     return userData as User
