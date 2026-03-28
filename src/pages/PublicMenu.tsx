@@ -13,7 +13,8 @@ import {
   PlusIcon,
   MinusIcon,
   TrashIcon,
-  CheckCircleIcon
+  CheckCircleIcon,
+  LinkIcon
 } from '@heroicons/react/24/outline'
 
 // Helper function to format currency
@@ -125,6 +126,7 @@ export default function PublicMenu() {
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [orderSuccess, setOrderSuccess] = useState(false)
+  const [createdOrderId, setCreatedOrderId] = useState<string | null>(null)
 
   const handleCheckout = async () => {
     if (cart.length === 0) return
@@ -152,7 +154,8 @@ export default function PublicMenu() {
         throw new Error(rpcError.message || 'Error al procesar el pedido')
       }
 
-      // Success state
+      // Guardar el ID para mostrar el link y cambiar de pantalla
+      setCreatedOrderId(saleId)
       setOrderSuccess(true)
       setCart([])
       setIsCartOpen(false)
@@ -199,25 +202,58 @@ export default function PublicMenu() {
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
         
         {orderSuccess ? (
-          <div className="max-w-md mx-auto mt-10 text-center space-y-6 animate-fade-in bg-[#1A1A1A] p-8 rounded-2xl border border-white/5">
+          <div className="max-w-md mx-auto mt-10 text-center space-y-6 animate-fade-in bg-[#1A1A1A] p-8 rounded-2xl border border-white/5 shadow-2xl">
             <div className="flex justify-center">
-              <CheckCircleIcon className="w-24 h-24 text-green-500" />
+              <CheckCircleIcon className="w-24 h-24 text-success" />
             </div>
-            <h2 className="text-3xl font-bold">¡Pedido Enviado!</h2>
-            <p className="text-gray-400">
+            <h2 className="text-3xl font-bold brand-heading uppercase">¡Pedido Enviado!</h2>
+            <p className="text-[color:var(--app-muted-1)] text-sm">
               Hemos recibido tu pedido y está pendiente de aprobación por nuestro equipo. 
               {orderType === 'local' ? ' En breve te llamaremos.' : ' Pronto lo prepararemos para envío.'}
             </p>
-            <button 
-              onClick={() => {
-                setOrderSuccess(false)
-                setStep('info')
-                navigate('/')
-              }}
-              className="w-full bg-white text-black font-bold py-4 rounded-xl hover:bg-gray-200 transition-colors mt-8"
-            >
-              Volver al Inicio
-            </button>
+
+            <div className="bg-black/50 p-4 rounded-xl border border-white/10 mt-6 text-left">
+              <p className="text-xs font-bold uppercase tracking-widest text-[color:var(--app-muted-2)] mb-2 text-center">
+                Sigue el estado de tu pedido aquí:
+              </p>
+              <div className="flex items-center gap-2 bg-black rounded-lg p-2 border border-white/10">
+                <input 
+                  type="text" 
+                  readOnly 
+                  value={`${window.location.origin}/status/${createdOrderId}`}
+                  className="bg-transparent text-xs text-[color:var(--app-text)] w-full outline-none px-2"
+                />
+                <button 
+                  onClick={() => {
+                    navigator.clipboard.writeText(`${window.location.origin}/status/${createdOrderId}`);
+                    alert('Enlace copiado al portapapeles');
+                  }}
+                  className="p-2 hover:bg-white/10 rounded-md transition-colors text-[color:var(--app-muted-2)] hover:text-white"
+                  title="Copiar enlace"
+                >
+                  <LinkIcon className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+
+            <div className="pt-4 flex flex-col gap-3">
+              <button 
+                onClick={() => navigate(`/status/${createdOrderId}`)}
+                className="w-full bg-success text-white font-bold py-4 rounded-xl hover:bg-success-hover transition-colors uppercase tracking-widest brand-heading text-sm"
+              >
+                IR AL SEGUIMIENTO AHORA
+              </button>
+              <button 
+                onClick={() => {
+                  setOrderSuccess(false)
+                  setStep('info')
+                  navigate('/')
+                }}
+                className="w-full bg-transparent border border-white/20 text-white font-bold py-3 rounded-xl hover:bg-white/5 transition-colors uppercase tracking-widest brand-heading text-xs"
+              >
+                Volver al Inicio
+              </button>
+            </div>
           </div>
         ) : step === 'info' ? (
           /* Step 1: Customer Information */

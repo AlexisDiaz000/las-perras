@@ -4,6 +4,7 @@ import { getColombiaDate } from '../lib/dateUtils'
 import { Sale } from '../types'
 import { useAuthStore } from '../stores/auth'
 import { useNotificationsStore } from '../stores/notifications'
+import { LinkIcon } from '@heroicons/react/24/outline'
 
 function formatCurrency(amount: number) {
   return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(amount)
@@ -296,7 +297,20 @@ export function RecentOrders() {
           <div className="brand-card p-6 w-full max-w-2xl">
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">
-                <div className="brand-heading text-2xl">{getOrderLabel(selected)}</div>
+                <div className="brand-heading text-2xl flex items-center gap-3">
+                  {getOrderLabel(selected)}
+                  <button 
+                    onClick={() => {
+                      const url = `${window.location.origin}/status/${selected.id}`;
+                      navigator.clipboard.writeText(url);
+                      alert('Enlace de seguimiento copiado al portapapeles');
+                    }}
+                    className="text-xs font-sans normal-case tracking-normal bg-[color:var(--app-hover)] text-[color:var(--app-text)] px-2 py-1 rounded-md flex items-center gap-1 hover:bg-[color:var(--app-hover-strong)] transition-colors border border-[color:var(--app-border)]"
+                    title="Copiar enlace de seguimiento"
+                  >
+                    <LinkIcon className="h-3 w-3" /> Copiar Link
+                  </button>
+                </div>
                 <div className="text-sm text-secondary-300 mt-1">
                   {new Date(selected.created_at).toLocaleString('es-CO')} · {STATUS_LABELS[selected.status || 'draft'] || selected.status}
                 </div>

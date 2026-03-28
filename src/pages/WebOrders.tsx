@@ -3,6 +3,7 @@ import { useNotificationsStore } from '../stores/notifications'
 import { useAuthStore } from '../stores/auth'
 import { supabase } from '../lib/supabase'
 import { consumeInventoryForSale } from '../services/sales'
+import { LinkIcon } from '@heroicons/react/24/outline'
 
 export default function WebOrders() {
   const { pendingOrders } = useNotificationsStore()
@@ -46,10 +47,16 @@ export default function WebOrders() {
 
   const handleApprove = async (orderId: string) => {
     try {
-      const { error } = await supabase
+      const { data: updatedSale, error } = await supabase
         .from('sales')
         .update({ status: 'preparing' })
         .eq('id', orderId)
+        .select(`
+          *,
+          seller:users!sales_seller_id_fkey(*),
+          items:sale_items(*)
+        `)
+        .single()
 
       if (error) throw error
 
@@ -61,6 +68,12 @@ export default function WebOrders() {
       
       // Force UI update immediately for better UX
       useNotificationsStore.getState().removeOrder(orderId)
+      // Agregarlo a las órdenes activas manualmente para que aparezca en POS inmediatamente
+      if (updatedSale) {
+        useNotificationsStore.setState(prev => ({
+          activeOrders: [updatedSale, ...prev.activeOrders]
+        }))
+      }
     } catch (error) {
       console.error('Error approving order:', error)
       alert('Error al aceptar el pedido.')
@@ -128,7 +141,20 @@ export default function WebOrders() {
               {/* Header */}
               <div className="p-5 border-b border-[color:var(--app-border)] bg-[color:var(--app-hover-strong)]">
                 <div className="flex justify-between items-start mb-2">
-                  <h3 className="font-bold text-lg text-[color:var(--app-text)] uppercase">{order.customer_name}</h3>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-bold text-lg text-[color:var(--app-text)] uppercase">{order.customer_name}</h3>
+                    <button 
+                      onClick={() => {
+                        const url = `${window.location.origin}/status/${order.id}`;
+                        navigator.clipboard.writeText(url);
+                        alert('Enlace copiado');
+                      }}
+                      className="text-[color:var(--app-muted-2)] hover:text-[color:var(--app-text)] transition-colors"
+                      title="Copiar enlace de seguimiento"
+                    >
+                      <LinkIcon className="h-4 w-4" />
+                    </button>
+                  </div>
                   <span className="text-lg font-mono text-success font-bold">${order.total_amount.toLocaleString('es-CO')}</span>
                 </div>
                 <div className="flex items-center gap-2">
