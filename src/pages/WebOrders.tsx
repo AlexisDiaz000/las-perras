@@ -113,7 +113,7 @@ export default function WebOrders() {
         </div>
         <div className="bg-[color:var(--app-hover-strong)] px-4 py-2 rounded-xl border border-[color:var(--app-border)]">
           <span className="text-[color:var(--app-muted-2)] text-sm font-bold mr-2 uppercase tracking-widest">Pendientes:</span>
-          <span className="text-red-500 font-bold text-xl">{pendingOrders.length}</span>
+          <span className="text-danger font-bold text-xl">{pendingOrders.length}</span>
         </div>
       </div>
 
@@ -129,11 +129,11 @@ export default function WebOrders() {
               <div className="p-5 border-b border-[color:var(--app-border)] bg-[color:var(--app-hover-strong)]">
                 <div className="flex justify-between items-start mb-2">
                   <h3 className="font-bold text-lg text-[color:var(--app-text)] uppercase">{order.customer_name}</h3>
-                  <span className="text-lg font-mono text-green-400 font-bold">${order.total_amount.toLocaleString('es-CO')}</span>
+                  <span className="text-lg font-mono text-success font-bold">${order.total_amount.toLocaleString('es-CO')}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest ${
-                    order.order_type === 'delivery' ? 'bg-blue-500/20 text-blue-400' : 'bg-orange-500/20 text-orange-400'
+                    order.order_type === 'delivery' ? 'bg-info/20 text-info' : 'bg-warning/20 text-warning'
                   }`}>
                     {order.order_type === 'delivery' ? 'DOMICILIO' : 'LOCAL'}
                   </span>
@@ -202,13 +202,13 @@ export default function WebOrders() {
               <div className="p-4 grid grid-cols-2 gap-3 border-t border-[color:var(--app-border)] bg-[color:var(--app-hover)]">
                 <button
                   onClick={() => handleReject(order.id)}
-                  className="py-3 rounded-xl font-bold uppercase tracking-widest text-xs border border-red-500/30 text-red-400 hover:bg-red-500/10 transition-colors"
+                  className="py-3 rounded-xl font-bold uppercase tracking-widest text-xs border border-danger/30 text-danger hover:bg-danger/10 transition-colors"
                 >
                   Rechazar
                 </button>
                 <button
                   onClick={() => handleApprove(order.id)}
-                  className="py-3 rounded-xl font-bold uppercase tracking-widest text-xs bg-green-600 hover:bg-green-500 text-white transition-colors"
+                  className="py-3 rounded-xl font-bold uppercase tracking-widest text-xs bg-success hover:bg-success-hover text-white transition-colors"
                 >
                   Aceptar
                 </button>
@@ -250,7 +250,7 @@ export default function WebOrders() {
               <button
                 onClick={confirmReject}
                 disabled={!rejectReason.trim() || isSubmitting}
-                className="px-6 py-2 rounded-xl text-sm font-bold bg-red-600 text-white hover:bg-red-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-6 py-2 rounded-xl text-sm font-bold bg-danger text-white hover:bg-danger-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? 'RECHAZANDO...' : 'CONFIRMAR RECHAZO'}
               </button>

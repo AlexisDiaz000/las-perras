@@ -2,6 +2,8 @@ export interface AppSettings {
   id: number
   app_name: string
   logo_url?: string | null
+  font_primary: string
+  font_display: string
   updated_at: string
 }
 

@@ -11,16 +11,22 @@ export const settingsService = {
 
     if (error && error.code !== 'PGRST116') {
       console.error('Error fetching settings:', error)
-      return { id: 1, app_name: 'Brutal System', updated_at: new Date().toISOString() }
+      return { id: 1, app_name: 'Brutal System', font_primary: 'Inter', font_display: 'Bebas Neue', updated_at: new Date().toISOString() }
     }
     
-    return data || { id: 1, app_name: 'Brutal System', updated_at: new Date().toISOString() }
+    return data || { id: 1, app_name: 'Brutal System', font_primary: 'Inter', font_display: 'Bebas Neue', updated_at: new Date().toISOString() }
   },
 
-  async updateSettings(appName: string, logoUrl?: string | null): Promise<AppSettings> {
+  async updateSettings(appName: string, logoUrl?: string | null, fontPrimary?: string, fontDisplay?: string): Promise<AppSettings> {
+    const updateData: any = { app_name: appName, updated_at: new Date().toISOString() }
+    
+    if (logoUrl !== undefined) updateData.logo_url = logoUrl
+    if (fontPrimary) updateData.font_primary = fontPrimary
+    if (fontDisplay) updateData.font_display = fontDisplay
+
     const { data, error } = await supabase
       .from('settings')
-      .update({ app_name: appName, logo_url: logoUrl, updated_at: new Date().toISOString() })
+      .update(updateData)
       .eq('id', 1)
       .select()
       .single()

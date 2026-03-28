@@ -1,0 +1,1 @@
+ALTER TABLE settings ADD COLUMN IF NOT EXISTS font_primary TEXT DEFAULT 'Inter'; ALTER TABLE settings ADD COLUMN IF NOT EXISTS font_display TEXT DEFAULT 'Bebas Neue';

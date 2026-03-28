@@ -271,9 +271,9 @@ export function RecentOrders() {
 
                         <div className="mt-3 pt-3 border-t border-gray-200 dark:border-white/5 flex justify-between items-center">
                            <span className={`text-xs uppercase tracking-wider px-2 py-1 rounded ${
-                             sale.status === 'preparing' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-500/20 dark:text-yellow-200' :
-                             sale.status === 'delivered' ? 'bg-blue-100 text-blue-800 dark:bg-blue-500/20 dark:text-blue-200' :
-                             'bg-green-100 text-green-800 dark:bg-green-500/20 dark:text-green-200'
+                             sale.status === 'preparing' ? 'bg-warning/10 text-warning dark:bg-warning/20' :
+                             sale.status === 'delivered' ? 'bg-info/10 text-info dark:bg-info/20' :
+                             'bg-success/10 text-success dark:bg-success/20'
                            }`}>
                              {STATUS_LABELS[sale.status || 'draft']}
                            </span>
@@ -458,7 +458,7 @@ export function RecentOrders() {
               <button
                 onClick={handleVoid}
                 disabled={!voidReason.trim() || actionLoading === voidingOrder.id}
-                className="px-6 py-2 rounded-xl text-sm font-bold bg-red-600 text-white hover:bg-red-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-6 py-2 rounded-xl text-sm font-bold bg-danger text-white hover:bg-danger-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {actionLoading === voidingOrder.id ? 'ANULANDO...' : 'CONFIRMAR ANULACIÓN'}
               </button>
@@ -500,7 +500,7 @@ export function RecentOrders() {
               <button
                 onClick={handleRefund}
                 disabled={!refundReason.trim() || actionLoading === refundingOrder.id}
-                className="px-6 py-2 rounded-xl text-sm font-bold bg-orange-600 text-white hover:bg-orange-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-6 py-2 rounded-xl text-sm font-bold bg-warning text-white hover:bg-warning-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {actionLoading === refundingOrder.id ? 'REEMBOLSANDO...' : 'CONFIRMAR REEMBOLSO'}
               </button>

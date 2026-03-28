@@ -14,6 +14,8 @@ export default function Settings() {
   const [showForm, setShowForm] = useState(false)
   const [appNameInput, setAppNameInput] = useState('')
   const [logoInput, setLogoInput] = useState<string | null>(null)
+  const [fontPrimaryInput, setFontPrimaryInput] = useState('Inter')
+  const [fontDisplayInput, setFontDisplayInput] = useState('Bebas Neue')
   const [isSavingApp, setIsSavingApp] = useState(false)
   const [imageToCrop, setImageToCrop] = useState<string | null>(null)
   const [formData, setFormData] = useState({
@@ -31,6 +33,8 @@ export default function Settings() {
     if (settings) {
       setAppNameInput(settings.app_name)
       setLogoInput(settings.logo_url || null)
+      if (settings.font_primary) setFontPrimaryInput(settings.font_primary)
+      if (settings.font_display) setFontDisplayInput(settings.font_display)
     }
   }, [settings])
 
@@ -63,7 +67,7 @@ export default function Settings() {
     if (!appNameInput.trim()) return
     try {
       setIsSavingApp(true)
-      await updateSettings(appNameInput.trim(), logoInput)
+      await updateSettings(appNameInput.trim(), logoInput, fontPrimaryInput, fontDisplayInput)
       alert('Configuración del sistema actualizada exitosamente')
     } catch (error) {
       alert('Error al actualizar la configuración')
@@ -215,8 +219,46 @@ export default function Settings() {
                 <p className="text-xs text-secondary-400 mt-2">Recomendado: Imagen cuadrada, máx. 2MB.</p>
               </div>
 
-              {/* App Name */}
-              <div className="flex flex-col sm:flex-row gap-4 items-end">
+              {/* Typography */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-white/10 pt-6">
+                <div>
+                  <label className="block text-xs font-semibold text-secondary-200 uppercase tracking-widest mb-1">
+                    Tipografía Principal (Textos)
+                  </label>
+                  <select
+                    value={fontPrimaryInput}
+                    onChange={(e) => setFontPrimaryInput(e.target.value)}
+                    className="brand-input w-full"
+                  >
+                    <option value="Inter">Inter (Por defecto)</option>
+                    <option value="Roboto">Roboto</option>
+                    <option value="Poppins">Poppins</option>
+                    <option value="Montserrat">Montserrat</option>
+                    <option value="Open Sans">Open Sans</option>
+                    <option value="Lato">Lato</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-secondary-200 uppercase tracking-widest mb-1">
+                    Tipografía Decorativa (Títulos)
+                  </label>
+                  <select
+                    value={fontDisplayInput}
+                    onChange={(e) => setFontDisplayInput(e.target.value)}
+                    className="brand-input w-full"
+                  >
+                    <option value="Bebas Neue">Bebas Neue (Por defecto)</option>
+                    <option value="Oswald">Oswald</option>
+                    <option value="Anton">Anton</option>
+                    <option value="Fjalla One">Fjalla One</option>
+                    <option value="Teko">Teko</option>
+                    <option value="Righteous">Righteous</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* App Name & Submit */}
+              <div className="flex flex-col sm:flex-row gap-4 items-end border-t border-white/10 pt-6">
                 <div className="flex-1 w-full">
                   <label className="block text-xs font-semibold text-secondary-200 uppercase tracking-widest mb-1">Nombre del Negocio</label>
                   <input
@@ -230,7 +272,7 @@ export default function Settings() {
                 </div>
                 <button 
                   type="submit" 
-                  disabled={isSavingApp || (appNameInput === settings?.app_name && logoInput === settings?.logo_url)}
+                  disabled={isSavingApp || (appNameInput === settings?.app_name && logoInput === settings?.logo_url && fontPrimaryInput === (settings?.font_primary || 'Inter') && fontDisplayInput === (settings?.font_display || 'Bebas Neue'))}
                   className="brand-button w-full sm:w-auto"
                 >
                   {isSavingApp ? 'Guardando...' : 'Guardar Cambios'}
