@@ -1,118 +1,208 @@
-## 1. Product Overview
+# PRD — Las Perras (Sistema POS + Gestión + Pedidos Web)
 
-Sistema web integral de gestión para el local de comida rápida "Las Perras", especializado en perros calientes. La plataforma automatiza el control de inventario, ventas, gastos y genera reportes financieros con cálculo de ganancias y distribución entre socios.
+Última actualización: 2026-03-28
 
-Dirigido a administradores y vendedores del restaurante, permite optimizar operaciones diarias, controlar stock en tiempo real y tomar decisiones basadas en datos financieros claros.
+## 0. Historial de cambios
 
-## 2. Core Features
+| Fecha | Cambio | Nota |
+|---|---|---|
+| 2026-03-28 | Actualización mayor del PRD para reflejar el estado actual del producto | Incluye pedidos web, Realtime, recetas por ingredientes, estados y KPIs |
 
-### 2.1 User Roles
+## 1. Resumen del Producto
 
-| Role     | Registration Method             | Core Permissions                                                                        |
-| -------- | ------------------------------- | --------------------------------------------------------------------------------------- |
-| Admin    | Manual creation by system owner | Full access: inventory management, sales, expenses, dashboard, user management, reports |
-| Vendedor | Admin invitation/creation       | Limited access: sales module, view-only inventory alerts, basic dashboard metrics       |
+“Las Perras” es un sistema web para operación diaria de un local de comida rápida (perros calientes) que integra:
 
-### 2.2 Feature Module
+- Venta en mostrador (POS).
+- Gestión de pedidos operativos (“Caja / Pedidos” para preparación → cobro).
+- Pedidos desde un menú público (web) con aprobación interna.
+- Inventario por insumos con consumo automático por receta.
+- Registro de gastos y comprobantes.
+- KPIs y reportes (ventas, gastos, CMV/COGS, utilidad).
 
-El sistema de gestión "Las Perras" consta de las siguientes páginas principales:
+El objetivo es operar el negocio con trazabilidad, control de costos y flujo de trabajo rápido, evitando errores de stock y consolidando información financiera para decisiones diarias y cierre.
 
-1. **Dashboard**: Vista general con métricas KPI, gráficos de ventas/gastos, distribución de utilidades, filtros por fecha
-2. **Punto de Venta**: Interfaz POS para registrar ventas de perros calientes, cálculo automático de totales, descontar inventario, imprimir tickets
-3. **Inventario**: Gestión completa de productos, registro de entradas/salidas, alertas de stock bajo, histórico de movimientos
-4. **Gastos**: Registro y control de gastos por categorías, subida de comprobantes, reportes mensuales
-5. **Reportes**: Exportación de datos a Excel/PDF, análisis detallados de ventas y gastos
-6. **Login**: Autenticación de usuarios según rol asignado
+## 2. Objetivos y No Objetivos
 
-### 2.3 Page Details
+### 2.1 Objetivos (Outcomes)
 
-| Page Name      | Module Name        | Feature description                                                                                                                                  |
-| -------------- | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Login          | Authentication     | Ingresar email y contraseña, validación de credenciales, redirección según rol de usuario                                                            |
-| Dashboard      | Métricas KPI       | Mostrar ventas totales, gastos totales, ganancia neta, distribución socios (70%/30%), filtros por día/mes/año/rango personalizado                    |
-| Dashboard      | Gráficos           | Visualizar gráfico de ventas por tipo de perro, gráfico de gastos por categoría, tendencias mensuales/anuales con Chart.js                           |
-| Punto de Venta | Selector Productos | Mostrar botones de tipos de perros (Básico $6k, Mejorado $7k, Especial $8k, Carnívoro $12k, Tricarne $14k, Supremo $15k), desglose de ingredientes   |
-| Punto de Venta | Cálculo Venta      | Calcular total automáticamente, mostrar desglose de precios, confirmar venta, registrar fecha/hora, descontar inventario                             |
-| Punto de Venta | Ticket             | Generar ticket de venta con detalles, opción de imprimir, guardar en historial de ventas                                                             |
-| Inventario     | Gestión Items      | CRUD completo para cada item (pan, salchicha, tocineta, salsas, papas, queso, bebidas, carnes, huevos), control de unidades (unidades/gramos/litros) |
-| Inventario     | Movimientos        | Registrar entradas/salidas de inventario, seleccionar tipo de movimiento, cantidad, fecha, motivo                                                    |
-| Inventario     | Alertas            | Configurar umbral mínimo por item, mostrar alertas visuales cuando stock esté bajo, notificaciones en dashboard                                      |
-| Inventario     | Historial          | Ver historial completo de movimientos por item, filtros por fecha, tipo de movimiento, exportar a Excel                                              |
-| Gastos         | Registro Gasto     | Ingresar fecha, descripción, categoría (Insumos/Servicios/Transporte/Alimentación/Personal/Otros), valor, subir factura/comprobante opcional         |
-| Gastos         | CRUD Gastos        | Listar todos los gastos, editar registros existentes, eliminar gastos, búsqueda por descripción/categoría                                            |
-| Gastos         | Reportes           | Filtrar gastos por categoría/fecha, generar reporte mensual con totales por categoría, exportar a PDF/Excel                                          |
-| Reportes       | Exportación        | Exportar datos de ventas, gastos e inventario a Excel/PDF, generar reportes personalizados por período                                               |
+- Reducir pérdidas por inventario y errores de despacho mediante consumo automático por receta.
+- Permitir operación “cobrar al entregar” y controlar estados del pedido sin inconsistencias.
+- Permitir pedidos web sin exponer la base de datos a escritura directa desde usuarios anónimos.
+- Mantener la experiencia operativa en tiempo real (sin recargar pantallas para ver pedidos).
+- Proveer KPIs diarios/mensuales: ventas, gastos, CMV, utilidad neta y distribución (70/30).
 
-## 3. Core Process
+### 2.2 No Objetivos (Por ahora)
 
-### Flujo Admin
+- Integraciones con pasarelas de pago o facturación electrónica.
+- Manejo multi-sucursal / multi-bodega.
+- Gestión de domicilios con ruteo y tracking.
 
-1. Login con credenciales de administrador
-2. Dashboard: Visualizar métricas generales del negocio y distribución de utilidades
-3. Inventario: Gestionar productos, registrar entradas de mercancía, ver alertas de stock
-4. Gastos: Registrar gastos del negocio, categorizarlos, subir comprobantes
-5. Reportes: Analizar datos financieros, exportar información para contabilidad
-6. Cierre diario: Revisar inventario final, confirmar cálculo de ganancias
+## 3. Usuarios, Roles y Permisos
 
-### Flujo Vendedor
+### 3.1 Roles
 
-1. Login con credenciales de vendedor
-2. Punto de Venta: Registrar ventas de perros calientes durante el día
-3. Dashboard: Ver solo métricas básicas de ventas del día
-4. Inventario: Solo ver alertas de stock bajo, no puede modificar
+| Rol | Quién es | Permisos principales |
+|---|---|---|
+| Admin | Dueño / Administrador | Acceso total: configuración, usuarios, inventario, productos/recetas, reportes, gastos, ventas y pedidos web |
+| Vendor | Cajero / Vendedor | Acceso operativo: POS, Caja/Pedidos, Pedidos Web (aceptar/rechazar), lectura de inventario (según configuración), dashboard básico |
 
-```mermaid
-graph TD
-  A[Login] --> B{User Role}
-  B -->|Admin| C[Dashboard Admin]
-  B -->|Vendedor| D[Dashboard Vendedor]
-  C --> E[Inventario]
-  C --> F[Gastos]
-  C --> G[Reportes]
-  D --> H[Punto de Venta]
-  E --> I[Movimientos Inventario]
-  F --> J[Registro Gastos]
-  G --> K[Exportar Datos]
-  H --> L[Historial Ventas]
-```
+### 3.2 Usuario público (anónimo)
 
-## 4. User Interface Design
+El usuario público no se autentica. Solo puede:
 
-### 4.1 Design Style
+- Ver productos publicados (activos + visibles en web).
+- Enviar un pedido web mediante una función segura (RPC) en base de datos.
 
-* **Colores primarios**: Rojo (#DC2626) y Amarillo (#EAB308) - colores típicos de comida rápida
+## 4. Módulos y Alcance Funcional
 
-* **Colores secundarios**: Blanco (#FFFFFF), Gris oscuro (#374151) para textos
+### 4.1 Rutas y páginas (actual)
 
-* **Botones**: Estilo redondeado con sombras sutiles, hover effects con cambio de color
+| Ruta | Pantalla | Audiencia | Propósito |
+|---|---|---|---|
+| / | Landing | Público | Entrada/marketing y acceso al menú |
+| /menu | Menú Público | Público | Catálogo web y creación de pedido (local/delivery) |
+| /login | Login | Staff | Autenticación (Supabase Auth + perfil en `users`) |
+| /dashboard | Dashboard | Staff | KPIs, gráficos y resumen del negocio |
+| /pos | POS | Vendor/Admin | Crear ventas rápidas (mostrador) |
+| /orders | Pedidos (Caja) | Vendor/Admin | Gestionar pedidos en estados operativos (preparación → cobro) |
+| /web-orders | Pedidos Web | Vendor/Admin | Aprobar/rechazar pedidos web entrantes |
+| /inventory | Inventario | Staff | Ver stock, alertas, movimientos, costos |
+| /products | Productos/Recetas | Admin | CRUD productos, publicación web, receta por ingredientes |
+| /expenses | Gastos | Staff | Registro/edición/eliminación y comprobantes |
+| /reports | Reportes | Staff | Exportación/analítica de ventas, gastos e inventario |
+| /settings | Configuración | Admin | Usuarios, ajustes del negocio (nombre/logo, etc.) |
 
-* **Tipografía**: Inter para headers, Roboto para body text
+### 4.2 Pedidos y Estados (Venta/Pedido)
 
-* **Tamaños de fuente**: Headers 24-32px, body 14-16px, small text 12px
+#### Tipos de pedido (`order_type`)
 
-* **Layout**: Diseño card-based con navegación lateral para desktop, bottom navigation para mobile
+- `pos`: venta creada desde POS.
+- `local`: pedido web para consumir en el local (sin dirección).
+- `delivery`: pedido web con dirección, datos de contacto y costo de envío.
 
-* **Iconos**: Estilo outline de Heroicons, colores consistentes con paleta
+#### Estados (`status`)
 
-### 4.2 Page Design Overview
+- `draft`: borrador/orden creada pero no necesariamente cobrada.
+- `pending_approval`: pedido web creado por usuario público y en espera de aprobación.
+- `preparing`: pedido en preparación.
+- `ready`: pedido listo para entregar.
+- `delivered`: pedido entregado (puede estar pendiente de cobro).
+- `paid`: pedido pagado/cerrado.
+- `voided`: anulado (requiere motivo).
+- `refunded`: reembolsado (posterior a `paid`, requiere motivo).
+- `rejected`: pedido web rechazado (requiere motivo).
 
-| Page Name      | Module Name    | UI Elements                                                                                          |
-| -------------- | -------------- | ---------------------------------------------------------------------------------------------------- |
-| Dashboard      | KPI Cards      | Cards con bordes redondeados, iconos grandes, números en negrita, colores verde/rojo según tendencia |
-| Dashboard      | Gráficos       | Chart.js con colores de marca, tooltips personalizados, leyendas claras                              |
-| Punto de Venta | Grid Productos | Grid responsivo de 2-3 columnas, botones grandes con imágenes de perros, precios destacados          |
-| Inventario     | Tabla Items    | Tabla con zebra striping, badges de stock (verde/ambar/rojo), botones de acción compactos            |
-| Gastos         | Formulario     | Formulario vertical con campos espaciados, selector de categoría con colores, preview de comprobante |
+#### Reglas de transición (en base de datos)
 
-### 4.3 Responsiveness
+El sistema restringe transiciones de estado para evitar inconsistencias operativas. Ejemplos clave:
 
-* Diseño desktop-first con breakpoints en 768px y 1024px
+- `pending_approval` → `preparing` o `rejected`.
+- `preparing` → `ready`/`delivered`/`voided`.
+- `delivered` → `paid` o `voided`.
+- `paid` → `refunded`.
 
-* Sidebar colapsable en tablets, bottom navigation en móviles
+## 5. Flujos Core (End-to-End)
 
-* Tablas horizontales scrollables en móviles
+### 5.1 Flujo POS (Mostrador)
 
-* Botones de tamaño mínimo 44px para touch optimization
+1. Staff entra a POS y arma el carrito (productos + cantidades; algunos productos pueden requerir elección de proteína).
+2. Se crea la venta (`sales`) y sus items (`sale_items`) con `order_type = pos`.
+3. Se descuenta inventario automáticamente según receta/consumo de insumos (movimientos `inventory_movements` tipo `out`).
+4. El pedido queda en flujo operativo (por lo general `preparing` → `ready` → `delivered` → `paid`).
+5. Si se anula o reembolsa:
+   - Se registra motivo (`void_reason`) y auditoría (quién/cuándo).
+   - Se generan movimientos reversos (`inventory_movements` tipo `in`) asociados al pedido para devolver insumos, cuando aplique.
 
-* Cards que se apilan verticalmente en mó
+### 5.2 Flujo Pedido Web (Público → Operación)
 
+1. Usuario público entra al menú web, ve productos publicados y crea pedido.
+2. El pedido se crea vía RPC segura en DB (no inserciones directas del cliente en `sales`):
+   - Calcula el total con precios reales de la tabla `products`.
+   - Crea `sales` con `status = pending_approval`.
+   - Inserta `sale_items` con nombre/precio real.
+   - Aplica costo fijo de envío cuando `order_type = delivery`.
+3. Staff ve el pedido en “Pedidos Web” en tiempo real.
+4. Staff decide:
+   - Aceptar: `pending_approval` → `preparing` y se descuenta inventario en ese momento.
+   - Rechazar: `pending_approval` → `rejected`, se guarda motivo. No hay devolución de inventario porque no se consumió.
+5. Pedido aceptado entra al flujo de “Caja / Pedidos” para completar preparación y cobro.
+
+### 5.3 Tiempo Real (Operación)
+
+El sistema escucha cambios en pedidos mediante suscripción WebSocket a la tabla `sales`. Esto permite:
+
+- Ver pedidos web entrantes sin recargar.
+- Reflejar cambios de estado inmediatamente en Caja/Pedidos.
+- Mantener una bandeja “pendientes” + “activos” sincronizada en toda la app.
+
+## 6. Inventario y Recetas
+
+### 6.1 Modelo de receta
+
+- `products`: productos vendibles (nombre, precio, categoría, flags de publicación web y requerimientos).
+- `product_ingredients`: ingredientes por producto (relación con `inventory_items`, cantidad y opcionalidad).
+
+### 6.2 Consumo
+
+Cuando una venta/pedido entra a preparación (POS inmediato o aceptación de pedido web):
+
+- Se calcula consumo total por ingrediente según receta y cantidad de items.
+- Se generan movimientos de inventario `out` con vínculo al `sale_id` para auditoría y cálculo de CMV.
+
+### 6.3 Reversos
+
+Si un pedido se anula y corresponde devolver insumos:
+
+- Se generan movimientos `in` como reverso de movimientos anteriores (con `reversal_of`).
+
+## 7. KPIs y Reportes
+
+### 7.1 KPIs principales
+
+- Ventas totales: suma de `total_amount` para estados operativos considerados “venta efectiva”.
+- Gastos totales: suma de `expenses.amount` por rango.
+- CMV / COGS: suma de (cantidad * costo unitario) de movimientos `inventory_movements` tipo `out` en el rango.
+- Utilidad neta: ventas - gastos - CMV.
+- Distribución de utilidad: 70% / 30% (parámetro de negocio).
+
+### 7.2 Reportes
+
+- Ventas por producto (“hotdog_type” en `sale_items` representa el nombre del producto vendido).
+- Gastos por categoría.
+- Exportación de datos (PDF/Excel) para contabilidad y revisión.
+
+## 8. Requisitos No Funcionales
+
+### 8.1 Seguridad
+
+- RLS (Row Level Security) habilitado en tablas sensibles.
+- Inserción de pedidos web anónimos solo mediante RPC `SECURITY DEFINER`.
+- Política de lectura pública limitada a productos publicados y configuración pública mínima.
+- No exponer llaves privadas (service role) en frontend.
+
+### 8.2 Rendimiento y UX
+
+- Tiempo real para pedidos (sin recargar).
+- Operación rápida en POS y Caja (acciones en 1–2 clics).
+- Tolerancia a latencia: UI debe mostrar “cargando” y errores claros.
+
+### 8.3 Trazabilidad
+
+- Movimientos de inventario auditables (tipo, motivo, usuario, venta asociada, reversos).
+- Cambios de estado restringidos para evitar saltos inválidos.
+
+## 9. Riesgos y Mitigaciones
+
+| Riesgo | Impacto | Mitigación |
+|---|---|---|
+| Desfase de inventario por recetas incompletas | Medio/Alto | Validación en productos/recetas, alertas de stock bajo, pruebas de consumo |
+| Pedidos web con manipulación de precios | Alto | RPC recalcula precios desde DB (fuente de verdad) |
+| Caída de Realtime / WebSockets | Medio | Fallback manual “Actualizar” y recarga inicial al iniciar sesión |
+| Costos por crecimiento de datos | Medio | Índices, partición por fecha futura, archivado de ventas antiguas |
+
+## 10. Roadmap sugerido
+
+- Realtime completo para `sale_items` (opcional) o caché eficiente por pedido.
+- Configuración editable de costo de envío (desde `settings`).
+- Impresión de tickets y plantillas personalizadas por local.
+- Modo cocina/pantalla de preparación dedicada (Kitchen Display).

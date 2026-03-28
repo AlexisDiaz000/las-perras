@@ -1,172 +1,101 @@
-## 1. Architecture design
+# Arquitectura Técnica — Las Perras
+
+Última actualización: 2026-03-28
+
+## 1. Diseño de Arquitectura
 
 ```mermaid
 graph TD
-  A[User Browser] --> B[React Frontend Application]
-  B --> C[Supabase Client SDK]
-  C --> D[Supabase Authentication]
-  C --> E[Supabase Database]
-  C --> F[Supabase Storage]
+  A[Navegador (Público o Staff)] --> B[SPA React + Vite]
+  B --> C[@supabase/supabase-js]
+  C --> D[Auth (Supabase)]
+  C --> E[PostgREST (DB API)]
+  C --> R[Realtime (WebSocket)]
+  C --> F[Storage (Comprobantes/Logos)]
 
-  subgraph "Frontend Layer"
+  subgraph Frontend
     B
   end
 
-  subgraph "Service Layer (Provided by Supabase)"
+  subgraph Supabase
     D
     E
+    R
     F
   end
 ```
 
-## 2. Technology Description
+## 2. Tecnologías (estado actual del repo)
 
-- Frontend: React@18 + tailwindcss@3 + vite
-- Initialization Tool: vite-init
-- Backend: Supabase (Authentication + PostgreSQL + Storage)
-- Charts: chart.js@4
-- UI Components: headlessui@1 + heroicons@2
-- State Management: React Context + useReducer
-- Forms: react-hook-form + zod
+- Frontend: React 18 + TypeScript + Vite 6
+- UI: Tailwind CSS 3 + Headless UI + Heroicons + Lucide
+- Estado global: Zustand (stores: auth, settings, notifications/pedidos)
+- Formularios y validación: React Hook Form + Zod
+- Gráficas: Chart.js + Recharts
+- Reportes: jsPDF + jsPDF-Autotable
+- Backend: Supabase (Auth + PostgreSQL + Storage + Realtime)
 
-## 3. Route definitions
+## 3. Rutas (SPA)
 
-| Route | Purpose |
-|-------|---------|
-| /login | Authentication page for admin and vendor users |
-| /dashboard | Main dashboard with KPIs and profit distribution |
-| /pos | Point of sale interface for hot dog sales |
-| /inventory | Inventory management with CRUD operations |
-| /expenses | Expense tracking and categorization |
-| /reports | Data export and detailed reports |
-| /settings | User management and system configuration (admin only) |
+| Ruta | Acceso | Propósito |
+|---|---|---|
+| / | Público | Landing |
+| /menu | Público | Menú público y creación de pedido web |
+| /login | Staff | Autenticación |
+| /dashboard | Staff | KPIs y gráficos |
+| /pos | Vendor/Admin | Punto de venta |
+| /orders | Vendor/Admin | Caja / Pedidos (flujo de estados y cobro) |
+| /web-orders | Vendor/Admin | Bandeja de pedidos web entrantes (aprobar/rechazar) |
+| /inventory | Staff | Inventario y alertas |
+| /products | Admin | Productos/recetas y publicación web |
+| /expenses | Staff | Gastos y comprobantes |
+| /reports | Staff | Reportes y exportación |
+| /settings | Admin | Configuración y gestión de usuarios |
 
-## 4. API definitions
+## 4. Integración con Supabase (APIs usadas)
 
-### 4.1 Authentication API
+La aplicación se integra mayoritariamente con Supabase mediante `@supabase/supabase-js` usando:
 
-```
-POST /auth/v1/token
-```
+- PostgREST: `.from('tabla').select/update/insert/delete`
+- RPC: `.rpc('nombre_funcion', params)`
+- Realtime: `.channel(...).on('postgres_changes', ...).subscribe()`
+- Auth: `supabase.auth.signInWithPassword`, `onAuthStateChange`, etc.
+- Storage: subida/lectura de comprobantes y logos según políticas.
 
-Request:
-| Param Name | Param Type | isRequired | Description |
-|------------|-------------|-------------|-------------|
-| email | string | true | User email address |
-| password | string | true | User password |
+### 4.1 Auth (staff)
 
-Response:
-| Param Name | Param Type | Description |
-|------------|-------------|-------------|
-| access_token | string | JWT token for API access |
-| refresh_token | string | Token for refreshing session |
-| user | object | User data including role |
+- Login contra Supabase Auth.
+- Perfil/rol real en tabla `users` (role: `admin` o `vendor`).
+- Rutas protegidas y autorización por rol en el frontend.
 
-### 4.2 Inventory API
+### 4.2 Pedido público seguro (RPC)
 
-```
-GET /rest/v1/inventory_items
-POST /rest/v1/inventory_items
-PATCH /rest/v1/inventory_items
-DELETE /rest/v1/inventory_items
-```
+Para evitar dar permisos directos a usuarios anónimos, la creación de pedido web se realiza con una función:
 
-Inventory Item Type:
-```typescript
-interface InventoryItem {
-  id: string;
-  name: string;
-  category: 'Panadería' | 'Proteínas' | 'Aderezos' | 'Complementos' | 'Bebidas' | 'Carnes';
-  unit: 'unidades' | 'gramos' | 'litros';
-  current_stock: number;
-  min_threshold: number;
-  unit_cost: number;
-  created_at: string;
-  updated_at: string;
-}
-```
+- `public.crear_pedido_publico(...)` (`SECURITY DEFINER`)
+  - Valida tipo de pedido (`local`/`delivery`)
+  - Recalcula total usando precios reales desde `products`
+  - Inserta `sales` con `status = pending_approval` y los datos del cliente
+  - Inserta `sale_items` con nombre/precio reales
 
-### 4.3 Sales API
+### 4.3 Realtime (Pedidos en tiempo real)
 
-```
-POST /rest/v1/sales
-GET /rest/v1/sales
-```
+Se usa Realtime para escuchar cambios en `sales`:
 
-Sale Type:
-```typescript
-interface Sale {
-  id: string;
-  items: SaleItem[];
-  total_amount: number;
-  payment_method: 'cash' | 'card';
-  seller_id: string;
-  created_at: string;
-}
+- Canal: `public:sales` con `postgres_changes` (`event: '*'`).
+- Al recibir INSERT/UPDATE en `sales`, se hace un fetch puntual para obtener la venta completa con `sale_items`, y se actualiza el store global.
+- Base de datos: la tabla `sales` está habilitada en la publicación `supabase_realtime`.
 
-interface SaleItem {
-  hotdog_type: 'Básico' | 'Mejorado' | 'Especial' | 'Carnívoro' | 'Tricarne' | 'Supremo';
-  quantity: number;
-  unit_price: number;
-  total_price: number;
-}
-```
+## 5. Reglas de negocio en DB
 
-### 4.4 Expenses API
+### 5.1 Estados y transiciones
 
-```
-POST /rest/v1/expenses
-GET /rest/v1/expenses
-```
+La base de datos restringe cambios inválidos de estado con un trigger:
 
-Expense Type:
-```typescript
-interface Expense {
-  id: string;
-  date: string;
-  description: string;
-  category: 'Insumos' | 'Servicios' | 'Transporte' | 'Alimentación' | 'Personal' | 'Otros';
-  amount: number;
-  receipt_url?: string;
-  created_by: string;
-  created_at: string;
-}
-```
+- `trg_check_sales_status_transition` (antes de UPDATE de `sales.status`)
+- Función `check_sales_status_transition()` que permite únicamente transiciones definidas (incluye `pending_approval` → `preparing|rejected`).
 
-## 5. Server architecture diagram
-
-```mermaid
-graph TD
-  A[Client Browser] --> B[Supabase Client SDK]
-  B --> C[Supabase Auth Service]
-  B --> D[Supabase Database API]
-  B --> E[Supabase Storage API]
-
-  C --> F[PostgreSQL Users Table]
-  D --> G[PostgreSQL Business Tables]
-  E --> H[Supabase Storage Buckets]
-
-  subgraph "Client Side"
-    A
-  end
-
-  subgraph "Supabase Services"
-    B
-    C
-    D
-    E
-  end
-
-  subgraph "Data Storage"
-    F
-    G
-    H
-  end
-```
-
-## 6. Data model
-
-### 6.1 Data model definition
+## 6. Modelo de Datos (alto nivel)
 
 ```mermaid
 erDiagram
@@ -176,195 +105,126 @@ erDiagram
   INVENTORY_ITEMS ||--o{ INVENTORY_MOVEMENTS : has
   SALES ||--o{ SALE_ITEMS : contains
 
+  PRODUCTS ||--o{ PRODUCT_INGREDIENTS : defines
+  INVENTORY_ITEMS ||--o{ PRODUCT_INGREDIENTS : used_by
+
+  SETTINGS ||--|| SETTINGS : singleton
+
   USERS {
-    string id PK
-    string email UK
-    string role "admin|vendor"
-    string name
-    timestamp created_at
-  }
-
-  INVENTORY_ITEMS {
-    string id PK
-    string name
-    string category
-    string unit
-    number current_stock
-    number min_threshold
-    number unit_cost
-    timestamp created_at
-  }
-
-  INVENTORY_MOVEMENTS {
-    string id PK
-    string item_id FK
-    string type "in|out"
-    number quantity
-    string reason
-    string user_id FK
-    timestamp created_at
+    uuid id PK
+    text email
+    text role "admin|vendor"
+    text name
+    bool active
+    timestamptz created_at
   }
 
   SALES {
-    string id PK
-    number total_amount
-    string payment_method
-    string seller_id FK
-    timestamp created_at
+    uuid id PK
+    numeric total_amount
+    text payment_method "cash|card"
+    uuid seller_id FK
+    text status "draft|pending_approval|preparing|ready|delivered|paid|voided|refunded|rejected"
+    text order_type "pos|local|delivery"
+    text customer_name
+    text customer_phone
+    text delivery_address
+    text delivery_notes
+    text void_reason
+    timestamptz created_at
+    timestamptz updated_at
   }
 
   SALE_ITEMS {
-    string id PK
-    string sale_id FK
-    string hotdog_type
-    number quantity
-    number unit_price
-    number total_price
+    uuid id PK
+    uuid sale_id FK
+    text hotdog_type
+    int quantity
+    numeric unit_price
+    numeric total_price
+    jsonb modifiers
+  }
+
+  INVENTORY_ITEMS {
+    uuid id PK
+    text name
+    text category
+    text unit
+    numeric current_stock
+    numeric min_threshold
+    numeric unit_cost
+    timestamptz created_at
+    timestamptz updated_at
+  }
+
+  INVENTORY_MOVEMENTS {
+    uuid id PK
+    uuid item_id FK
+    text type "in|out"
+    numeric quantity
+    text reason
+    uuid user_id FK
+    uuid sale_id FK
+    uuid reversal_of FK
+    uuid movement_group
+    timestamptz created_at
+  }
+
+  PRODUCTS {
+    uuid id PK
+    text name
+    text description
+    numeric price
+    text category
+    bool active
+    bool show_in_web
+    bool requires_protein_choice
+    text image_url
+    timestamptz created_at
+  }
+
+  PRODUCT_INGREDIENTS {
+    uuid id PK
+    uuid product_id FK
+    uuid inventory_item_id FK
+    numeric quantity
+    bool is_optional
   }
 
   EXPENSES {
-    string id PK
+    uuid id PK
     date expense_date
-    string description
-    string category
-    number amount
-    string receipt_url
-    string user_id FK
-    timestamp created_at
+    text description
+    text category
+    numeric amount
+    text receipt_url
+    uuid user_id FK
+    timestamptz created_at
+  }
+
+  SETTINGS {
+    int id PK
+    text app_name
+    text logo_url
+    timestamptz updated_at
   }
 ```
 
-### 6.2 Data Definition Language
+## 7. Consideraciones Operativas
 
-Users Table:
-```sql
-CREATE TABLE users (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  email VARCHAR(255) UNIQUE NOT NULL,
-  role VARCHAR(20) CHECK (role IN ('admin', 'vendor')) DEFAULT 'vendor',
-  name VARCHAR(100) NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+### 7.1 Zona horaria
 
--- Enable Row Level Security
-ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+El negocio opera en Colombia (-05:00). Para consultas por rango del “día”, se recomienda construir ventanas de tiempo con offset -05:00 para evitar cortes por UTC en horas de la tarde/noche.
 
--- Policies
-CREATE POLICY "Users can view own profile" ON users
-  FOR SELECT USING (auth.uid() = id);
+### 7.2 Rendimiento y costos
 
-CREATE POLICY "Admin can view all users" ON users
-  FOR SELECT USING (EXISTS (
-    SELECT 1 FROM users WHERE id = auth.uid() AND role = 'admin'
-  ));
-```
+Realtime reduce polling, pero introduce suscripciones WebSocket. Se recomienda:
 
-Inventory Items Table:
-```sql
-CREATE TABLE inventory_items (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name VARCHAR(100) NOT NULL,
-  category VARCHAR(50) CHECK (category IN ('Panadería', 'Proteínas', 'Aderezos', 'Complementos', 'Bebidas', 'Carnes')),
-  unit VARCHAR(20) CHECK (unit IN ('unidades', 'gramos', 'litros')),
-  current_stock DECIMAL(10,2) NOT NULL DEFAULT 0,
-  min_threshold DECIMAL(10,2) NOT NULL DEFAULT 10,
-  unit_cost DECIMAL(10,2) NOT NULL DEFAULT 0,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+- Mantener el canal con filtros cuando el volumen crezca (por fecha/estado).
+- Evitar “N+1 queries” excesivas al recibir eventos; preferir agrupar fetches o cache de `sale_items` si aumenta la carga.
 
--- Indexes
-CREATE INDEX idx_inventory_category ON inventory_items(category);
-CREATE INDEX idx_inventory_low_stock ON inventory_items(current_stock) WHERE current_stock <= min_threshold;
+### 7.3 Seguridad
 
--- RLS Policies
-ALTER TABLE inventory_items ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "All authenticated users can read inventory" ON inventory_items
-  FOR SELECT USING (auth.role() = 'authenticated');
-CREATE POLICY "Only admin can modify inventory" ON inventory_items
-  FOR ALL USING (EXISTS (
-    SELECT 1 FROM users WHERE id = auth.uid() AND role = 'admin'
-  ));
-```
-
-Sales Tables:
-```sql
-CREATE TABLE sales (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  total_amount DECIMAL(10,2) NOT NULL,
-  payment_method VARCHAR(20) CHECK (payment_method IN ('cash', 'card')),
-  seller_id UUID REFERENCES users(id),
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
-CREATE TABLE sale_items (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  sale_id UUID REFERENCES sales(id) ON DELETE CASCADE,
-  hotdog_type VARCHAR(20) CHECK (hotdog_type IN ('Básico', 'Mejorado', 'Especial', 'Carnívoro', 'Tricarne', 'Supremo')),
-  quantity INTEGER NOT NULL CHECK (quantity > 0),
-  unit_price DECIMAL(10,2) NOT NULL,
-  total_price DECIMAL(10,2) NOT NULL
-);
-
--- Indexes
-CREATE INDEX idx_sales_date ON sales(created_at DESC);
-CREATE INDEX idx_sales_seller ON sales(seller_id);
-CREATE INDEX idx_sale_items_sale ON sale_items(sale_id);
-
--- RLS Policies
-ALTER TABLE sales ENABLE ROW LEVEL SECURITY;
-ALTER TABLE sale_items ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Authenticated users can read sales" ON sales
-  FOR SELECT USING (auth.role() = 'authenticated');
-CREATE POLICY "Vendors can create sales" ON sales
-  FOR INSERT WITH CHECK (seller_id = auth.uid());
-```
-
-Expenses Table:
-```sql
-CREATE TABLE expenses (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  expense_date DATE NOT NULL,
-  description TEXT NOT NULL,
-  category VARCHAR(50) CHECK (category IN ('Insumos', 'Servicios', 'Transporte', 'Alimentación', 'Personal', 'Otros')),
-  amount DECIMAL(10,2) NOT NULL CHECK (amount > 0),
-  receipt_url TEXT,
-  user_id UUID REFERENCES users(id),
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- Indexes
-CREATE INDEX idx_expenses_date ON expenses(expense_date DESC);
-CREATE INDEX idx_expenses_category ON expenses(category);
-CREATE INDEX idx_expenses_user ON expenses(user_id);
-
--- RLS Policies
-ALTER TABLE expenses ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Authenticated users can read expenses" ON expenses
-  FOR SELECT USING (auth.role() = 'authenticated');
-CREATE POLICY "Users can create own expenses" ON expenses
-  FOR INSERT WITH CHECK (user_id = auth.uid());
-CREATE POLICY "Admin can modify all expenses" ON expenses
-  FOR ALL USING (EXISTS (
-    SELECT 1 FROM users WHERE id = auth.uid() AND role = 'admin'
-  ));
-```
-
--- Initial inventory data
-INSERT INTO inventory_items (name, category, unit, current_stock, min_threshold, unit_cost) VALUES
-('Pan de perro', 'Panadería', 'unidades', 100, 20, 500),
-('Salchicha', 'Proteínas', 'unidades', 150, 30, 1200),
-('Tocineta', 'Proteínas', 'gramos', 5000, 1000, 80),
-('Cebolla', 'Complementos', 'gramos', 3000, 500, 40),
-('Salsa BBQ', 'Aderezos', 'gramos', 2000, 300, 25),
-('Salsa Mayonesa', 'Aderezos', 'gramos', 2000, 300, 20),
-('Salsa Mostaza', 'Aderezos', 'gramos', 1500, 200, 15),
-('Papa Fosforito', 'Complementos', 'gramos', 8000, 1500, 35),
-('Queso', 'Complementos', 'gramos', 4000, 800, 60),
-('CocaCola Personal', 'Bebidas', 'unidades', 50, 15, 2500),
-('CocaCola 1L', 'Bebidas', 'unidades', 30, 10, 4500),
-('CocaCola 1.5L', 'Bebidas', 'unidades', 25, 8, 5500),
-('Carne de Cerdo', 'Carnes', 'gramos', 3000, 500, 120),
-('Carne de Pollo', 'Carnes', 'gramos', 2500, 400, 100),
-('Desmechada de Res', 'Carnes', 'gramos', 2000, 300, 150),
-('Huevos de Codorniz', 'Complementos', 'unidades', 48, 12, 300);
+- No usar `service_role_key` en frontend.
+- Aislar escritura anónima a través de RPC segura.
+- Mantener RLS habilitado en tablas sensibles.
