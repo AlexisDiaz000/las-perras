@@ -77,10 +77,14 @@ export const inventoryService = {
   },
 
   async registerWaste(itemId: string, quantity: number, reason: string, userId: string) {
+    // Asegurarnos de que la cantidad que se pasa a createMovement siempre sea positiva, 
+    // ya que el tipo 'out' en la base de datos o en los triggers se encarga de restarlo
+    const absQuantity = Math.abs(quantity);
+    
     return this.createMovement({
       item_id: itemId,
       type: 'out',
-      quantity,
+      quantity: absQuantity,
       reason: `Merma: ${reason}`,
       user_id: userId
     })

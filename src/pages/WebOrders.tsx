@@ -173,8 +173,8 @@ export default function WebOrders() {
                 )}
 
                 {/* Order Items List */}
-                <div className="bg-black/30 p-4 rounded-xl border border-white/5 max-h-48 overflow-y-auto custom-scrollbar">
-                  <p className="text-xs text-[color:var(--app-muted-2)] uppercase tracking-widest mb-3 border-b border-white/5 pb-2">Detalle del Pedido</p>
+              <div className="bg-[color:var(--app-hover)] p-4 rounded-xl border border-[color:var(--app-border)] max-h-48 overflow-y-auto custom-scrollbar">
+                <p className="text-xs text-[color:var(--app-muted-2)] uppercase tracking-widest mb-3 border-b border-[color:var(--app-border)] pb-2">Detalle del Pedido</p>
                   
                   {orderItems[order.id] ? (
                     <ul className="space-y-3">
@@ -199,18 +199,18 @@ export default function WebOrders() {
               </div>
 
               {/* Actions */}
-              <div className="p-4 grid grid-cols-2 gap-3 border-t border-[color:var(--app-border)] bg-[color:var(--app-hover)]">
+              <div className="p-4 grid grid-cols-2 gap-3 border-t border-[color:var(--app-border)] bg-[color:var(--app-hover-strong)]">
                 <button
                   onClick={() => handleReject(order.id)}
                   className="py-3 rounded-xl font-bold uppercase tracking-widest text-xs border border-danger/30 text-danger hover:bg-danger/10 transition-colors"
                 >
-                  Rechazar
+                  RECHAZAR
                 </button>
                 <button
                   onClick={() => handleApprove(order.id)}
                   className="py-3 rounded-xl font-bold uppercase tracking-widest text-xs bg-success hover:bg-success-hover text-white transition-colors"
                 >
-                  Aceptar
+                  ACEPTAR
                 </button>
               </div>
             </div>

@@ -399,14 +399,14 @@ export default function Inventory() {
               </button>
             </div>
             
-            <div className="flex-1 overflow-y-auto mb-6 pr-2">
-              <table className="min-w-full divide-y divide-white/10">
-                <thead className="bg-white/5 sticky top-0">
+            <div className="flex-1 overflow-y-auto mb-6 pr-2 custom-scrollbar">
+              <table className="min-w-full divide-y divide-white/10 relative">
+                <thead className="sticky top-0 z-20 bg-[color:var(--brand-surface)] shadow-sm">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-secondary-300 uppercase">Producto</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-secondary-300 uppercase">Sistema</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-secondary-300 uppercase">Real (Físico)</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-secondary-300 uppercase">Diferencia</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-secondary-300 uppercase bg-black/40 backdrop-blur-md">Producto</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-secondary-300 uppercase bg-black/40 backdrop-blur-md">Sistema</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-secondary-300 uppercase bg-black/60 backdrop-blur-md">Real (Físico)</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-secondary-300 uppercase bg-black/40 backdrop-blur-md">Diferencia</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/10">
@@ -414,19 +414,19 @@ export default function Inventory() {
                     const realVal = stocktakeData[item.id] !== undefined ? parseFloat(stocktakeData[item.id]) : item.current_stock
                     const diff = realVal - item.current_stock
                     return (
-                      <tr key={item.id} className="hover:bg-white/5">
+                      <tr key={item.id} className="hover:bg-white/5 relative z-0">
                         <td className="px-4 py-3 text-sm font-medium text-secondary-50">{item.name}</td>
                         <td className="px-4 py-3 text-sm text-secondary-300">{item.current_stock} {item.unit}</td>
-                        <td className="px-4 py-2">
+                        <td className="px-4 py-2 bg-white/[0.02]">
                           <input
                             type="number"
-                            className="bg-black/20 border border-white/10 rounded px-2 py-1 text-white w-24 focus:border-blue-500 outline-none"
+                            className="bg-black/40 border border-white/10 rounded px-2 py-1.5 text-white w-28 focus:border-blue-500 outline-none font-mono"
                             placeholder={item.current_stock.toString()}
                             value={stocktakeData[item.id] || ''}
                             onChange={(e) => setStocktakeData({...stocktakeData, [item.id]: e.target.value})}
                           />
                         </td>
-                        <td className={`px-4 py-3 text-sm font-bold ${diff < 0 ? 'text-red-400' : diff > 0 ? 'text-green-400' : 'text-secondary-400'}`}>
+                        <td className={`px-4 py-3 text-sm font-bold ${diff < 0 ? 'text-danger' : diff > 0 ? 'text-success' : 'text-secondary-400'}`}>
                           {diff > 0 ? '+' : ''}{diff} {item.unit}
                         </td>
                       </tr>
@@ -689,42 +689,57 @@ export default function Inventory() {
             <div className="brand-card p-5">
             <h3 className="brand-heading text-2xl mb-4">Editar Item</h3>
             <div className="space-y-4">
-              <input
-                type="text"
-                value={editingItem.name}
-                onChange={(e) => setEditingItem({...editingItem, name: e.target.value})}
-                className="brand-input"
-              />
-              <select
-                value={editingItem.category}
-                onChange={(e) => setEditingItem({...editingItem, category: e.target.value as typeof INVENTORY_CATEGORIES[number]})}
-                className="brand-input"
-              >
-                {INVENTORY_CATEGORIES.map(cat => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
-              </select>
-              <select
-                value={editingItem.unit}
-                onChange={(e) => setEditingItem({...editingItem, unit: e.target.value as typeof UNITS[number]})}
-                className="brand-input"
-              >
-                {UNITS.map(unit => (
-                  <option key={unit} value={unit}>{unit}</option>
-                ))}
-              </select>
-              <input
-                type="number"
-                value={editingItem.min_threshold}
-                onChange={(e) => setEditingItem({...editingItem, min_threshold: e.target.value})}
-                className="brand-input"
-              />
-              <input
-                type="number"
-                value={editingItem.unit_cost}
-                onChange={(e) => setEditingItem({...editingItem, unit_cost: e.target.value})}
-                className="brand-input"
-              />
+              <div>
+                <label className="block text-xs font-semibold text-secondary-200 uppercase tracking-widest mb-1">Nombre del Item</label>
+                <input
+                  type="text"
+                  value={editingItem.name}
+                  onChange={(e) => setEditingItem({...editingItem, name: e.target.value})}
+                  className="brand-input"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-secondary-200 uppercase tracking-widest mb-1">Categoría</label>
+                <select
+                  value={editingItem.category}
+                  onChange={(e) => setEditingItem({...editingItem, category: e.target.value as typeof INVENTORY_CATEGORIES[number]})}
+                  className="brand-input"
+                >
+                  {INVENTORY_CATEGORIES.map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-secondary-200 uppercase tracking-widest mb-1">Unidad de Medida</label>
+                <select
+                  value={editingItem.unit}
+                  onChange={(e) => setEditingItem({...editingItem, unit: e.target.value as typeof UNITS[number]})}
+                  className="brand-input"
+                >
+                  {UNITS.map(unit => (
+                    <option key={unit} value={unit}>{unit}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-secondary-200 uppercase tracking-widest mb-1">Stock Mínimo (Alerta)</label>
+                <input
+                  type="number"
+                  value={editingItem.min_threshold}
+                  onChange={(e) => setEditingItem({...editingItem, min_threshold: e.target.value})}
+                  className="brand-input"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-secondary-200 uppercase tracking-widest mb-1">Costo Unitario ($)</label>
+                <input
+                  type="number"
+                  value={editingItem.unit_cost}
+                  onChange={(e) => setEditingItem({...editingItem, unit_cost: e.target.value})}
+                  className="brand-input"
+                />
+              </div>
             </div>
             <div className="flex justify-end space-x-3 mt-6">
               <button
@@ -857,9 +872,9 @@ export default function Inventory() {
                             {movement.item?.name}
                           </div>
                           <div className={`col-span-6 text-right font-bold ${
-                            movement.type === 'in' ? 'text-green-400' : 'text-red-400'
+                            movement.type === 'in' ? 'text-green-400' : 'text-danger'
                           }`}>
-                            {movement.type === 'in' ? '+' : '-'}{movement.quantity} {movement.item?.unit}
+                            {movement.type === 'in' ? '+' : '-'}{Math.abs(movement.quantity)} {movement.item?.unit}
                           </div>
                         </div>
                       ))}
