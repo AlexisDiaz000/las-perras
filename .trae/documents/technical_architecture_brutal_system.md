@@ -27,64 +27,82 @@ graph TD
 
 ## 2. Tecnologías (estado actual del repo)
 
-- Frontend: React 18 + TypeScript + Vite 6
-- UI: Tailwind CSS 3 + Headless UI + Heroicons + Lucide
-- Estado global: Zustand (stores: auth, settings, notifications/pedidos)
-- Formularios y validación: React Hook Form + Zod
-- Gráficas: Chart.js + Recharts
-- Reportes: jsPDF + jsPDF-Autotable
-- Backend: Supabase (Auth + PostgreSQL + Storage + Realtime)
+* Frontend: React 18 + TypeScript + Vite 6
+
+* UI: Tailwind CSS 3 + Headless UI + Heroicons + Lucide
+
+* Estado global: Zustand (stores: auth, settings, notifications/pedidos)
+
+* Formularios y validación: React Hook Form + Zod
+
+* Gráficas: Chart.js + Recharts
+
+* Reportes: jsPDF + jsPDF-Autotable
+
+* Backend: Supabase (Auth + PostgreSQL + Storage + Realtime)
 
 ## 3. Rutas (SPA)
 
-| Ruta | Acceso | Propósito |
-|---|---|---|
-| / | Público | Landing |
-| /menu | Público | Menú público y creación de pedido web |
-| /login | Staff | Autenticación |
-| /dashboard | Staff | KPIs y gráficos |
-| /pos | Vendor/Admin | Punto de venta |
-| /orders | Vendor/Admin | Caja / Pedidos (flujo de estados y cobro) |
+| Ruta        | Acceso       | Propósito                                           |
+| ----------- | ------------ | --------------------------------------------------- |
+| /           | Público      | Landing                                             |
+| /menu       | Público      | Menú público y creación de pedido web               |
+| /login      | Staff        | Autenticación                                       |
+| /dashboard  | Staff        | KPIs y gráficos                                     |
+| /pos        | Vendor/Admin | Punto de venta                                      |
+| /orders     | Vendor/Admin | Caja / Pedidos (flujo de estados y cobro)           |
 | /web-orders | Vendor/Admin | Bandeja de pedidos web entrantes (aprobar/rechazar) |
-| /inventory | Staff | Inventario y alertas |
-| /products | Admin | Productos/recetas y publicación web |
-| /expenses | Staff | Gastos y comprobantes |
-| /reports | Staff | Reportes y exportación |
-| /settings | Admin | Configuración y gestión de usuarios |
+| /inventory  | Staff        | Inventario y alertas                                |
+| /products   | Admin        | Productos/recetas y publicación web                 |
+| /expenses   | Staff        | Gastos y comprobantes                               |
+| /reports    | Staff        | Reportes y exportación                              |
+| /settings   | Admin        | Configuración y gestión de usuarios                 |
 
 ## 4. Integración con Supabase (APIs usadas)
 
 La aplicación se integra mayoritariamente con Supabase mediante `@supabase/supabase-js` usando:
 
-- PostgREST: `.from('tabla').select/update/insert/delete`
-- RPC: `.rpc('nombre_funcion', params)`
-- Realtime: `.channel(...).on('postgres_changes', ...).subscribe()`
-- Auth: `supabase.auth.signInWithPassword`, `onAuthStateChange`, etc.
-- Storage: subida/lectura de comprobantes y logos según políticas.
+* PostgREST: `.from('tabla').select/update/insert/delete`
+
+* RPC: `.rpc('nombre_funcion', params)`
+
+* Realtime: `.channel(...).on('postgres_changes', ...).subscribe()`
+
+* Auth: `supabase.auth.signInWithPassword`, `onAuthStateChange`, etc.
+
+* Storage: subida/lectura de comprobantes y logos según políticas.
 
 ### 4.1 Auth (staff)
 
-- Login contra Supabase Auth.
-- Perfil/rol real en tabla `users` (role: `admin` o `vendor`).
-- Rutas protegidas y autorización por rol en el frontend.
+* Login contra Supabase Auth.
+
+* Perfil/rol real en tabla `users` (role: `admin` o `vendor`).
+
+* Rutas protegidas y autorización por rol en el frontend.
 
 ### 4.2 Pedido público seguro (RPC)
 
 Para evitar dar permisos directos a usuarios anónimos, la creación de pedido web se realiza con una función:
 
-- `public.crear_pedido_publico(...)` (`SECURITY DEFINER`)
-  - Valida tipo de pedido (`local`/`delivery`)
-  - Recalcula total usando precios reales desde `products`
-  - Inserta `sales` con `status = pending_approval` y los datos del cliente
-  - Inserta `sale_items` con nombre/precio reales
+* `public.crear_pedido_publico(...)` (`SECURITY DEFINER`)
+
+  * Valida tipo de pedido (`local`/`delivery`)
+
+  * Recalcula total usando precios reales desde `products`
+
+  * Inserta `sales` con `status = pending_approval` y los datos del cliente
+
+  * Inserta `sale_items` con nombre/precio reales
 
 ### 4.3 Realtime (Pedidos en tiempo real)
 
 Se usa Realtime para escuchar cambios en `sales`:
 
-- Canal: `public:sales` con `postgres_changes` (`event: '*'`).
-- Al recibir INSERT/UPDATE en `sales`, se hace un fetch puntual para obtener la venta completa con `sale_items`, y se actualiza el store global.
-- Base de datos: la tabla `sales` está habilitada en la publicación `supabase_realtime`.
+* Canal: `public:sales` con `postgres_changes` (`event: '*'`).
+
+* Al recibir INSERT/UPDATE en `sales`, se hace un fetch puntual para obtener la venta completa con `sale_items`, y se actualiza el store global.
+
+* Base de datos: la tabla `sales` está habilitada en la publicación `supabase_realtime`.
 
 ## 5. Reglas de negocio en DB
 
@@ -92,8 +110,9 @@ Se usa Realtime para escuchar cambios en `sales`:
 
 La base de datos restringe cambios inválidos de estado con un trigger:
 
-- `trg_check_sales_status_transition` (antes de UPDATE de `sales.status`)
-- Función `check_sales_status_transition()` que permite únicamente transiciones definidas (incluye `pending_approval` → `preparing|rejected`).
+* `trg_check_sales_status_transition` (antes de UPDATE de `sales.status`)
+
+* Función `check_sales_status_transition()` que permite únicamente transiciones definidas (incluye `pending_approval` → `preparing|rejected`).
 
 ## 6. Modelo de Datos (alto nivel)
 
@@ -220,11 +239,15 @@ El negocio opera en Colombia (-05:00). Para consultas por rango del “día”, 
 
 Realtime reduce polling, pero introduce suscripciones WebSocket. Se recomienda:
 
-- Mantener el canal con filtros cuando el volumen crezca (por fecha/estado).
-- Evitar “N+1 queries” excesivas al recibir eventos; preferir agrupar fetches o cache de `sale_items` si aumenta la carga.
+* Mantener el canal con filtros cuando el volumen crezca (por fecha/estado).
+
+* Evitar “N+1 queries” excesivas al recibir eventos; preferir agrupar fetches o cache de `sale_items` si aumenta la carga.
 
 ### 7.3 Seguridad
 
-- No usar `service_role_key` en frontend.
-- Aislar escritura anónima a través de RPC segura.
-- Mantener RLS habilitado en tablas sensibles.
+* No usar `service_role_key` en frontend.
+
+* Aislar escritura anónima a través de RPC segura.
+
+* Mantener RLS habilitado en tablas sensibles.
+

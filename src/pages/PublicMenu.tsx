@@ -39,6 +39,13 @@ export default function PublicMenu() {
   const { settings } = useSettingsStore()
   const orderType = searchParams.get('type') as 'local' | 'delivery'
   
+  // Protect from accessing if store is closed
+  useEffect(() => {
+    if (settings && settings.is_store_open === false) {
+      navigate('/')
+    }
+  }, [settings, navigate])
+
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -48,7 +55,7 @@ export default function PublicMenu() {
   const [deliveryAddress, setDeliveryAddress] = useState('')
   const [deliveryNeighborhood, setDeliveryNeighborhood] = useState('')
   const [tableNumber, setTableNumber] = useState('')
-  const [step, setStep] = useState<'info' | 'menu'>('info') // First ask for info, then show menu
+  const [step, setStep] = useState<'menu' | 'checkout'>('menu') // First show menu, then ask for info
 
   // Cart State
   const [cart, setCart] = useState<CartItem[]>([])
@@ -86,11 +93,6 @@ export default function PublicMenu() {
     } finally {
       setLoading(false)
     }
-  }
-
-  const handleInfoSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    setStep('menu')
   }
 
   // Group products by category
@@ -159,7 +161,8 @@ export default function PublicMenu() {
     }
   }
 
-  const handleCheckout = async () => {
+  const handleCheckout = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault()
     if (cart.length === 0) return
     
     setIsSubmitting(true)
@@ -215,16 +218,16 @@ export default function PublicMenu() {
         <header className="pt-8 pb-4 relative">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-start gap-4">
             <button 
-              onClick={() => setStep('info')}
+              onClick={() => navigate('/')}
               className="mt-2 p-2 bg-white/5 hover:bg-white/10 rounded-full transition-colors shrink-0"
-              title="Volver a los datos"
+              title="Volver al inicio"
             >
               <ArrowLeftIcon className="w-6 h-6 text-white" />
             </button>
             <div>
               <h1 className="text-4xl md:text-5xl font-bold text-white mb-2 tracking-tight brand-heading uppercase">NUESTRO MENÚ</h1>
               <p className="text-gray-400 text-sm md:text-base brand-heading tracking-widest uppercase">
-                HOLA, {customerName} • {orderType === 'local' ? `MESA ${tableNumber || 'N/A'}` : `ENVÍO A ${deliveryNeighborhood}`}
+                {orderType === 'local' ? 'PARA CONSUMIR EN EL LOCAL' : 'PARA ENVÍO A DOMICILIO'}
               </p>
             </div>
           </div>
@@ -278,7 +281,7 @@ export default function PublicMenu() {
               <button 
                 onClick={() => {
                   setOrderSuccess(false)
-                  setStep('info')
+                  setStep('menu')
                   navigate('/')
                 }}
                 className="w-full bg-transparent border border-white/20 text-white font-bold py-3 rounded-xl hover:bg-white/5 transition-colors uppercase tracking-widest brand-heading text-xs"
@@ -287,25 +290,25 @@ export default function PublicMenu() {
               </button>
             </div>
           </div>
-        ) : step === 'info' ? (
-          /* Step 1: Customer Information */
+        ) : step === 'checkout' ? (
+          /* Step 1 (Checkout): Customer Information */
           <div className="max-w-md mx-auto mt-10 relative">
             <button 
-              onClick={() => navigate('/')}
+              onClick={() => setStep('menu')}
               className="absolute -top-12 left-0 p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-full transition-colors flex items-center gap-2"
             >
               <ArrowLeftIcon className="w-5 h-5" />
-              <span className="text-sm font-medium tracking-widest uppercase brand-heading">VOLVER AL INICIO</span>
+              <span className="text-sm font-medium tracking-widest uppercase brand-heading">VOLVER AL MENÚ</span>
             </button>
             <div className="bg-[#1A1A1A] rounded-2xl border border-white/5 p-6 md:p-8">
               <h2 className="text-2xl font-bold mb-2 text-center text-white brand-heading uppercase">
                 {orderType === 'delivery' ? 'DATOS DE ENVÍO' : 'DATOS DEL PEDIDO'}
               </h2>
               <p className="text-gray-400 text-sm text-center mb-8 brand-heading tracking-widest uppercase">
-                POR FAVOR, INGRESA TUS DATOS PARA CONTINUAR
+                POR FAVOR, INGRESA TUS DATOS PARA FINALIZAR
               </p>
 
-              <form onSubmit={handleInfoSubmit} className="space-y-5">
+              <form onSubmit={handleCheckout} className="space-y-5">
                 <div>
                   <label className="block text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2 flex items-center gap-2 brand-heading">
                     <UserIcon className="w-4 h-4" /> TU NOMBRE
@@ -379,8 +382,12 @@ export default function PublicMenu() {
                   </>
                 )}
 
-                <button type="submit" className="w-full bg-white text-black font-bold py-4 rounded-xl hover:bg-gray-200 transition-colors mt-8 uppercase tracking-widest brand-heading">
-                  VER MENÚ
+                <button 
+                  type="submit" 
+                  disabled={isSubmitting}
+                  className="w-full bg-white text-black font-bold py-4 rounded-xl hover:bg-gray-200 transition-colors mt-8 uppercase tracking-widest brand-heading disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isSubmitting ? 'ENVIANDO...' : 'CONFIRMAR Y ENVIAR PEDIDO'}
                 </button>
               </form>
             </div>
@@ -501,11 +508,11 @@ export default function PublicMenu() {
                 </div>
 
                 <button 
-                  onClick={handleCheckout}
-                  disabled={isSubmitting || cart.length === 0}
+                  onClick={() => setStep('checkout')}
+                  disabled={cart.length === 0}
                   className="w-full bg-white text-black font-bold text-xl py-4 rounded-2xl hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-wider brand-button"
                 >
-                  {isSubmitting ? 'ENVIANDO...' : 'ENVIAR'}
+                  IR A PAGAR
                 </button>
               </div>
 
@@ -517,7 +524,7 @@ export default function PublicMenu() {
                 >
                   <div className="flex items-center gap-3">
                     <span className="bg-black text-white text-xs px-2.5 py-1 rounded-full not-italic font-sans">{totalItems}</span>
-                    <span>ENVIAR</span>
+                    <span>VER CARRITO</span>
                   </div>
                   <span className="not-italic font-sans text-base">{formatCurrency(total)}</span>
                 </button>
@@ -653,11 +660,13 @@ export default function PublicMenu() {
                 </div>
                 
                 <button 
-                  onClick={handleCheckout}
-                  disabled={isSubmitting}
+                  onClick={() => {
+                    setIsCartOpen(false);
+                    setStep('checkout');
+                  }}
                   className="w-full bg-white text-black font-bold text-xl py-4 rounded-xl hover:bg-gray-200 transition-colors uppercase tracking-wider brand-button"
                 >
-                  {isSubmitting ? 'ENVIANDO...' : 'CONFIRMAR PEDIDO'}
+                  IR A PAGAR
                 </button>
               </div>
             )}

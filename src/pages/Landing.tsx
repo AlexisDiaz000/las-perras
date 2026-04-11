@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { useSettingsStore } from '../stores/settings'
-import { UserCircleIcon, ShoppingBagIcon, TruckIcon } from '@heroicons/react/24/outline'
+import { UserCircleIcon, ShoppingBagIcon, TruckIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline'
 import { motion, useMotionTemplate, useMotionValue } from 'framer-motion'
 import { MouseEvent } from 'react'
 
@@ -9,6 +9,8 @@ export default function Landing() {
   const { settings } = useSettingsStore()
   
   const appName = settings?.app_name || 'Brutal System'
+  const isStoreOpen = settings?.is_store_open ?? true
+  const publicMessage = settings?.public_message
 
   // Mouse tracking for background interaction
   const mouseX = useMotionValue(0)
@@ -71,12 +73,12 @@ export default function Landing() {
       >
         
         {/* Header: Logo/Name */}
-        <div className="flex justify-center items-center mb-16">
+        <div className="flex flex-col justify-center items-center mb-12">
           <motion.div 
             initial={{ scale: 0.9 }}
             animate={{ scale: 1 }}
             transition={{ duration: 0.5, type: "spring", bounce: 0.5 }}
-            className="flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left"
+            className="flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left mb-6"
           >
             {settings?.logo_url && (
               <div className="w-20 h-20 sm:w-16 sm:h-16 rounded-full overflow-hidden border-2 border-[color:var(--app-border)] shadow-md shrink-0">
@@ -87,6 +89,27 @@ export default function Landing() {
               {appName}
             </h1>
           </motion.div>
+
+          {/* Public Message / Closed Notice */}
+          {!isStoreOpen ? (
+            <motion.div 
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-danger/10 border border-danger/30 rounded-xl p-4 max-w-md w-full text-center mt-2"
+            >
+              <ExclamationTriangleIcon className="w-8 h-8 text-danger mx-auto mb-2" />
+              <h3 className="text-danger font-bold uppercase tracking-widest text-sm mb-1">Actualmente Cerrado</h3>
+              <p className="text-[color:var(--app-text)] text-sm">{publicMessage || 'Lo sentimos, no estamos recibiendo pedidos en este momento.'}</p>
+            </motion.div>
+          ) : publicMessage ? (
+            <motion.div 
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-primary-500/10 border border-primary-500/30 rounded-xl p-4 max-w-md w-full text-center mt-2"
+            >
+              <p className="text-[color:var(--app-text)] text-sm font-medium">{publicMessage}</p>
+            </motion.div>
+          ) : null}
         </div>
 
         {/* Main Actions */}
@@ -102,7 +125,8 @@ export default function Landing() {
             <h2 className="brand-logo text-3xl md:text-4xl text-[color:var(--app-text)]">Tu pedido aquí!</h2>
             <button 
               onClick={() => navigate('/menu?type=local')}
-              className="w-full py-6 rounded-2xl border-2 border-[color:var(--app-text)] hover:bg-[color:var(--app-hover-strong)] transition-all group flex items-center justify-center gap-4 shadow-lg hover:shadow-xl hover:-translate-y-1"
+              disabled={!isStoreOpen}
+              className="w-full py-6 rounded-2xl border-2 border-[color:var(--app-text)] hover:bg-[color:var(--app-hover-strong)] transition-all group flex items-center justify-center gap-4 shadow-lg hover:shadow-xl hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:transform-none"
             >
               <ShoppingBagIcon className="w-8 h-8 text-[color:var(--app-text)] group-hover:scale-110 transition-transform" />
               <span className="text-xl font-bold text-[color:var(--app-text)] uppercase tracking-wider">Para Comer Aquí</span>
@@ -119,7 +143,8 @@ export default function Landing() {
             <h2 className="brand-logo text-2xl md:text-3xl text-[color:var(--app-text)]">Tu pedido a domicilio</h2>
             <button 
               onClick={() => navigate('/menu?type=delivery')}
-              className="w-full py-5 rounded-2xl border-2 border-[color:var(--app-muted-2)] text-[color:var(--app-muted-2)] hover:border-[color:var(--app-text)] hover:text-[color:var(--app-text)] hover:bg-[color:var(--app-hover)] transition-all group flex items-center justify-center gap-4 hover:shadow-lg hover:-translate-y-1"
+              disabled={!isStoreOpen}
+              className="w-full py-5 rounded-2xl border-2 border-[color:var(--app-muted-2)] text-[color:var(--app-muted-2)] hover:border-[color:var(--app-text)] hover:text-[color:var(--app-text)] hover:bg-[color:var(--app-hover)] transition-all group flex items-center justify-center gap-4 hover:shadow-lg hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:transform-none"
             >
               <TruckIcon className="w-7 h-7 group-hover:translate-x-2 transition-transform" />
               <span className="text-lg font-bold uppercase tracking-wider">A Domicilio</span>

@@ -1,0 +1,4 @@
+
+ALTER TABLE public.settings 
+ADD COLUMN IF NOT EXISTS is_store_open BOOLEAN DEFAULT true,
+ADD COLUMN IF NOT EXISTS public_message TEXT DEFAULT '';

@@ -6,7 +6,7 @@ interface SettingsState {
   settings: AppSettings | null
   loading: boolean
   fetchSettings: () => Promise<void>
-  updateSettings: (name: string, logoUrl?: string | null, fontPrimary?: string, fontDisplay?: string) => Promise<void>
+  updateSettings: (name: string, logoUrl?: string | null, fontPrimary?: string, fontDisplay?: string, isStoreOpen?: boolean, publicMessage?: string | null) => Promise<void>
 }
 
 const updateCSSVariables = (primary: string, display: string) => {
@@ -55,9 +55,9 @@ export const useSettingsStore = create<SettingsState>((set) => ({
       set({ loading: false })
     }
   },
-  updateSettings: async (name: string, logoUrl?: string | null, fontPrimary?: string, fontDisplay?: string) => {
+  updateSettings: async (name: string, logoUrl?: string | null, fontPrimary?: string, fontDisplay?: string, isStoreOpen?: boolean, publicMessage?: string | null) => {
     try {
-      const data = await settingsService.updateSettings(name, logoUrl, fontPrimary, fontDisplay)
+      const data = await settingsService.updateSettings(name, logoUrl, fontPrimary, fontDisplay, isStoreOpen, publicMessage)
       set({ settings: data })
       document.title = data.app_name
       if (data.font_primary && data.font_display) {

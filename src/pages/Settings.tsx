@@ -16,6 +16,8 @@ export default function Settings() {
   const [logoInput, setLogoInput] = useState<string | null>(null)
   const [fontPrimaryInput, setFontPrimaryInput] = useState('Inter')
   const [fontDisplayInput, setFontDisplayInput] = useState('Bebas Neue')
+  const [isStoreOpenInput, setIsStoreOpenInput] = useState(true)
+  const [publicMessageInput, setPublicMessageInput] = useState('')
   const [isSavingApp, setIsSavingApp] = useState(false)
   const [imageToCrop, setImageToCrop] = useState<string | null>(null)
   const [formData, setFormData] = useState({
@@ -35,6 +37,8 @@ export default function Settings() {
       setLogoInput(settings.logo_url || null)
       if (settings.font_primary) setFontPrimaryInput(settings.font_primary)
       if (settings.font_display) setFontDisplayInput(settings.font_display)
+      setIsStoreOpenInput(settings.is_store_open ?? true)
+      setPublicMessageInput(settings.public_message || '')
     }
   }, [settings])
 
@@ -67,7 +71,7 @@ export default function Settings() {
     if (!appNameInput.trim()) return
     try {
       setIsSavingApp(true)
-      await updateSettings(appNameInput.trim(), logoInput, fontPrimaryInput, fontDisplayInput)
+      await updateSettings(appNameInput.trim(), logoInput, fontPrimaryInput, fontDisplayInput, isStoreOpenInput, publicMessageInput)
       alert('Configuración del sistema actualizada exitosamente')
     } catch (error) {
       alert('Error al actualizar la configuración')
@@ -257,6 +261,41 @@ export default function Settings() {
                 </div>
               </div>
 
+              {/* Horario y Mensajes Públicos */}
+              <div className="border-t border-white/10 pt-6 space-y-6">
+                <h4 className="brand-heading text-lg text-secondary-50">Estado de la Tienda y Avisos</h4>
+                
+                <div className="flex items-center gap-3">
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      className="sr-only peer" 
+                      checked={isStoreOpenInput}
+                      onChange={(e) => setIsStoreOpenInput(e.target.checked)}
+                    />
+                    <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-success"></div>
+                  </label>
+                  <span className={`text-sm font-bold uppercase tracking-widest ${isStoreOpenInput ? 'text-success' : 'text-danger'}`}>
+                    {isStoreOpenInput ? 'Tienda Abierta (Recibiendo Pedidos)' : 'Tienda Cerrada (Pedidos Pausados)'}
+                  </span>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-secondary-200 uppercase tracking-widest mb-2">
+                    Mensaje Público (Visible para los clientes)
+                  </label>
+                  <textarea
+                    value={publicMessageInput}
+                    onChange={(e) => setPublicMessageInput(e.target.value)}
+                    className="brand-input w-full h-24 resize-none"
+                    placeholder="Ej: Hoy martes estamos cerrados por mantenimiento. ¡Nos vemos el miércoles!"
+                  />
+                  <p className="text-xs text-secondary-400 mt-1">
+                    Si la tienda está cerrada, este mensaje se mostrará a los clientes y no podrán hacer pedidos.
+                  </p>
+                </div>
+              </div>
+
               {/* App Name & Submit */}
               <div className="flex flex-col sm:flex-row gap-4 items-end border-t border-white/10 pt-6">
                 <div className="flex-1 w-full">
@@ -272,7 +311,14 @@ export default function Settings() {
                 </div>
                 <button 
                   type="submit" 
-                  disabled={isSavingApp || (appNameInput === settings?.app_name && logoInput === settings?.logo_url && fontPrimaryInput === (settings?.font_primary || 'Inter') && fontDisplayInput === (settings?.font_display || 'Bebas Neue'))}
+                  disabled={isSavingApp || (
+                    appNameInput === settings?.app_name && 
+                    logoInput === settings?.logo_url && 
+                    fontPrimaryInput === (settings?.font_primary || 'Inter') && 
+                    fontDisplayInput === (settings?.font_display || 'Bebas Neue') &&
+                    isStoreOpenInput === (settings?.is_store_open ?? true) &&
+                    publicMessageInput === (settings?.public_message || '')
+                  )}
                   className="brand-button w-full sm:w-auto"
                 >
                   {isSavingApp ? 'Guardando...' : 'Guardar Cambios'}

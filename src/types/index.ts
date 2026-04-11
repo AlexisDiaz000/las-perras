@@ -4,6 +4,8 @@ export interface AppSettings {
   logo_url?: string | null
   font_primary: string
   font_display: string
+  is_store_open: boolean
+  public_message: string | null
   updated_at: string
 }
 
