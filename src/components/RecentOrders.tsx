@@ -4,9 +4,17 @@ import { getColombiaDate } from '../lib/dateUtils'
 import { Sale } from '../types'
 import { useAuthStore } from '../stores/auth'
 import { useNotificationsStore } from '../stores/notifications'
-import { LinkIcon, DocumentArrowDownIcon } from '@heroicons/react/24/outline'
+import { LinkIcon, DocumentArrowDownIcon, PrinterIcon } from '@heroicons/react/24/outline'
 import { generateReceiptPDF } from '../lib/pdf'
 import { useSettingsStore } from '../stores/settings'
+import { ReceiptPrintTemplate } from './ReceiptPrintTemplate'
+
+// Componente para el ícono de WhatsApp
+const WhatsAppIcon = ({ className = "w-4 h-4" }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/>
+  </svg>
+)
 
 function formatCurrency(amount: number) {
   return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(amount)
@@ -44,6 +52,10 @@ export function RecentOrders() {
     start: getColombiaDate(),
     end: getColombiaDate()
   })
+  
+  const [printingSale, setPrintingSale] = useState<Sale | null>(null)
+  const [whatsappSale, setWhatsappSale] = useState<Sale | null>(null)
+  const [whatsappPhone, setWhatsappPhone] = useState('')
 
   // Debounce search
   useEffect(() => {
@@ -54,7 +66,13 @@ export function RecentOrders() {
   const handleDownloadPDF = async (sale: Sale) => {
     try {
       const blob = generateReceiptPDF(sale, settings)
-      const file = new File([blob], `Factura_${sale.id.slice(0, 8)}.pdf`, { type: 'application/pdf' })
+      
+      // Crear un nombre de archivo limpio y profesional
+      const orderNum = getOrderLabel(sale).replace('#', '')
+      const customerName = sale.customer_name ? `_${sale.customer_name.replace(/[^a-zA-Z0-9]/g, '')}` : ''
+      const fileName = `Factura_Pedido_${orderNum}${customerName}.pdf`
+      
+      const file = new File([blob], fileName, { type: 'application/pdf' })
       
       if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
         try {
@@ -76,7 +94,7 @@ export function RecentOrders() {
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `Factura_${sale.id.slice(0, 8)}.pdf`
+      a.download = fileName
       document.body.appendChild(a)
       a.click()
       document.body.removeChild(a)
@@ -85,6 +103,52 @@ export function RecentOrders() {
       console.error('Error generating PDF', e)
       alert('Error al generar la factura')
     }
+  }
+
+  const handlePrint = (sale: Sale, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setPrintingSale(sale)
+    // Usar setTimeout para dar tiempo al navegador de renderizar el componente oculto
+    setTimeout(() => {
+      window.print()
+      // Limpiar el estado después de imprimir (opcional, pero limpio)
+      setTimeout(() => setPrintingSale(null), 1000)
+    }, 100)
+  }
+
+  const handleWhatsApp = (sale: Sale, e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (sale.customer_phone) {
+      sendWhatsApp(sale, sale.customer_phone)
+    } else {
+      // Abrir modal para pedir número
+      setWhatsappSale(sale)
+      setWhatsappPhone('')
+    }
+  }
+
+  const sendWhatsApp = async (sale: Sale, phoneInput: string) => {
+    if (!phoneInput) return
+    
+    // Limpiar el número de teléfono
+    let phone = phoneInput.replace(/\D/g, '')
+    if (phone.length === 10) {
+      phone = '57' + phone
+    }
+
+    // El flujo ideal web es descargar el PDF localmente y abrir WhatsApp Web para que el usuario lo arrastre.
+    const message = `¡Hola! Aquí tienes el recibo de tu compra (${getOrderLabel(sale)}) en ${settings?.app_name || 'Brutal System'} por un total de $${sale.total_amount.toLocaleString('es-CO')}.`
+    const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`
+    
+    // Primero descargamos el PDF (usamos await para asegurar que se procese)
+    await handleDownloadPDF(sale)
+    
+    // Luego abrimos WhatsApp en otra pestaña
+    setTimeout(() => {
+      window.open(whatsappUrl, '_blank')
+    }, 500)
+    
+    setWhatsappSale(null)
   }
 
   // Ya no usamos setInterval, confiamos en la suscripción en tiempo real de notificationsStore
@@ -280,10 +344,10 @@ export function RecentOrders() {
                     </div>
                   ) : (
                     (grouped[col.key] || []).map(sale => (
-                      <button
+                      <div
                         key={sale.id}
                         onClick={() => setSelected(sale)}
-                        className="w-full text-left brand-card p-4 hover:bg-white/5 transition-colors group relative overflow-hidden"
+                        className="w-full text-left brand-card p-4 hover:bg-white/5 transition-colors group relative overflow-hidden cursor-pointer"
                       >
                         <div className="absolute top-0 left-0 w-1 h-full bg-primary-500 opacity-0 group-hover:opacity-100 transition-opacity" />
                         
@@ -321,11 +385,31 @@ export function RecentOrders() {
                            }`}>
                              {STATUS_LABELS[sale.status || 'draft']}
                            </span>
-                           <span className="text-xs text-gray-500 dark:text-secondary-400 group-hover:text-primary-600 dark:group-hover:text-white transition-colors">
-                             Ver detalles →
-                           </span>
-                        </div>
-                      </button>
+
+                           {sale.status === 'paid' ? (
+                             <div className="flex gap-2 relative z-10">
+                               <button 
+                                 onClick={(e) => handleWhatsApp(sale, e)}
+                                 className="p-1.5 border border-[#25D366]/50 text-[#25D366] hover:bg-[#25D366]/10 hover:border-[#25D366] rounded transition-all"
+                                 title="Enviar por WhatsApp"
+                               >
+                                 <WhatsAppIcon className="w-5 h-5" />
+                               </button>
+                               <button 
+                                 onClick={(e) => handlePrint(sale, e)}
+                                 className="p-1.5 border border-secondary-400 text-secondary-400 hover:bg-white/10 hover:text-white rounded transition-all"
+                                 title="Imprimir Ticket"
+                               >
+                                 <PrinterIcon className="w-5 h-5" />
+                               </button>
+                             </div>
+                           ) : (
+                             <span className="text-xs text-gray-500 dark:text-secondary-400 group-hover:text-primary-600 dark:group-hover:text-white transition-colors">
+                                Ver detalles →
+                              </span>
+                            )}
+                         </div>
+                      </div>
                     ))
                   )}
                 </div>
@@ -572,6 +656,50 @@ export function RecentOrders() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Modal para solicitar número de WhatsApp si no hay */}
+      {whatsappSale && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[60] p-4">
+          <div className="bg-[color:var(--brand-surface)] rounded-2xl border border-[color:var(--app-border)] p-6 max-w-sm w-full shadow-2xl">
+            <h3 className="text-xl font-bold text-[color:var(--app-text)] uppercase tracking-widest mb-2 flex items-center gap-2">
+              <WhatsAppIcon className="w-6 h-6 text-[#25D366]" /> Enviar Factura
+            </h3>
+            <p className="text-sm text-[color:var(--app-muted-2)] mb-4">
+              Este pedido no tiene un teléfono registrado. Ingresa el número del cliente para enviarle el recibo por WhatsApp.
+            </p>
+            
+            <input
+              type="tel"
+              value={whatsappPhone}
+              onChange={(e) => setWhatsappPhone(e.target.value)}
+              placeholder="Ej: 3001234567"
+              className="w-full bg-[color:var(--app-bg)] border border-[color:var(--app-border)] rounded-xl p-3 text-[color:var(--app-text)] focus:outline-none focus:border-success/50 mb-6 font-mono text-lg"
+              autoFocus
+            />
+
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setWhatsappSale(null)}
+                className="px-4 py-2 rounded-xl text-sm font-bold text-[color:var(--app-muted-2)] hover:text-[color:var(--app-text)] hover:bg-[color:var(--app-hover)] transition-colors"
+              >
+                CANCELAR
+              </button>
+              <button
+                onClick={() => sendWhatsApp(whatsappSale, whatsappPhone)}
+                disabled={whatsappPhone.length < 10}
+                className="px-6 py-2 rounded-xl text-sm font-bold bg-[#25D366] text-white hover:bg-[#128C7E] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                ENVIAR Y DESCARGAR
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Hidden Print Template */}
+      {printingSale && (
+        <ReceiptPrintTemplate sale={printingSale} settings={settings} />
       )}
     </>
   )

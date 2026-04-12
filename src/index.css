@@ -218,3 +218,31 @@ html.dark {
   html:not(.dark) .hover\:bg-white\/5:hover { background-color: var(--app-hover); }
   html:not(.dark) .hover\:bg-white\/10:hover { background-color: var(--app-hover-strong); }
 }
+
+@media print {
+  /* Ocultar absolutamente todo en la página por defecto */
+  body > * {
+    display: none !important;
+  }
+  
+  /* Mostrar solamente el contenedor de impresión y forzar estilos de tinta negra/blanca */
+  #print-receipt-container {
+    display: block !important;
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    background-color: white !important;
+    color: black !important;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif !important;
+  }
+
+  /* Resetear márgenes de página que añade el navegador por defecto */
+  @page {
+    margin: 0;
+  }
+}

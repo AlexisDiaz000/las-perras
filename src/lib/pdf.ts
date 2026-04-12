@@ -1,5 +1,5 @@
 import jsPDF from 'jspdf'
-import 'jspdf-autotable'
+import autoTable from 'jspdf-autotable'
 import { Sale } from '../types'
 import { AppSettings } from '../types'
 
@@ -71,8 +71,8 @@ export const generateReceiptPDF = (sale: Sale, settings: AppSettings | null) => 
     ]
   }) || []
 
-  // @ts-ignore
-  doc.autoTable({
+  // Usar la función importada directamente
+  autoTable(doc, {
     startY: currentY,
     head: [['Cant', 'Producto', 'Total']],
     body: tableData,
