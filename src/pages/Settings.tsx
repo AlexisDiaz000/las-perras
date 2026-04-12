@@ -263,35 +263,37 @@ export default function Settings() {
 
               {/* Horario y Mensajes Públicos */}
               <div className="border-t border-white/10 pt-6 space-y-6">
-                <h4 className="brand-heading text-lg text-secondary-50">Estado de la Tienda y Avisos</h4>
+                <h4 className="brand-heading text-lg text-secondary-50">Avisos y Cierre de Tienda</h4>
                 
                 <div className="flex items-center gap-3">
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input 
                       type="checkbox" 
                       className="sr-only peer" 
-                      checked={isStoreOpenInput}
-                      onChange={(e) => setIsStoreOpenInput(e.target.checked)}
+                      checked={!isStoreOpenInput}
+                      onChange={(e) => setIsStoreOpenInput(!e.target.checked)}
                     />
-                    <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-success"></div>
+                    <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-danger"></div>
                   </label>
-                  <span className={`text-sm font-bold uppercase tracking-widest ${isStoreOpenInput ? 'text-success' : 'text-danger'}`}>
-                    {isStoreOpenInput ? 'Tienda Abierta (Recibiendo Pedidos)' : 'Tienda Cerrada (Pedidos Pausados)'}
+                  <span className={`text-sm font-bold uppercase tracking-widest ${!isStoreOpenInput ? 'text-danger' : 'text-secondary-400'}`}>
+                    {!isStoreOpenInput ? 'Activado: Tienda Cerrada (Mostrando Aviso)' : 'Desactivado: Tienda Abierta (Recibiendo Pedidos)'}
                   </span>
                 </div>
 
                 <div>
                   <label className="block text-xs font-semibold text-secondary-200 uppercase tracking-widest mb-2">
-                    Mensaje Público (Visible para los clientes)
+                    Mensaje Público de Cierre (Visible para los clientes)
                   </label>
                   <textarea
                     value={publicMessageInput}
                     onChange={(e) => setPublicMessageInput(e.target.value)}
                     className="brand-input w-full h-24 resize-none"
-                    placeholder="Ej: Hoy martes estamos cerrados por mantenimiento. ¡Nos vemos el miércoles!"
+                    placeholder="Ej: Hoy martes estamos cerrados por descanso. ¡Nos vemos el miércoles!"
                   />
                   <p className="text-xs text-secondary-400 mt-1">
-                    Si la tienda está cerrada, este mensaje se mostrará a los clientes y no podrán hacer pedidos.
+                    {!isStoreOpenInput 
+                      ? 'Este mensaje se está mostrando a los clientes y no pueden hacer pedidos.' 
+                      : 'Activa el interruptor arriba para cerrar la tienda y mostrar este mensaje.'}
                   </p>
                 </div>
               </div>

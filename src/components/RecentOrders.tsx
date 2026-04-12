@@ -4,7 +4,9 @@ import { getColombiaDate } from '../lib/dateUtils'
 import { Sale } from '../types'
 import { useAuthStore } from '../stores/auth'
 import { useNotificationsStore } from '../stores/notifications'
-import { LinkIcon } from '@heroicons/react/24/outline'
+import { LinkIcon, DocumentArrowDownIcon } from '@heroicons/react/24/outline'
+import { generateReceiptPDF } from '../lib/pdf'
+import { useSettingsStore } from '../stores/settings'
 
 function formatCurrency(amount: number) {
   return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(amount)
@@ -26,6 +28,7 @@ const STATUS_LABELS: Record<string, string> = {
 
 export function RecentOrders() {
   const { user } = useAuthStore()
+  const { settings } = useSettingsStore()
   const { activeOrders, fetchOrders, isLoading } = useNotificationsStore()
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [selected, setSelected] = useState<Sale | null>(null)
@@ -37,16 +40,52 @@ export function RecentOrders() {
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [payMethod, setPayMethod] = useState<'cash' | 'card'>('cash')
 
+  const [dateRange, setDateRange] = useState({
+    start: getColombiaDate(),
+    end: getColombiaDate()
+  })
+
   // Debounce search
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(search), 300)
     return () => clearTimeout(timer)
   }, [search])
 
-  const [dateRange, setDateRange] = useState({
-    start: getColombiaDate(),
-    end: getColombiaDate()
-  })
+  const handleDownloadPDF = async (sale: Sale) => {
+    try {
+      const blob = generateReceiptPDF(sale, settings)
+      const file = new File([blob], `Factura_${sale.id.slice(0, 8)}.pdf`, { type: 'application/pdf' })
+      
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({
+            title: `Factura ${getOrderLabel(sale)}`,
+            text: `Aquí tienes el recibo de tu compra en ${settings?.app_name || 'Brutal System'}`,
+            files: [file]
+          })
+          return
+        } catch (shareError: any) {
+          if (shareError.name !== 'AbortError') {
+            console.error('Error sharing:', shareError)
+          } else {
+            return
+          }
+        }
+      }
+      
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `Factura_${sale.id.slice(0, 8)}.pdf`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+    } catch (e) {
+      console.error('Error generating PDF', e)
+      alert('Error al generar la factura')
+    }
+  }
 
   // Ya no usamos setInterval, confiamos en la suscripción en tiempo real de notificationsStore
   // Solo cargamos los datos iniciales al cambiar de fecha si no es el día actual (porque el día actual ya lo maneja el Layout/Store)
@@ -301,7 +340,7 @@ export function RecentOrders() {
           <div className="brand-card p-6 w-full max-w-2xl">
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">
-                <div className="brand-heading text-2xl flex items-center gap-3">
+                <div className="brand-heading text-2xl flex flex-wrap items-center gap-3">
                   {getOrderLabel(selected)}
                   <button 
                     onClick={() => {
@@ -313,6 +352,14 @@ export function RecentOrders() {
                     title="Copiar enlace de seguimiento"
                   >
                     <LinkIcon className="h-3 w-3" /> Copiar Link
+                  </button>
+
+                  <button 
+                    onClick={() => handleDownloadPDF(selected)}
+                    className="text-xs font-sans normal-case tracking-normal bg-[color:var(--app-hover)] text-[color:var(--app-text)] px-2 py-1 rounded-md flex items-center gap-1 hover:bg-[color:var(--app-hover-strong)] transition-colors border border-[color:var(--app-border)]"
+                    title="Generar Factura PDF"
+                  >
+                    <DocumentArrowDownIcon className="h-3 w-3" /> Factura PDF
                   </button>
                 </div>
                 <div className="text-sm text-secondary-300 mt-1">

@@ -27,8 +27,15 @@ function formatCurrency(amount: number) {
   return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(amount)
 }
 
+import { useSettingsStore } from '../stores/settings'
+
+import { generateReceiptPDF } from '../lib/pdf'
+
+import { DocumentArrowDownIcon } from '@heroicons/react/24/outline'
+
 export default function POS() {
   const { user } = useAuthStore()
+  const { settings } = useSettingsStore()
   const [products, setProducts] = useState<Product[]>([])
   const [loadingProducts, setLoadingProducts] = useState(true)
   
@@ -41,6 +48,10 @@ export default function POS() {
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [notif, setNotif] = useState<string | null>(null)
+  const [showReceiptModal, setShowReceiptModal] = useState(false)
+  const [customerPhone, setCustomerPhone] = useState('')
+  const [customerName, setCustomerName] = useState('')
+  const [lastSaleForReceipt, setLastSaleForReceipt] = useState<Sale | null>(null)
 
   const [proteinModal, setProteinModal] = useState<{
     open: boolean
@@ -218,22 +229,6 @@ export default function POS() {
     }
   }
 
-  const markDelivered = async () => {
-    if (!saleId) return
-    if (stage !== 'ready') return
-    setLoading(true)
-    setMessage(null)
-    try {
-      await salesService.updateSale(saleId, { status: 'delivered' } as any)
-      setStage('delivered')
-      setMessage('Pedido entregado')
-    } catch (e: any) {
-      setMessage(e?.message || 'No se pudo actualizar el pedido')
-    } finally {
-      setLoading(false)
-    }
-  }
-
   const voidOrder = () => {
     if (!saleId || !user) {
       resetOrder()
@@ -268,6 +263,52 @@ export default function POS() {
 
   // Orden de visualización de categorías
   const categoryOrder = ['Perros Sencillos', 'Perros Especiales', 'Bebidas', 'Adicionales', 'Otros']
+
+  const handleDownloadPDF = async (sale: Sale) => {
+    try {
+      const blob = generateReceiptPDF(sale, settings)
+      const file = new File([blob], `Factura_${sale.id.slice(0, 8)}.pdf`, { type: 'application/pdf' })
+      
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({
+            title: `Factura ${getOrderLabel(sale)}`,
+            text: `Aquí tienes el recibo de tu compra en ${settings?.app_name || 'Brutal System'}`,
+            files: [file]
+          })
+          return
+        } catch (shareError: any) {
+          if (shareError.name !== 'AbortError') {
+            console.error('Error sharing:', shareError)
+          } else {
+            return
+          }
+        }
+      }
+      
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `Factura_${sale.id.slice(0, 8)}.pdf`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+    } catch (e) {
+      console.error('Error generating PDF', e)
+      alert('Error al generar la factura')
+    }
+  }
+
+  const getOrderLabel = (sale: Sale) => {
+    try {
+      if (typeof sale.order_number === 'number') return `#${sale.order_number}`
+      if (sale.id && typeof sale.id === 'string') return `#${sale.id.slice(0, 8)}`
+      return '#???'
+    } catch {
+      return '#ERR'
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -405,8 +446,8 @@ export default function POS() {
 
               <div>
                 <button disabled={!cart.length || stage !== 'draft' || loading} onClick={markPreparing} className="brand-button w-full text-xs sm:text-sm px-2 py-3">
-                  ENVIAR A COCINA
-                </button>
+                ENVIAR A COCINA
+              </button>
               </div>
 
               <button disabled={!cart.length} onClick={voidOrder} className="w-full px-4 py-2 rounded-md border border-white/10 text-secondary-200 hover:bg-white/10 uppercase tracking-widest">
@@ -442,6 +483,7 @@ export default function POS() {
           </div>
         </div>
       )}
+
     </div>
   )
 }

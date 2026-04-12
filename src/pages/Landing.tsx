@@ -91,7 +91,7 @@ export default function Landing() {
           </motion.div>
 
           {/* Public Message / Closed Notice */}
-          {!isStoreOpen ? (
+          {!isStoreOpen && (
             <motion.div 
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -101,15 +101,7 @@ export default function Landing() {
               <h3 className="text-danger font-bold uppercase tracking-widest text-sm mb-1">Actualmente Cerrado</h3>
               <p className="text-[color:var(--app-text)] text-sm">{publicMessage || 'Lo sentimos, no estamos recibiendo pedidos en este momento.'}</p>
             </motion.div>
-          ) : publicMessage ? (
-            <motion.div 
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-primary-500/10 border border-primary-500/30 rounded-xl p-4 max-w-md w-full text-center mt-2"
-            >
-              <p className="text-[color:var(--app-text)] text-sm font-medium">{publicMessage}</p>
-            </motion.div>
-          ) : null}
+          )}
         </div>
 
         {/* Main Actions */}
