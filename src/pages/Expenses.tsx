@@ -5,6 +5,7 @@ import { getColombiaDate } from '../lib/dateUtils'
 import { EXPENSE_CATEGORIES } from '../constants'
 import { useAuthStore } from '../stores/auth'
 import { PlusIcon, PencilIcon, TrashIcon, DocumentArrowUpIcon } from '@heroicons/react/24/outline'
+import { compressImage } from '../lib/imageCompression'
 
 export default function Expenses() {
   const { user } = useAuthStore()
@@ -101,7 +102,10 @@ export default function Expenses() {
 
     try {
       setIsUploading(true)
-      const url = await expensesService.uploadReceipt(file)
+      // Comprimir la imagen antes de subirla (si es un PDF lo ignora)
+      const compressedFile = await compressImage(file, 800, 0.7) // Máximo 800px de ancho, calidad 70%
+      
+      const url = await expensesService.uploadReceipt(compressedFile)
       setNewExpense(prev => ({ ...prev, receipt_url: url }))
     } catch (error) {
       console.error('Error uploading receipt:', error)

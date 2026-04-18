@@ -89,7 +89,7 @@ export default function Reports() {
     
     currentY += 10
     doc.setFontSize(10)
-    doc.text(`Generado: ${new Date().toLocaleDateString()}`, margin, currentY)
+    doc.text(`Generado: ${new Date().toLocaleDateString('es-CO')}`, margin, currentY)
     doc.text(`Período: ${startDate} al ${endDate}`, pageWidth - margin, currentY, { align: 'right' })
 
     currentY += 15

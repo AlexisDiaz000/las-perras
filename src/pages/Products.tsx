@@ -4,6 +4,7 @@ import { productsService } from '../services/products'
 import { inventoryService } from '../services/inventory'
 import { PlusIcon, PencilIcon, TrashIcon, XMarkIcon, EyeIcon, EyeSlashIcon, PhotoIcon } from '@heroicons/react/24/outline'
 import ImageCropper from '../components/ImageCropper'
+import { compressImage } from '../lib/imageCompression'
 
 const CATEGORIES = ['Perros Sencillos', 'Perros Especiales', 'Bebidas', 'Adicionales', 'Otros'] as const
 
@@ -175,21 +176,18 @@ export default function Products() {
     }
   }
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
 
-    // Validate size (max 5MB for initial upload before crop)
-    if (file.size > 5 * 1024 * 1024) {
-      alert('La imagen no debe superar los 5MB')
-      return
-    }
+    // Pre-comprimir la imagen antes de enviarla al recortador para ahorrar memoria RAM en el navegador
+    const compressedFile = await compressImage(file, 1200, 0.8)
 
     const reader = new FileReader()
     reader.onloadend = () => {
       setImageToCrop(reader.result as string)
     }
-    reader.readAsDataURL(file)
+    reader.readAsDataURL(compressedFile)
     e.target.value = ''
   }
 

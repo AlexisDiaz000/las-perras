@@ -5,6 +5,7 @@ import { authService } from '../services/auth'
 import { User } from '../types'
 import { PlusIcon, TrashIcon, NoSymbolIcon, CheckCircleIcon } from '@heroicons/react/24/outline'
 import ImageCropper from '../components/ImageCropper'
+import { compressImage } from '../lib/imageCompression'
 
 export default function Settings() {
   const { user } = useAuthStore()
@@ -42,21 +43,18 @@ export default function Settings() {
     }
   }, [settings])
 
-  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLogoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
 
-    // Validate size (max 5MB for initial upload before crop)
-    if (file.size > 5 * 1024 * 1024) {
-      alert('La imagen no debe superar los 5MB')
-      return
-    }
+    // Pre-comprimir el logo para asegurar que sea ultraligero
+    const compressedFile = await compressImage(file, 600, 0.8)
 
     const reader = new FileReader()
     reader.onloadend = () => {
       setImageToCrop(reader.result as string)
     }
-    reader.readAsDataURL(file)
+    reader.readAsDataURL(compressedFile)
     // Clear input so same file can be selected again if needed
     e.target.value = ''
   }
