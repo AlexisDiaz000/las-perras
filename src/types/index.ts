@@ -94,6 +94,8 @@ export interface DashboardMetrics {
   cogs: number // Cost of Goods Sold (Costo de Mercancía Vendida)
   waste_cost: number // Costo total de mermas
   net_profit: number
+  cogs_details: { name: string; quantity: number; unit: string; totalCost: number }[]
+  waste_details: { name: string; quantity: number; unit: string; totalCost: number }[]
   sales_by_hotdog_type: { hotdog_type: string; total: number; count: number }[]
   expenses_by_category: { category: string; total: number }[]
 }

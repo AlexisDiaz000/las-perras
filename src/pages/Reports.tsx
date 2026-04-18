@@ -61,7 +61,8 @@ export default function Reports() {
     return new Intl.NumberFormat('es-CO', {
       style: 'currency',
       currency: 'COP',
-      minimumFractionDigits: 0
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
     }).format(amount)
   }
 
@@ -103,10 +104,10 @@ export default function Reports() {
       head: [['Concepto', 'Valor']],
       body: [
         ['Ventas Totales', formatCurrency(metrics.total_sales)],
+        ['Costo Insumos (Ventas)', formatCurrency(metrics.cogs)],
+        ['Pérdidas x Merma', formatCurrency(metrics.waste_cost)],
         ['Gastos Totales', formatCurrency(metrics.total_expenses)],
-        ['Ganancia Neta', formatCurrency(metrics.net_profit)],
-        ['Socio 1 (70%)', formatCurrency(metrics.partner1_share)],
-        ['Socio 2 (30%)', formatCurrency(metrics.partner2_share)],
+        ['Ganancia Neta', formatCurrency(metrics.net_profit)]
       ],
       theme: 'grid',
       headStyles: { fillColor: [20, 20, 20] },
@@ -140,8 +141,54 @@ export default function Reports() {
     // @ts-ignore
     currentY = doc.lastAutoTable.finalY + 15
 
-    // Section 3: Expenses Details
-    doc.text('Detalle de Gastos', margin, currentY)
+    // Section 3: Cost of Goods Sold Details
+    if (metrics.cogs_details && metrics.cogs_details.length > 0) {
+      doc.text('Detalle de Costo de Insumos (Ventas)', margin, currentY)
+      
+      autoTable(doc, {
+        startY: currentY + 5,
+        head: [['Insumo', 'Cantidad Usada', 'Costo Total']],
+        body: metrics.cogs_details.map((item: any) => [
+          item.name,
+          `${item.quantity} ${item.unit}`,
+          formatCurrency(item.totalCost)
+        ]),
+        theme: 'striped',
+        headStyles: { fillColor: [50, 50, 50] },
+        columnStyles: {
+          2: { halign: 'right' }
+        }
+      })
+
+      // @ts-ignore
+      currentY = doc.lastAutoTable.finalY + 15
+    }
+
+    // Section 4: Waste Details
+    if (metrics.waste_details && metrics.waste_details.length > 0) {
+      doc.text('Detalle de Pérdidas por Merma', margin, currentY)
+      
+      autoTable(doc, {
+        startY: currentY + 5,
+        head: [['Insumo', 'Cantidad Perdida', 'Costo Total']],
+        body: metrics.waste_details.map((item: any) => [
+          item.name,
+          `${item.quantity} ${item.unit}`,
+          formatCurrency(item.totalCost)
+        ]),
+        theme: 'striped',
+        headStyles: { fillColor: [50, 50, 50] },
+        columnStyles: {
+          2: { halign: 'right' }
+        }
+      })
+
+      // @ts-ignore
+      currentY = doc.lastAutoTable.finalY + 15
+    }
+
+    // Section 5: Expenses Details
+    doc.text('Detalle de Gastos Operativos', margin, currentY)
 
     autoTable(doc, {
       startY: currentY + 5,
@@ -254,27 +301,27 @@ export default function Reports() {
               </p>
             </div>
             <div className="brand-card p-5">
+              <h3 className="text-xs font-semibold text-secondary-300 uppercase tracking-widest">Costo Insumos</h3>
+              <p className="text-2xl font-bold text-secondary-50">
+                {formatCurrency(reportData.metrics.cogs)}
+              </p>
+            </div>
+            <div className="brand-card p-5 border-l-4 border-l-danger">
+              <h3 className="text-xs font-semibold text-danger uppercase tracking-widest">Pérdidas x Merma</h3>
+              <p className="text-2xl font-bold text-secondary-50">
+                {formatCurrency(reportData.metrics.waste_cost)}
+              </p>
+            </div>
+            <div className="brand-card p-5">
               <h3 className="text-xs font-semibold text-secondary-300 uppercase tracking-widest">Gastos Totales</h3>
               <p className="text-2xl font-bold text-secondary-50">
                 {formatCurrency(reportData.metrics.total_expenses)}
               </p>
             </div>
-            <div className="brand-card p-5">
-              <h3 className="text-xs font-semibold text-secondary-300 uppercase tracking-widest">Ganancia Neta</h3>
-              <p className="text-2xl font-bold text-secondary-50">
+            <div className={`brand-card p-5 ${reportData.metrics.net_profit < 0 ? 'border-l-4 border-l-danger' : ''}`}>
+              <h3 className={`text-xs font-semibold uppercase tracking-widest ${reportData.metrics.net_profit < 0 ? 'text-danger' : 'text-secondary-300'}`}>Ganancia Neta</h3>
+              <p className={`text-2xl font-bold ${reportData.metrics.net_profit < 0 ? 'text-danger' : 'text-secondary-50'}`}>
                 {formatCurrency(reportData.metrics.net_profit)}
-              </p>
-            </div>
-            <div className="brand-card p-5">
-              <h3 className="text-xs font-semibold text-secondary-300 uppercase tracking-widest">Socio 1 (70%)</h3>
-              <p className="text-2xl font-bold text-secondary-50">
-                {formatCurrency(reportData.metrics.partner1_share)}
-              </p>
-            </div>
-            <div className="brand-card p-5">
-              <h3 className="text-xs font-semibold text-secondary-300 uppercase tracking-widest">Socio 2 (30%)</h3>
-              <p className="text-2xl font-bold text-secondary-50">
-                {formatCurrency(reportData.metrics.partner2_share)}
               </p>
             </div>
           </div>

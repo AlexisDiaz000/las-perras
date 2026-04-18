@@ -33,7 +33,7 @@ export const dashboardService = {
       .select(`
         quantity,
         reason,
-        item:inventory_items (unit_cost)
+        item:inventory_items (name, unit_cost, unit)
       `)
       .eq('type', 'out')
       .gte('created_at', startDate)
@@ -43,19 +43,32 @@ export const dashboardService = {
 
     let cogs = 0
     let wasteCost = 0
+    const cogsMap: Record<string, any> = {}
+    const wasteMap: Record<string, any> = {}
 
     ;(inventoryMovements || []).forEach((mov: any) => {
       const cost = mov.item?.unit_cost || 0
       const totalCost = cost * mov.quantity
+      const itemName = mov.item?.name || 'Desconocido'
+      const itemUnit = mov.item?.unit || 'u'
       
       // Clasificar si es merma o venta
       if (mov.reason && mov.reason.toLowerCase().includes('merma')) {
         wasteCost += totalCost
+        if (!wasteMap[itemName]) wasteMap[itemName] = { name: itemName, quantity: 0, unit: itemUnit, totalCost: 0 }
+        wasteMap[itemName].quantity += mov.quantity
+        wasteMap[itemName].totalCost += totalCost
       } else {
         // Todo lo demás (Venta: ..., Ajuste de Inventario: ...) se considera CMV operativo
         cogs += totalCost
+        if (!cogsMap[itemName]) cogsMap[itemName] = { name: itemName, quantity: 0, unit: itemUnit, totalCost: 0 }
+        cogsMap[itemName].quantity += mov.quantity
+        cogsMap[itemName].totalCost += totalCost
       }
     })
+
+    const cogsDetails = Object.values(cogsMap).sort((a: any, b: any) => b.totalCost - a.totalCost)
+    const wasteDetails = Object.values(wasteMap).sort((a: any, b: any) => b.totalCost - a.totalCost)
 
     // Calcular ganancia neta REAL:
     // Ganancia Neta = Ventas Totales - (Costo Mercancía Vendida + Costo de Mermas + Gastos Operativos Totales)
@@ -67,57 +80,45 @@ export const dashboardService = {
       cogs: cogs, // Devolver el costo de mercancía vendida
       waste_cost: wasteCost, // Devolver el costo de las mermas separadas
       net_profit: netProfit, // Permitir valores negativos para reflejar pérdidas reales
+      cogs_details: cogsDetails,
+      waste_details: wasteDetails,
       sales_by_hotdog_type: [], // Se llenará con getSalesDataForChart
       expenses_by_category: [] // Se llenará con getExpensesDataForChart
     }
   },
 
   async getSalesDataForChart(startDate: string, endDate: string): Promise<{ hotdog_type: string; total: number; count: number }[]> {
-    // Obtener ventas por tipo de perro con filtro de fecha
-    const { data, error } = await supabase
-      .rpc('get_sales_by_hotdog_type', {
-        start_date: startDate,
-        end_date: endDate
-      })
+    // Calculamos manualmente filtrando por estados válidos (paid, delivered) para coincidir con las ventas totales
+    const { data: manualData, error: manualError } = await supabase
+      .from('sale_items')
+      .select(`
+        hotdog_type,
+        total_price,
+        quantity,
+        sales!inner(id, created_at, status)
+      `)
+      .in('sales.status', ['paid', 'delivered'])
+      .gte('sales.created_at', startDate)
+      .lte('sales.created_at', endDate)
 
-    if (error) {
-      // Si la función RPC no existe, usar consulta manual
-      const { data: manualData, error: manualError } = await supabase
-        .from('sale_items')
-        .select(`
-          hotdog_type,
-          total_price,
-          quantity,
-          sales!inner(id, created_at)
-        `)
+    if (manualError) throw manualError
 
-      if (manualError) throw manualError
+    const grouped = (manualData || []).reduce((acc: any, item: any) => {
+      const existing = acc.find((g: any) => g.hotdog_type === item.hotdog_type)
+      if (existing) {
+        existing.total += item.total_price
+        existing.count += item.quantity
+      } else {
+        acc.push({
+          hotdog_type: item.hotdog_type,
+          total: item.total_price,
+          count: item.quantity
+        })
+      }
+      return acc
+    }, [])
 
-      // Filtrar manualmente por fecha y agrupar
-      const filtered = (manualData as any[]).filter((item: any) => {
-        const itemDate = new Date(item.sales.created_at).toISOString().split('T')[0]
-        return itemDate >= startDate && itemDate <= endDate
-      })
-
-      const grouped = filtered.reduce((acc: any, item: any) => {
-        const existing = acc.find((g: any) => g.hotdog_type === item.hotdog_type)
-        if (existing) {
-          existing.total += item.total_price
-          existing.count += item.quantity
-        } else {
-          acc.push({
-            hotdog_type: item.hotdog_type,
-            total: item.total_price,
-            count: item.quantity
-          })
-        }
-        return acc
-      }, [])
-
-      return grouped
-    }
-
-    return data
+    return grouped.sort((a: any, b: any) => b.total - a.total)
   },
 
   async getExpensesDataForChart(startDate: string, endDate: string): Promise<{ category: string; total: number }[]> {
