@@ -318,7 +318,7 @@ export default function PublicMenu() {
                     required
                     value={customerName}
                     onChange={(e) => setCustomerName(e.target.value)}
-                    className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-white/30 transition-colors"
+                    className="brand-input w-full bg-white/5 border-white/10 rounded-xl px-4 py-3 text-white focus:border-white/30 transition-colors"
                     placeholder="Ej: Juan Pérez"
                   />
                 </div>
@@ -332,7 +332,7 @@ export default function PublicMenu() {
                       type="text"
                       value={tableNumber}
                       onChange={(e) => setTableNumber(e.target.value)}
-                      className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-white/30 transition-colors"
+                      className="brand-input w-full bg-white/5 border-white/10 rounded-xl px-4 py-3 text-white focus:border-white/30 transition-colors"
                       placeholder="Ej: 5"
                     />
                   </div>
@@ -349,7 +349,7 @@ export default function PublicMenu() {
                         required
                         value={customerPhone}
                         onChange={(e) => setCustomerPhone(e.target.value)}
-                        className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-white/30 transition-colors"
+                        className="brand-input w-full bg-white/5 border-white/10 rounded-xl px-4 py-3 text-white focus:border-white/30 transition-colors"
                         placeholder="Ej: 300 123 4567"
                       />
                     </div>
@@ -362,7 +362,7 @@ export default function PublicMenu() {
                         required
                         value={deliveryNeighborhood}
                         onChange={(e) => setDeliveryNeighborhood(e.target.value)}
-                        className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-white/30 transition-colors"
+                        className="brand-input w-full bg-white/5 border-white/10 rounded-xl px-4 py-3 text-white focus:border-white/30 transition-colors"
                         placeholder="Ej: El Poblado"
                       />
                     </div>
@@ -375,7 +375,7 @@ export default function PublicMenu() {
                         required
                         value={deliveryAddress}
                         onChange={(e) => setDeliveryAddress(e.target.value)}
-                        className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-white/30 transition-colors"
+                        className="brand-input w-full bg-white/5 border-white/10 rounded-xl px-4 py-3 text-white focus:border-white/30 transition-colors"
                         placeholder="Ej: Calle 123 # 45-67, Apto 101"
                       />
                     </div>
@@ -485,7 +485,9 @@ export default function PublicMenu() {
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className="text-[color:var(--app-muted-1)] font-mono">{formatCurrency(item.price * item.cartQuantity)}</span>
+                            <span className="font-bold text-sm text-[color:var(--app-text)] brand-heading tracking-widest uppercase">
+                              {formatCurrency(item.price * item.cartQuantity)}
+                            </span>
                             <button onClick={() => updateCartItemQuantity(index, -1)} className="text-danger hover:text-danger-hover p-1">
                               <TrashIcon className="w-4 h-4" />
                             </button>
@@ -497,7 +499,7 @@ export default function PublicMenu() {
 
                 <div className="border-t border-white/10 pt-4 space-y-2 mb-6 text-sm">
                    <div className="flex justify-between text-white font-bold text-lg pt-2">
-                     <span>Total (Sin envío)</span>
+                     <span className="brand-heading uppercase tracking-widest">Total (Sin envío)</span>
                      <span>{formatCurrency(total)}</span>
                    </div>
                    {orderType === 'delivery' && (
@@ -523,10 +525,10 @@ export default function PublicMenu() {
                   className="w-full bg-white text-black font-bold text-xl py-4 rounded-2xl shadow-2xl shadow-black flex items-center justify-between px-6 uppercase tracking-wider border border-gray-200 brand-button"
                 >
                   <div className="flex items-center gap-3">
-                    <span className="bg-black text-white text-xs px-2.5 py-1 rounded-full not-italic font-sans">{totalItems}</span>
+                    <span className="bg-black text-white text-xs px-2.5 py-1 rounded-full not-italic brand-heading">{totalItems}</span>
                     <span>VER CARRITO</span>
                   </div>
-                  <span className="not-italic font-sans text-base">{formatCurrency(total)}</span>
+                  <span className="not-italic brand-heading tracking-widest text-base">{formatCurrency(total)}</span>
                 </button>
               </div>
             </div>
@@ -602,7 +604,7 @@ export default function PublicMenu() {
             
             {/* Cart Header */}
             <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between">
-              <h2 className="text-xl font-bold">Tu Pedido</h2>
+              <h2 className="text-xl font-bold brand-heading uppercase">Tu Pedido</h2>
               <button 
                 onClick={() => setIsCartOpen(false)}
                 className="p-2 rounded-full hover:bg-white/10 text-gray-400 transition-colors"
@@ -621,13 +623,13 @@ export default function PublicMenu() {
                 cart.map((item, index) => (
                   <div key={index} className="flex justify-between items-center border-b border-white/5 pb-4 gap-4">
                     <div className="flex-1 min-w-0">
-                      <h4 className="font-bold text-sm uppercase truncate text-[color:var(--app-text)]">{item.name}</h4>
+                      <h4 className="font-bold text-sm uppercase truncate text-[color:var(--app-text)] brand-heading">{item.name}</h4>
                       {item.modifiers?.protein && (
                         <span className="block text-[10px] text-yellow-500 uppercase mt-0.5">
                           + {item.modifiers.protein}
                         </span>
                       )}
-                      <p className="text-[color:var(--app-muted-1)] text-sm mt-1">{formatCurrency(item.price)}</p>
+                      <p className="text-[color:var(--app-muted-1)] text-sm mt-1 brand-heading tracking-widest">{formatCurrency(item.price)}</p>
                     </div>
                     
                     <div className="flex items-center gap-2 bg-black rounded-lg border border-white/10 p-1 shrink-0">
@@ -648,7 +650,7 @@ export default function PublicMenu() {
             {cart.length > 0 && (
               <div className="border-t border-white/10 p-6 space-y-4 bg-black/50">
                 <div className="space-y-2 text-sm">
-                  <div className="flex justify-between text-xl font-bold pt-2">
+                  <div className="flex justify-between text-white font-bold text-lg pt-2 brand-heading uppercase tracking-widest">
                     <span>Total (Sin envío)</span>
                     <span>{formatCurrency(total)}</span>
                   </div>

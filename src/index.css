@@ -102,6 +102,19 @@ html.dark {
     color: var(--app-text);
     background-image: var(--app-bg-image);
     background-attachment: fixed;
+    font-family: var(--font-primary);
+  }
+  
+  /* Reset global para asegurar herencia de fuentes en elementos de formulario */
+  input, button, select, textarea { 
+    font-family: inherit; 
+    letter-spacing: inherit; 
+  }
+  ::placeholder { 
+    font-family: inherit; 
+    font-weight: inherit; 
+    color: inherit;
+    opacity: 0.5; 
   }
 }
 
@@ -139,7 +152,7 @@ html.dark {
   .brand-button {
     background-color: var(--button-bg);
     color: var(--button-text);
-    @apply inline-flex items-center justify-center rounded-md px-4 py-2 font-semibold uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply inline-flex items-center justify-center rounded-md px-4 py-2 font-semibold uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed font-display;
     letter-spacing: 0.1em;
   }
   .brand-button:hover {
