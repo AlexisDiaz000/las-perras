@@ -138,6 +138,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                               <li key={item.name}>
                                 <Link
                                   to={item.href}
+                                  onClick={() => setSidebarOpen(false)}
                                   className={classNames(
                                     location.pathname === item.href
                                       ? 'bg-[color:var(--app-hover-strong)] text-[color:var(--app-text)]'
@@ -280,16 +281,32 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               <h1 className="brand-logo text-xl lg:hidden truncate">{appName}</h1>
             </div>
 
-            <div className="flex items-center gap-x-3">
+            <div className="flex items-center gap-x-1 sm:gap-x-3 shrink-0">
+              <Link to="/web-orders" className="relative p-1.5 sm:p-2 hover:bg-[color:var(--app-hover)] rounded-full text-[color:var(--app-muted-2)] hover:text-[color:var(--app-text)] transition-colors outline-none" title="Ver Pedidos Web">
+                <BellIcon className="h-5 w-5" />
+                {pendingOrders.length > 0 && (
+                  <span className="absolute top-1 right-1 flex h-3 w-3 items-center justify-center rounded-full bg-red-500 ring-2 ring-[color:var(--brand-surface)] text-[8px] font-bold text-white">
+                    {pendingOrders.length}
+                  </span>
+                )}
+              </Link>
               <button
                 onClick={toggleTheme}
-                className="p-2 hover:bg-[color:var(--app-hover)] rounded-full text-[color:var(--app-muted-2)] hover:text-[color:var(--app-text)] transition-colors"
+                className="p-1.5 sm:p-2 hover:bg-[color:var(--app-hover)] rounded-full text-[color:var(--app-muted-2)] hover:text-[color:var(--app-text)] transition-colors"
+                title={isDark ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro'}
               >
                 {isDark ? <SunIcon className="h-5 w-5" /> : <MoonIcon className="h-5 w-5" />}
               </button>
-              <div className="h-8 w-8 rounded-full bg-[color:var(--app-hover-strong)] flex items-center justify-center text-[color:var(--app-text)] text-sm font-bold">
+              <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-[color:var(--app-hover-strong)] flex items-center justify-center text-[color:var(--app-text)] text-sm font-bold shrink-0 mx-1 sm:mx-0">
                 {user?.name?.[0]?.toUpperCase() || 'U'}
               </div>
+              <button
+                 onClick={handleSignOut}
+                 className="p-1.5 sm:p-2 hover:bg-red-500/10 rounded-full text-red-500 hover:text-red-400 transition-colors"
+                 title="Cerrar Sesión"
+               >
+                 <ArrowLeftOnRectangleIcon className="h-5 w-5" />
+               </button>
             </div>
           </div>
 
