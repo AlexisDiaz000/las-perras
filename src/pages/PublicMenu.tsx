@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { Product } from '../types'
@@ -95,14 +95,16 @@ export default function PublicMenu() {
     }
   }
 
-  // Group products by category
-  const groupedProducts = products.reduce((acc, product) => {
-    if (!acc[product.category]) {
-      acc[product.category] = []
-    }
-    acc[product.category].push(product)
-    return acc
-  }, {} as Record<string, Product[]>)
+  // Group products by category efficiently
+  const groupedProducts = useMemo(() => {
+    return products.reduce((acc, product) => {
+      if (!acc[product.category]) {
+        acc[product.category] = []
+      }
+      acc[product.category].push(product)
+      return acc
+    }, {} as Record<string, Product[]>)
+  }, [products])
 
   // Cart Functions
   const addToCart = (product: Product, modifier?: { protein?: string }) => {
@@ -440,7 +442,9 @@ export default function PublicMenu() {
                             <div className="w-[140px] h-full bg-[#1A1A1A] shrink-0 relative">
                               <img 
                                 src={product.image_url} 
-                                alt={product.name} 
+                                alt={product.name}
+                                loading="lazy"
+                                decoding="async"
                                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                               />
                               <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors" />
