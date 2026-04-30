@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { salesService } from '../services/sales'
+import { salesService, consumeInventoryForSale } from '../services/sales'
 import { getColombiaDate } from '../lib/dateUtils'
 import { Sale } from '../types'
 import { useAuthStore } from '../stores/auth'
@@ -165,6 +165,15 @@ export function RecentOrders() {
     setActionLoading(saleId)
     try {
       await salesService.updateSale(saleId, { status } as any)
+      
+      // Descontar inventario SOLAMENTE cuando el pedido pasa a "Listo / Por cobrar" (delivered)
+      if (status === 'delivered' && user) {
+        const items = await salesService.getSaleItems(saleId)
+        if (items && items.length > 0) {
+          await consumeInventoryForSale(saleId, user.id, items)
+        }
+      }
+
       // No necesitamos llamar a loadOrders() aquí porque el websocket actualizará el estado automáticamente
     } catch (error: any) {
       alert(error?.message || 'Error al actualizar pedido')

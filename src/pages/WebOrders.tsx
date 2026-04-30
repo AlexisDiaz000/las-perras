@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNotificationsStore } from '../stores/notifications'
 import { useAuthStore } from '../stores/auth'
 import { supabase } from '../lib/supabase'
-import { consumeInventoryForSale } from '../services/sales'
+import { salesService } from '../services/sales'
 import { LinkIcon } from '@heroicons/react/24/outline'
 
 // Componente para el ícono de WhatsApp
@@ -67,12 +67,6 @@ export default function WebOrders() {
 
       if (error) throw error
 
-      // Descontar inventario al aceptar el pedido
-      const items = orderItems[orderId]
-      if (items && user) {
-        await consumeInventoryForSale(orderId, user.id, items)
-      }
-      
       // Force UI update immediately for better UX
       useNotificationsStore.getState().removeOrder(orderId)
       // Agregarlo a las órdenes activas manualmente para que aparezca en POS inmediatamente

@@ -1,10 +1,10 @@
 import { useMemo, useState, useEffect } from 'react'
 import { useAuthStore } from '../stores/auth'
 import { PAYMENT_METHODS } from '../constants'
-import { createSaleAndConsumeInventory, salesService } from '../services/sales'
+import { salesService } from '../services/sales'
 import { productsService } from '../services/products'
 import { supabase } from '../lib/supabase'
-import { Product } from '../types'
+import { Product, Sale } from '../types'
 
 type ProteinChoice = 'Desmechada de Res' | 'Carne de Pollo' | 'Carne de Cerdo'
 
@@ -206,7 +206,7 @@ export default function POS() {
     }
 
     try {
-      const created = await createSaleAndConsumeInventory(
+      const created = await salesService.createSale(
         {
           total_amount: totals.total,
           payment_method: paymentMethod,

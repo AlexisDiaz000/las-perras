@@ -297,6 +297,9 @@ export const salesService = {
   },
 
   async voidSale(saleId: string, reason: string, userId: string, reverseInventory: boolean): Promise<void> {
+    const { data: sale } = await supabase.from('sales').select('status').eq('id', saleId).single()
+    const oldStatus = sale?.status
+
     const { error: updateError } = await supabase
       .from('sales')
       .update({
@@ -310,29 +313,45 @@ export const salesService = {
 
     if (updateError) throw updateError
 
-    if (!reverseInventory) return
+    // Si el pedido ya estaba preparado o cobrado, los insumos se gastaron físicamente.
+    // Como se anuló, esos insumos pasan a ser "Merma".
+    if (oldStatus === 'delivered' || oldStatus === 'paid') {
+      const movements = await this.getMovementsBySaleId(saleId)
+      if (movements.length > 0) {
+        // Actualizamos la razón para que incluya la palabra "Merma"
+        for (const mov of movements) {
+          if (mov.type === 'out' && !mov.reason?.toLowerCase().includes('merma')) {
+            await supabase
+              .from('inventory_movements')
+              .update({ reason: `Merma (Anulado): ${mov.reason} - ${reason}` })
+              .eq('id', mov.id)
+          }
+        }
+      }
+    } else if (reverseInventory) {
+      // Por compatibilidad, si se pide reversar explícitamente y no era merma
+      const movements = await this.getMovementsBySaleId(saleId)
+      const originals = movements.filter(m => !m.reversal_of)
+      if (!originals.length) return
 
-    const movements = await this.getMovementsBySaleId(saleId)
-    const originals = movements.filter(m => !m.reversal_of)
-    if (!originals.length) return
+      const group = crypto.randomUUID()
+      const reversals = originals.map(m => ({
+        item_id: m.item_id,
+        type: m.type === 'out' ? 'in' : 'out',
+        quantity: m.quantity,
+        reason: `Reverso venta ${saleId}: ${reason}`,
+        user_id: userId,
+        sale_id: saleId,
+        reversal_of: m.id,
+        movement_group: group,
+      }))
 
-    const group = crypto.randomUUID()
-    const reversals = originals.map(m => ({
-      item_id: m.item_id,
-      type: m.type === 'out' ? 'in' : 'out',
-      quantity: m.quantity,
-      reason: `Reverso venta ${saleId}: ${reason}`,
-      user_id: userId,
-      sale_id: saleId,
-      reversal_of: m.id,
-      movement_group: group,
-    }))
+      const { error: insertError } = await supabase
+        .from('inventory_movements')
+        .insert(reversals as any)
 
-    const { error: insertError } = await supabase
-      .from('inventory_movements')
-      .insert(reversals as any)
-
-    if (insertError) throw insertError
+      if (insertError) throw insertError
+    }
   },
 
   async refundSale(saleId: string, reason: string, userId: string): Promise<void> {
@@ -408,14 +427,4 @@ export const salesService = {
     if (error) throw error
     return data as any
   }
-}
-
-export async function createSaleAndConsumeInventory(
-  sale: Omit<Sale, 'id' | 'created_at'>,
-  items: POSItemInput[]
-): Promise<Sale> {
-  const saleData = await salesService.createSale(sale, items)
-  await consumeInventoryForSale(saleData.id, sale.seller_id, items)
-
-  return saleData
 }

@@ -82,7 +82,7 @@ export default function Landing() {
           >
             {settings?.logo_url && (
               <div className="w-20 h-20 sm:w-16 sm:h-16 rounded-full overflow-hidden border-2 border-[color:var(--app-border)] shadow-md shrink-0">
-                <img src={settings.logo_url} alt="Logo" className="w-full h-full object-cover" fetchpriority="high" decoding="async" />
+                <img src={settings.logo_url} alt="Logo" className="w-full h-full object-cover" fetchPriority="high" decoding="async" />
               </div>
             )}
             <h1 className="brand-logo text-4xl md:text-5xl text-[color:var(--app-text)] bg-clip-text text-transparent bg-gradient-to-br from-[color:var(--app-text)] to-[color:var(--app-muted-2)]">
