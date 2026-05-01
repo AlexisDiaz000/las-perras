@@ -165,11 +165,8 @@ export default function Products() {
     setFormData({ ...formData, ingredients: newIngredients })
   }
 
-  const handleDelete = async (e: React.MouseEvent, id: string) => {
-    e.preventDefault()
-    e.stopPropagation()
-    
-    if (!window.confirm('¿Estás totalmente seguro de eliminar este producto?')) return
+  const handleDelete = async (id: string) => {
+    if (!window.confirm('¿Eliminar este producto?')) return
     try {
       await productsService.deleteProduct(id)
       loadData()
@@ -179,11 +176,8 @@ export default function Products() {
     }
   }
 
-  const handleDuplicate = async (e: React.MouseEvent, id: string) => {
-    e.preventDefault()
-    e.stopPropagation()
-    
-    if (!window.confirm('¿Deseas crear una copia exacta de este producto y su receta?')) return
+  const handleDuplicate = async (id: string) => {
+    if (!window.confirm('¿Duplicar este producto y su receta?')) return
     try {
       await productsService.duplicateProduct(id)
       loadData()
@@ -280,25 +274,21 @@ export default function Products() {
             
             <div className="flex justify-end space-x-2 pt-4 border-t border-white/10">
               <button 
-                onClick={(e) => handleDuplicate(e, product.id)} 
+                onClick={() => handleDuplicate(product.id)} 
                 className="p-2 text-green-400 hover:bg-green-500/10 rounded-full" 
                 title="Duplicar"
               >
                 <DocumentDuplicateIcon className="h-5 w-5" />
               </button>
               <button 
-                onClick={(e) => { 
-                  e.preventDefault(); 
-                  e.stopPropagation(); 
-                  handleEdit(product) 
-                }} 
+                onClick={() => handleEdit(product)} 
                 className="p-2 text-blue-400 hover:bg-blue-500/10 rounded-full" 
                 title="Editar"
               >
                 <PencilIcon className="h-5 w-5" />
               </button>
               <button 
-                onClick={(e) => handleDelete(e, product.id)} 
+                onClick={() => handleDelete(product.id)} 
                 className="p-2 text-red-400 hover:bg-red-500/10 rounded-full" 
                 title="Eliminar"
               >
