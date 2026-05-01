@@ -166,25 +166,31 @@ export default function Products() {
   }
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('¿Eliminar este producto?')) return
-    try {
-      await productsService.deleteProduct(id)
-      loadData()
-    } catch (error) {
-      console.error('Error deleting product:', error)
-      alert('Error al eliminar el producto')
-    }
+    // Usamos setTimeout para dar un respiro al event loop y evitar auto-click por "mouse bounce" o lag en celulares
+    setTimeout(async () => {
+      if (!window.confirm('¿Eliminar este producto?')) return
+      try {
+        await productsService.deleteProduct(id)
+        loadData()
+      } catch (error) {
+        console.error('Error deleting product:', error)
+        alert('Error al eliminar el producto')
+      }
+    }, 50)
   }
 
   const handleDuplicate = async (id: string) => {
-    if (!window.confirm('¿Duplicar este producto y su receta?')) return
-    try {
-      await productsService.duplicateProduct(id)
-      loadData()
-    } catch (error) {
-      console.error('Error duplicating product:', error)
-      alert('Error al duplicar el producto')
-    }
+    // Usamos setTimeout para evitar "ghost clicks" en pantallas táctiles o teclados lentos
+    setTimeout(async () => {
+      if (!window.confirm('¿Duplicar este producto y su receta?')) return
+      try {
+        await productsService.duplicateProduct(id)
+        loadData()
+      } catch (error) {
+        console.error('Error duplicating product:', error)
+        alert('Error al duplicar el producto')
+      }
+    }, 50)
   }
 
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -273,13 +279,37 @@ export default function Products() {
             </div>
             
             <div className="flex justify-end space-x-2 pt-4 border-t border-white/10">
-              <button onClick={(e) => { e.stopPropagation(); handleDuplicate(product.id) }} className="p-2 text-green-400 hover:bg-green-500/10 rounded-full" title="Duplicar">
+              <button 
+                onClick={(e) => { 
+                  e.preventDefault(); 
+                  e.stopPropagation(); 
+                  handleDuplicate(product.id) 
+                }} 
+                className="p-2 text-green-400 hover:bg-green-500/10 rounded-full" 
+                title="Duplicar"
+              >
                 <DocumentDuplicateIcon className="h-5 w-5" />
               </button>
-              <button onClick={(e) => { e.stopPropagation(); handleEdit(product) }} className="p-2 text-blue-400 hover:bg-blue-500/10 rounded-full" title="Editar">
+              <button 
+                onClick={(e) => { 
+                  e.preventDefault(); 
+                  e.stopPropagation(); 
+                  handleEdit(product) 
+                }} 
+                className="p-2 text-blue-400 hover:bg-blue-500/10 rounded-full" 
+                title="Editar"
+              >
                 <PencilIcon className="h-5 w-5" />
               </button>
-              <button onClick={(e) => { e.stopPropagation(); handleDelete(product.id) }} className="p-2 text-red-400 hover:bg-red-500/10 rounded-full" title="Eliminar">
+              <button 
+                onClick={(e) => { 
+                  e.preventDefault(); 
+                  e.stopPropagation(); 
+                  handleDelete(product.id) 
+                }} 
+                className="p-2 text-red-400 hover:bg-red-500/10 rounded-full" 
+                title="Eliminar"
+              >
                 <TrashIcon className="h-5 w-5" />
               </button>
             </div>
