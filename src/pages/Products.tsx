@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Product, ProductIngredient, InventoryItem } from '../types'
 import { productsService } from '../services/products'
 import { inventoryService } from '../services/inventory'
-import { PlusIcon, PencilIcon, TrashIcon, XMarkIcon, EyeIcon, EyeSlashIcon, PhotoIcon } from '@heroicons/react/24/outline'
+import { PlusIcon, PencilIcon, TrashIcon, XMarkIcon, EyeIcon, EyeSlashIcon, DocumentDuplicateIcon, PhotoIcon } from '@heroicons/react/24/outline'
 import ImageCropper from '../components/ImageCropper'
 import { compressImage } from '../lib/imageCompression'
 
@@ -176,6 +176,17 @@ export default function Products() {
     }
   }
 
+  const handleDuplicate = async (id: string) => {
+    if (!window.confirm('¿Duplicar este producto y su receta?')) return
+    try {
+      await productsService.duplicateProduct(id)
+      loadData()
+    } catch (error) {
+      console.error('Error duplicating product:', error)
+      alert('Error al duplicar el producto')
+    }
+  }
+
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -229,7 +240,7 @@ export default function Products() {
                 <div className="flex items-center gap-2">
                   <h3 className="brand-heading text-xl">{product.name}</h3>
                   <button 
-                    onClick={() => toggleVisibility(product)}
+                    onClick={(e) => { e.stopPropagation(); toggleVisibility(product) }}
                     className="p-1 rounded-full hover:bg-white/10 transition-colors"
                     title={product.show_in_web ? "Visible en la web" : "Oculto en la web"}
                   >
@@ -262,10 +273,13 @@ export default function Products() {
             </div>
             
             <div className="flex justify-end space-x-2 pt-4 border-t border-white/10">
-              <button onClick={() => handleEdit(product)} className="p-2 text-blue-400 hover:bg-blue-500/10 rounded-full">
+              <button onClick={(e) => { e.stopPropagation(); handleDuplicate(product.id) }} className="p-2 text-green-400 hover:bg-green-500/10 rounded-full" title="Duplicar">
+                <DocumentDuplicateIcon className="h-5 w-5" />
+              </button>
+              <button onClick={(e) => { e.stopPropagation(); handleEdit(product) }} className="p-2 text-blue-400 hover:bg-blue-500/10 rounded-full" title="Editar">
                 <PencilIcon className="h-5 w-5" />
               </button>
-              <button onClick={() => handleDelete(product.id)} className="p-2 text-red-400 hover:bg-red-500/10 rounded-full">
+              <button onClick={(e) => { e.stopPropagation(); handleDelete(product.id) }} className="p-2 text-red-400 hover:bg-red-500/10 rounded-full" title="Eliminar">
                 <TrashIcon className="h-5 w-5" />
               </button>
             </div>
