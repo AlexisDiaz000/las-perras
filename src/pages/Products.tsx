@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { Product, ProductIngredient, InventoryItem } from '../types'
 import { productsService } from '../services/products'
 import { inventoryService } from '../services/inventory'
-import { PlusIcon, PencilIcon, TrashIcon, XMarkIcon, EyeIcon, EyeSlashIcon, DocumentDuplicateIcon, PhotoIcon } from '@heroicons/react/24/outline'
+import { PlusIcon, PencilIcon, TrashIcon, XMarkIcon, EyeIcon, EyeSlashIcon, DocumentDuplicateIcon, PhotoIcon, ExclamationTriangleIcon, RocketLaunchIcon } from '@heroicons/react/24/outline'
 import ImageCropper from '../components/ImageCropper'
 import { compressImage } from '../lib/imageCompression'
 
@@ -15,6 +16,21 @@ export default function Products() {
   const [showForm, setShowForm] = useState(false)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
   const [imageToCrop, setImageToCrop] = useState<string | null>(null)
+
+  // Confirm Modal State
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    type: 'danger' | 'warning' | 'primary';
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'primary',
+    onConfirm: () => {}
+  })
 
   // Form States
   const [formData, setFormData] = useState({
@@ -92,16 +108,7 @@ export default function Products() {
     setShowForm(true)
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-
-    // Validación de costo $0
-    if (formData.ingredients.length === 0) {
-      if (!window.confirm('ADVERTENCIA: Estás creando un producto SIN RECETA.\n\nEsto significa que al venderlo:\n1. NO descontará nada del inventario.\n2. Su COSTO será $0 (ganancia falsa del 100%).\n\n¿Estás seguro de continuar sin enlazar ingredientes?')) {
-        return
-      }
-    }
-
+  const processSubmit = async () => {
     try {
       const productPayload = {
         name: formData.name,
@@ -146,6 +153,27 @@ export default function Products() {
     }
   }
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    // Validación de costo $0
+    if (formData.ingredients.length === 0) {
+      setConfirmModal({
+        isOpen: true,
+        title: 'Advertencia: Producto sin receta',
+        message: 'Estás creando un producto SIN RECETA.\n\nEsto significa que al venderlo:\n1. NO descontará nada del inventario.\n2. Su COSTO será $0 (ganancia falsa del 100%).\n\n¿Estás seguro de continuar sin enlazar ingredientes?',
+        type: 'warning',
+        onConfirm: () => {
+          setConfirmModal(prev => ({ ...prev, isOpen: false }));
+          processSubmit();
+        }
+      });
+      return;
+    }
+
+    processSubmit();
+  }
+
   const addIngredientRow = () => {
     setFormData({
       ...formData,
@@ -165,26 +193,44 @@ export default function Products() {
     setFormData({ ...formData, ingredients: newIngredients })
   }
 
-  const handleDelete = async (id: string) => {
-    if (!window.confirm('¿Eliminar este producto?')) return
-    try {
-      await productsService.deleteProduct(id)
-      loadData()
-    } catch (error) {
-      console.error('Error deleting product:', error)
-      alert('Error al eliminar el producto')
-    }
+  const handleDelete = (id: string) => {
+    setConfirmModal({
+      isOpen: true,
+      title: 'Eliminar Producto',
+      message: '¿Estás seguro de que deseas eliminar este producto? Esta acción no se puede deshacer.',
+      type: 'danger',
+      onConfirm: async () => {
+        try {
+          await productsService.deleteProduct(id)
+          loadData()
+        } catch (error) {
+          console.error('Error deleting product:', error)
+          alert('Error al eliminar el producto')
+        } finally {
+          setConfirmModal(prev => ({ ...prev, isOpen: false }))
+        }
+      }
+    })
   }
 
-  const handleDuplicate = async (id: string) => {
-    if (!window.confirm('¿Duplicar este producto y su receta?')) return
-    try {
-      await productsService.duplicateProduct(id)
-      loadData()
-    } catch (error) {
-      console.error('Error duplicating product:', error)
-      alert('Error al duplicar el producto')
-    }
+  const handleDuplicate = (id: string) => {
+    setConfirmModal({
+      isOpen: true,
+      title: 'Duplicar Producto',
+      message: '¿Estás seguro de que deseas duplicar este producto y su receta?',
+      type: 'primary',
+      onConfirm: async () => {
+        try {
+          await productsService.duplicateProduct(id)
+          loadData()
+        } catch (error) {
+          console.error('Error duplicating product:', error)
+          alert('Error al duplicar el producto')
+        } finally {
+          setConfirmModal(prev => ({ ...prev, isOpen: false }))
+        }
+      }
+    })
   }
 
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -231,9 +277,30 @@ export default function Products() {
         </button>
       </div>
 
+      {/* Empty State / Kits Call to Action */}
+      {!loading && products.length === 0 && (
+        <div className="brand-card p-12 flex flex-col items-center text-center border-dashed border-2 border-white/20 bg-black/10">
+          <RocketLaunchIcon className="h-16 w-16 text-primary-400 mb-4" />
+          <h2 className="brand-heading text-2xl mb-2">¡Tu menú está vacío!</h2>
+          <p className="text-secondary-300 max-w-md mb-8">
+            Puedes empezar a crear tus productos desde cero, o usar uno de nuestros <strong className="text-white">Kits de Inicio</strong> preconfigurados para acelerar la instalación de tu negocio en segundos.
+          </p>
+          <div className="flex gap-4">
+            <button onClick={() => { setEditingProduct(null); setShowForm(true) }} className="bg-white/10 text-white px-6 py-3 rounded font-bold uppercase tracking-widest text-sm hover:bg-white/20 transition-colors">
+              Crear desde cero
+            </button>
+            <Link to="/settings" className="brand-button px-6 py-3 flex items-center gap-2">
+              <RocketLaunchIcon className="h-5 w-5" />
+              Explorar Kits de Inicio
+            </Link>
+          </div>
+        </div>
+      )}
+
       {/* Product List */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {products.map(product => (
+      {products.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {products.map(product => (
           <div key={product.id} className="brand-card p-5 flex flex-col justify-between">
             <div>
               <div className="flex justify-between items-start mb-2">
@@ -296,8 +363,9 @@ export default function Products() {
               </button>
             </div>
           </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       {/* Modal Form */}
       {showForm && (
@@ -486,6 +554,41 @@ export default function Products() {
           aspect={4/3}
           cropShape="rect"
         />
+      )}
+
+      {/* Confirmation Modal */}
+      {confirmModal.isOpen && (
+        <div className="fixed inset-0 bg-black/80 overflow-y-auto h-full w-full z-[60] flex items-center justify-center p-4">
+          <div className="brand-card w-full max-w-md p-6 flex flex-col items-center text-center space-y-4">
+            <ExclamationTriangleIcon className={`h-12 w-12 mb-2 ${
+              confirmModal.type === 'danger' ? 'text-red-500' :
+              confirmModal.type === 'warning' ? 'text-yellow-500' :
+              'text-primary-500'
+            }`} />
+            <h2 className="brand-heading text-xl text-white">{confirmModal.title}</h2>
+            <p className="text-secondary-300 whitespace-pre-line text-sm">
+              {confirmModal.message}
+            </p>
+            <div className="flex justify-center space-x-4 pt-4 w-full">
+              <button 
+                onClick={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))} 
+                className="px-6 py-2 text-secondary-300 hover:text-white uppercase tracking-widest text-sm w-1/2"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={confirmModal.onConfirm} 
+                className={`w-1/2 px-6 py-2 font-bold uppercase tracking-widest text-sm rounded transition-colors ${
+                  confirmModal.type === 'danger' ? 'bg-red-500 text-white hover:bg-red-600' :
+                  confirmModal.type === 'warning' ? 'bg-yellow-500 text-black hover:bg-yellow-600' :
+                  'brand-button'
+                }`}
+              >
+                Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

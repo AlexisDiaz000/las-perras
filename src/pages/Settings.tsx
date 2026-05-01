@@ -3,9 +3,12 @@ import { useAuthStore } from '../stores/auth'
 import { useSettingsStore } from '../stores/settings'
 import { authService } from '../services/auth'
 import { User } from '../types'
-import { PlusIcon, TrashIcon, NoSymbolIcon, CheckCircleIcon } from '@heroicons/react/24/outline'
+import { PlusIcon, TrashIcon, NoSymbolIcon, CheckCircleIcon, RocketLaunchIcon } from '@heroicons/react/24/outline'
 import ImageCropper from '../components/ImageCropper'
 import { compressImage } from '../lib/imageCompression'
+import { availableKits } from '../lib/kits'
+import { kitsService } from '../services/kits'
+import { Kit } from '../lib/kits/types'
 
 export default function Settings() {
   const { user } = useAuthStore()
@@ -27,6 +30,42 @@ export default function Settings() {
     password: '',
     role: 'vendor' as 'admin' | 'vendor'
   })
+
+  // Kits state
+  const [installingKit, setInstallingKit] = useState<string | null>(null);
+  const [uninstallingKit, setUninstallingKit] = useState<string | null>(null);
+
+  const handleInstallKit = async (kit: Kit) => {
+    if (!window.confirm(`¿Estás seguro de instalar el "${kit.name}"?\n\nEsto creará ${kit.inventory.length} insumos y ${kit.products.length} productos en tu cuenta. Es ideal si tu cuenta está vacía.`)) {
+      return;
+    }
+
+    try {
+      setInstallingKit(kit.id);
+      await kitsService.installKit(kit);
+      alert(`¡${kit.name} instalado con éxito! Revisa la sección de Inventario y Productos.`);
+    } catch (error: any) {
+      alert(`Error instalando el kit: ${error.message}`);
+    } finally {
+      setInstallingKit(null);
+    }
+  };
+
+  const handleUninstallKit = async (kit: Kit) => {
+    if (!window.confirm(`¿PELIGRO: Estás seguro de DESINSTALAR el "${kit.name}"?\n\nEsto ELIMINARÁ PERMANENTEMENTE los productos y el inventario asociados a este kit (que no tengan ventas previas).\n\nEsta acción no se puede deshacer.`)) {
+      return;
+    }
+
+    try {
+      setUninstallingKit(kit.id);
+      await kitsService.uninstallKit(kit);
+      alert(`¡${kit.name} desinstalado! Se limpiaron los productos e insumos base.`);
+    } catch (error: any) {
+      alert(`Error desinstalando el kit: ${error.message}`);
+    } finally {
+      setUninstallingKit(null);
+    }
+  };
 
   useEffect(() => {
     loadUsers()
@@ -487,6 +526,52 @@ export default function Settings() {
           </div>
         </div>
       </div>
+
+      {/* Kits de Inicio */}
+      {user?.role === 'admin' && (
+        <div className="mt-8 brand-card">
+          <div className="px-4 py-5 sm:p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <RocketLaunchIcon className="h-6 w-6 text-primary-400" />
+              <h3 className="brand-heading text-2xl">Kits de Inicio Rápidos</h3>
+            </div>
+            <p className="text-sm text-secondary-300 mb-6">
+              Acelera la configuración de tu negocio instalando plantillas preconfiguradas de insumos, productos y recetas. Ideal para cuentas nuevas.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {availableKits.map((kit) => (
+                <div key={kit.id} className="border border-white/10 rounded-lg p-5 flex flex-col bg-black/20 hover:border-primary-500/30 transition-colors">
+                  <div className="flex items-center gap-3 mb-2">
+                    <span className="text-3xl">{kit.icon}</span>
+                    <h4 className="brand-heading text-lg text-secondary-50">{kit.name}</h4>
+                  </div>
+                  <p className="text-sm text-secondary-400 mb-4 flex-1">
+                    {kit.description}
+                  </p>
+                  <div className="text-xs text-secondary-500 mb-4 space-y-1">
+                    <p>• {kit.inventory.length} Insumos base</p>
+                    <p>• {kit.products.length} Productos y Recetas</p>
+                  </div>
+                  <button
+                    onClick={() => handleInstallKit(kit)}
+                    disabled={installingKit !== null || uninstallingKit !== null}
+                    className="w-full py-2 px-4 rounded font-bold uppercase tracking-widest text-xs transition-colors bg-primary-500/20 text-primary-400 hover:bg-primary-500 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed mb-2"
+                  >
+                    {installingKit === kit.id ? 'Instalando...' : 'Instalar Kit'}
+                  </button>
+                  <button
+                    onClick={() => handleUninstallKit(kit)}
+                    disabled={installingKit !== null || uninstallingKit !== null}
+                    className="w-full py-2 px-4 rounded border border-red-500/30 text-red-500 font-bold uppercase tracking-widest text-xs transition-colors hover:bg-red-500/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {uninstallingKit === kit.id ? 'Desinstalando...' : 'Desinstalar Kit'}
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* System Info */}
       <div className="mt-8 brand-card">
