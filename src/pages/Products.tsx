@@ -165,32 +165,32 @@ export default function Products() {
     setFormData({ ...formData, ingredients: newIngredients })
   }
 
-  const handleDelete = async (id: string) => {
-    // Usamos setTimeout para dar un respiro al event loop y evitar auto-click por "mouse bounce" o lag en celulares
-    setTimeout(async () => {
-      if (!window.confirm('¿Eliminar este producto?')) return
-      try {
-        await productsService.deleteProduct(id)
-        loadData()
-      } catch (error) {
-        console.error('Error deleting product:', error)
-        alert('Error al eliminar el producto')
-      }
-    }, 50)
+  const handleDelete = async (e: React.MouseEvent, id: string) => {
+    e.preventDefault()
+    e.stopPropagation()
+    
+    if (!window.confirm('¿Estás totalmente seguro de eliminar este producto?')) return
+    try {
+      await productsService.deleteProduct(id)
+      loadData()
+    } catch (error) {
+      console.error('Error deleting product:', error)
+      alert('Error al eliminar el producto')
+    }
   }
 
-  const handleDuplicate = async (id: string) => {
-    // Usamos setTimeout para evitar "ghost clicks" en pantallas táctiles o teclados lentos
-    setTimeout(async () => {
-      if (!window.confirm('¿Duplicar este producto y su receta?')) return
-      try {
-        await productsService.duplicateProduct(id)
-        loadData()
-      } catch (error) {
-        console.error('Error duplicating product:', error)
-        alert('Error al duplicar el producto')
-      }
-    }, 50)
+  const handleDuplicate = async (e: React.MouseEvent, id: string) => {
+    e.preventDefault()
+    e.stopPropagation()
+    
+    if (!window.confirm('¿Deseas crear una copia exacta de este producto y su receta?')) return
+    try {
+      await productsService.duplicateProduct(id)
+      loadData()
+    } catch (error) {
+      console.error('Error duplicating product:', error)
+      alert('Error al duplicar el producto')
+    }
   }
 
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -280,11 +280,7 @@ export default function Products() {
             
             <div className="flex justify-end space-x-2 pt-4 border-t border-white/10">
               <button 
-                onClick={(e) => { 
-                  e.preventDefault(); 
-                  e.stopPropagation(); 
-                  handleDuplicate(product.id) 
-                }} 
+                onClick={(e) => handleDuplicate(e, product.id)} 
                 className="p-2 text-green-400 hover:bg-green-500/10 rounded-full" 
                 title="Duplicar"
               >
@@ -302,11 +298,7 @@ export default function Products() {
                 <PencilIcon className="h-5 w-5" />
               </button>
               <button 
-                onClick={(e) => { 
-                  e.preventDefault(); 
-                  e.stopPropagation(); 
-                  handleDelete(product.id) 
-                }} 
+                onClick={(e) => handleDelete(e, product.id)} 
                 className="p-2 text-red-400 hover:bg-red-500/10 rounded-full" 
                 title="Eliminar"
               >
