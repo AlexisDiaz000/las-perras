@@ -1,0 +1,19 @@
+ALTER TABLE inventory_items
+ADD COLUMN IF NOT EXISTS is_hidden BOOLEAN NOT NULL DEFAULT FALSE;
+
+ALTER TABLE inventory_items
+ADD COLUMN IF NOT EXISTS hidden_reason TEXT;
+
+ALTER TABLE products
+ADD COLUMN IF NOT EXISTS kit_id TEXT;
+
+ALTER TABLE products
+ADD COLUMN IF NOT EXISTS kit_temp_id TEXT;
+
+ALTER TABLE products
+ADD COLUMN IF NOT EXISTS is_kit BOOLEAN NOT NULL DEFAULT FALSE;
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_products_kit_unique
+ON products (kit_id, kit_temp_id)
+WHERE kit_id IS NOT NULL AND kit_temp_id IS NOT NULL;
+

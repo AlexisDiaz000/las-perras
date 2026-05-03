@@ -150,6 +150,7 @@ export const dashboardService = {
     const { data, error } = await supabase
       .from('inventory_items')
       .select('*')
+      .eq('is_hidden', false) // SOLO ACTIVOS
       .order('current_stock', { ascending: true })
 
     if (error) throw error

@@ -7,28 +7,32 @@ export const kitsService = {
       const inventoryIdMap: Record<string, string> = {};
       const productIdMap: Record<string, string> = {};
 
-      // ==========================================
-      // 1. INVENTARIO (Insumos)
-      // ==========================================
       if (kit.inventory && kit.inventory.length > 0) {
         const kitInvNames = kit.inventory.map(i => i.name);
         
-        // 1.1 Consultar qué insumos ya existen en la base de datos
         const { data: existingInv, error: err1 } = await supabase
           .from('inventory_items')
-          .select('id, name')
+          .select('id, name, is_hidden')
           .in('name', kitInvNames);
           
         if (err1) throw new Error(`Error leyendo inventario: ${err1.message}`);
 
-        // 1.2 Guardar los IDs de los que YA existen
         existingInv?.forEach(item => {
           const kitItem = kit.inventory.find(i => i.name === item.name);
           if (kitItem) inventoryIdMap[kitItem.tempId] = item.id;
         });
 
-        // 1.3 Filtrar estrictamente los que NO existen para crearlos
         const missingInv = kit.inventory.filter(i => !existingInv?.find(e => e.name === i.name));
+
+        const hiddenExistingIds = (existingInv || []).filter(i => i.is_hidden).map(i => i.id);
+        if (hiddenExistingIds.length > 0) {
+          const { error: unhideError } = await supabase
+            .from('inventory_items')
+            .update({ is_hidden: false, hidden_reason: null })
+            .in('id', hiddenExistingIds);
+
+          if (unhideError) throw new Error(`Error reactivando inventario: ${unhideError.message}`);
+        }
 
         if (missingInv.length > 0) {
           const inventoryToInsert = missingInv.map(item => ({
@@ -37,7 +41,9 @@ export const kitsService = {
             current_stock: item.stock,
             min_threshold: item.min_stock,
             unit_cost: item.cost,
-            category: item.category
+            category: item.category,
+            is_hidden: false,
+            hidden_reason: null
           }));
 
           const { data: insertedInv, error: err2 } = await supabase
@@ -47,7 +53,6 @@ export const kitsService = {
 
           if (err2) throw new Error(`Error creando inventario: ${err2.message}`);
 
-          // 1.4 Guardar los IDs de los recién creados
           insertedInv?.forEach(item => {
             const kitItem = kit.inventory.find(i => i.name === item.name);
             if (kitItem) inventoryIdMap[kitItem.tempId] = item.id;
@@ -55,29 +60,26 @@ export const kitsService = {
         }
       }
 
-      // ==========================================
-      // 2. PRODUCTOS
-      // ==========================================
       if (kit.products && kit.products.length > 0) {
-        const kitProdNames = kit.products.map(p => p.name);
+        const kitTempIds = kit.products.map(p => p.tempId);
         
-        // 2.1 Consultar qué productos ya existen en la base de datos
         const { data: existingProd, error: err3 } = await supabase
           .from('products')
-          .select('id, name')
-          .in('name', kitProdNames);
+          .select('id, kit_temp_id')
+          .eq('kit_id', kit.id)
+          .in('kit_temp_id', kitTempIds);
 
         if (err3) throw new Error(`Error leyendo productos: ${err3.message}`);
 
-        // 2.2 Guardar los IDs de los productos que YA existen
         existingProd?.forEach(prod => {
-          const kitProd = kit.products.find(p => p.name === prod.name);
-          if (kitProd) productIdMap[kitProd.tempId] = prod.id;
+          if (prod.kit_temp_id) productIdMap[prod.kit_temp_id] = prod.id;
         });
 
-        // 2.3 Filtrar estrictamente los que NO existen para crearlos
-        const missingProd = kit.products.filter(p => !existingProd?.find(e => e.name === p.name));
+        // Separar productos nuevos de los existentes
+        const missingProd = kit.products.filter(p => !existingProd?.find(e => e.kit_temp_id === p.tempId));
+        const existingProdToUpdate = kit.products.filter(p => existingProd?.find(e => e.kit_temp_id === p.tempId));
 
+        // Insertar los nuevos
         if (missingProd.length > 0) {
           const productsToInsert = missingProd.map(prod => ({
             name: prod.name,
@@ -86,26 +88,35 @@ export const kitsService = {
             category: prod.category,
             requires_protein_choice: prod.requires_protein_choice,
             show_in_web: prod.show_in_web,
-            active: true
+            active: true,
+            is_kit: true,
+            kit_id: kit.id,
+            kit_temp_id: prod.tempId
           }));
 
           const { data: insertedProd, error: err4 } = await supabase
             .from('products')
             .insert(productsToInsert)
-            .select('id, name');
+            .select('id, kit_temp_id');
 
           if (err4) throw new Error(`Error creando productos: ${err4.message}`);
 
-          // 2.4 Guardar los IDs de los recién creados
           insertedProd?.forEach(prod => {
-            const kitProd = kit.products.find(p => p.name === prod.name);
-            if (kitProd) productIdMap[kitProd.tempId] = prod.id;
+            if (prod.kit_temp_id) productIdMap[prod.kit_temp_id] = prod.id;
           });
         }
 
-        // ==========================================
-        // 3. RECETAS (Ingredientes de productos)
-        // ==========================================
+        // Reactivar los existentes (si estaban desactivados por desinstalación previa)
+        if (existingProdToUpdate.length > 0 && existingProd) {
+          const existingIds = existingProd.map(p => p.id);
+          const { error: errUpdate } = await supabase
+            .from('products')
+            .update({ active: true, show_in_web: true })
+            .in('id', existingIds);
+            
+          if (errUpdate) throw new Error(`Error reactivando productos: ${errUpdate.message}`);
+        }
+
         const ingredientsToInsert: any[] = [];
         
         kit.products.forEach(prod => {
@@ -128,13 +139,11 @@ export const kitsService = {
         });
 
         if (ingredientsToInsert.length > 0) {
-          // 3.1 Limpiar recetas viejas solo de estos productos para evitar duplicados
           const productIds = Object.values(productIdMap);
           if (productIds.length > 0) {
             await supabase.from('product_ingredients').delete().in('product_id', productIds);
           }
 
-          // 3.2 Insertar las recetas correctas
           const { error: ingError } = await supabase
             .from('product_ingredients')
             .insert(ingredientsToInsert);
@@ -152,56 +161,68 @@ export const kitsService = {
 
   async uninstallKit(kit: Kit) {
     try {
-      const kitProdNames = kit.products.map(p => p.name);
       const kitInvNames = kit.inventory.map(i => i.name);
 
-      // 1. Eliminar Productos y sus recetas
-      if (kitProdNames.length > 0) {
-        const { data: prods } = await supabase.from('products').select('id').in('name', kitProdNames);
-        if (prods && prods.length > 0) {
-          const prodIds = prods.map(p => p.id);
-          // Borrar recetas explícitamente para evitar bloqueos
-          await supabase.from('product_ingredients').delete().in('product_id', prodIds);
-          // Borrar productos
-          const { error: prodError } = await supabase.from('products').delete().in('id', prodIds);
-          if (prodError) throw new Error(`Error eliminando productos: ${prodError.message}`);
-        }
+      const { data: prods, error: prodFetchError } = await supabase
+        .from('products')
+        .select('id')
+        .eq('kit_id', kit.id)
+        .eq('is_kit', true);
+
+      if (prodFetchError) throw new Error(`Error leyendo productos: ${prodFetchError.message}`);
+
+      const prodIds = (prods || []).map(p => p.id);
+
+      if (prodIds.length > 0) {
+        const { error: ingDeleteError } = await supabase
+          .from('product_ingredients')
+          .delete()
+          .in('product_id', prodIds);
+
+        if (ingDeleteError) throw new Error(`Error eliminando recetas: ${ingDeleteError.message}`);
+
+        // Eliminamos los productos por completo (Hard Delete es seguro porque las ventas solo guardan el nombre en texto)
+        const { error: prodDeleteError } = await supabase
+          .from('products')
+          .delete()
+          .in('id', prodIds);
+
+        if (prodDeleteError) throw new Error(`Error eliminando productos: ${prodDeleteError.message}`);
       }
 
-      // 2. Manejar Insumos (Desactivarlos si tienen historial, borrarlos si no)
       if (kitInvNames.length > 0) {
-        const { data: invs } = await supabase.from('inventory_items').select('id, current_stock').in('name', kitInvNames);
-        if (invs && invs.length > 0) {
-          const invIds = invs.map(i => i.id);
-          
-          // a. Borrar recetas huérfanas que usen estos insumos (las de los productos recién borrados)
-          await supabase.from('product_ingredients').delete().in('inventory_item_id', invIds);
-          
-          // En lugar de borrar a la fuerza los movimientos y el insumo (que rompe el historial de ventas pasadas),
-          // intentamos borrar el insumo de forma segura.
-          const { error: deleteError } = await supabase.from('inventory_items').delete().in('id', invIds);
+        const { data: invs, error: invFetchError } = await supabase
+          .from('inventory_items')
+          .select('id, name')
+          .in('name', kitInvNames);
 
-          // Si falla por foreign key constraint (ej. 23503), significa que hay ventas o movimientos que debemos preservar
-          if (deleteError && deleteError.code === '23503') {
-             console.warn('Algunos insumos no se pudieron borrar porque tienen historial. Se procederá a "Ocultarlos" llevando su stock a 0.');
-             // Solución "Soft Delete": No podemos borrar la fila, así que vaciamos su stock
-             // y podríamos agregarle un prefijo "[INACTIVO]" o simplemente dejar el stock en 0.
-             // Para la integridad contable, creamos un movimiento de "Salida" por el stock restante.
-             for (const item of invs) {
-               if (item.current_stock > 0) {
-                 await supabase.from('inventory_movements').insert({
-                   item_id: item.id,
-                   type: 'out',
-                   quantity: item.current_stock,
-                   reason: 'Ajuste: Desinstalación de Kit',
-                   user_id: (await supabase.auth.getUser()).data.user?.id
-                 });
-                 // Actualizamos el stock a 0
-                 await supabase.from('inventory_items').update({ current_stock: 0 }).eq('id', item.id);
-               }
-             }
-          } else if (deleteError) {
-             throw new Error(`Error eliminando inventario: ${deleteError.message}`);
+        if (invFetchError) throw new Error(`Error leyendo inventario: ${invFetchError.message}`);
+
+        const invIds = (invs || []).map(i => i.id);
+
+        if (invIds.length > 0) {
+          const { data: links, error: linkError } = await supabase
+            .from('product_ingredients')
+            .select('inventory_item_id, product_id, product:products(active)')
+            .in('inventory_item_id', invIds);
+
+          if (linkError) throw new Error(`Error validando uso de inventario: ${linkError.message}`);
+
+          const inUse = new Set<string>();
+          (links || []).forEach((row: any) => {
+            const isActive = row.product?.active === true;
+            const isSameKitProduct = prodIds.includes(row.product_id);
+            if (isActive && !isSameKitProduct) inUse.add(row.inventory_item_id);
+          });
+
+          const toHide = invIds.filter(id => !inUse.has(id));
+          if (toHide.length > 0) {
+            const { error: hideError } = await supabase
+              .from('inventory_items')
+              .update({ is_hidden: true, hidden_reason: `Kit uninstall: ${kit.id}` })
+              .in('id', toHide);
+
+            if (hideError) throw new Error(`Error ocultando inventario: ${hideError.message}`);
           }
         }
       }

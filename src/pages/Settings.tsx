@@ -9,6 +9,8 @@ import { compressImage } from '../lib/imageCompression'
 import { availableKits } from '../lib/kits'
 import { kitsService } from '../services/kits'
 import { Kit } from '../lib/kits/types'
+import { linkSeedDataToKit } from '../scripts/linkSeedData'
+import { devService } from '../services/dev'
 
 export default function Settings() {
   const { user } = useAuthStore()
@@ -34,6 +36,31 @@ export default function Settings() {
   // Kits state
   const [installingKit, setInstallingKit] = useState<string | null>(null);
   const [uninstallingKit, setUninstallingKit] = useState<string | null>(null);
+  const [isResetting, setIsResetting] = useState(false);
+
+  const handleResetDatabase = async () => {
+    if (!window.confirm('🚨 PELIGRO EXTREMO 🚨\n\n¿Estás absolutamente seguro de querer BORRAR TODOS LOS DATOS?\n\nEsto eliminará permanentemente:\n- Todas las ventas\n- Todos los productos y recetas\n- Todo el inventario\n\nTu cuenta quedará 100% en blanco. Esta acción NO se puede deshacer.')) {
+      return;
+    }
+
+    // Doble confirmación de seguridad
+    const confirmText = window.prompt('Para confirmar, escribe la palabra: BORRAR');
+    if (confirmText !== 'BORRAR') {
+      alert('Operación cancelada.');
+      return;
+    }
+
+    try {
+      setIsResetting(true);
+      await devService.resetDatabase();
+      alert('✅ Base de datos limpiada con éxito. Tu cuenta está como nueva.');
+      window.location.reload(); // Recargar para limpiar estados de React
+    } catch (error: any) {
+      alert(`Error limpiando la base de datos: ${error.message}`);
+    } finally {
+      setIsResetting(false);
+    }
+  };
 
   const handleInstallKit = async (kit: Kit) => {
     if (!window.confirm(`¿Estás seguro de instalar el "${kit.name}"?\n\nEsto creará ${kit.inventory.length} insumos y ${kit.products.length} productos en tu cuenta. Es ideal si tu cuenta está vacía.`)) {
@@ -537,6 +564,9 @@ export default function Settings() {
             </div>
             <p className="text-sm text-secondary-300 mb-6">
               Acelera la configuración de tu negocio instalando plantillas preconfiguradas de insumos, productos y recetas. Ideal para cuentas nuevas.
+              <button onClick={() => { linkSeedDataToKit(); alert('Datos enlazados al kit'); }} className="ml-2 text-xs text-primary-500 underline hidden">
+                [Fix Seed Data]
+              </button>
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {availableKits.map((kit) => (
@@ -569,6 +599,25 @@ export default function Settings() {
                 </div>
               ))}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Zona de Peligro / Pruebas */}
+      {user?.role === 'admin' && (
+        <div className="mt-8 brand-card border-red-500/30">
+          <div className="px-4 py-5 sm:p-6">
+            <h3 className="brand-heading text-xl text-red-500 mb-2">Zona de Peligro (Pruebas)</h3>
+            <p className="text-sm text-secondary-300 mb-4">
+              Opciones destructivas para limpiar la cuenta y hacer pruebas de instalación en limpio.
+            </p>
+            <button
+              onClick={handleResetDatabase}
+              disabled={isResetting}
+              className="bg-red-500/10 text-red-500 border border-red-500/50 hover:bg-red-500 hover:text-white font-bold py-2 px-4 rounded transition-colors disabled:opacity-50"
+            >
+              {isResetting ? 'Borrando todo...' : 'Resetear Cuenta a Cero'}
+            </button>
           </div>
         </div>
       )}

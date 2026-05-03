@@ -35,6 +35,7 @@ export default function Inventory() {
   const [items, setItems] = useState<InventoryItem[]>([])
   const [movements, setMovements] = useState<InventoryMovement[]>([])
   const [loading, setLoading] = useState(true)
+  const [itemStatusFilter, setItemStatusFilter] = useState<'active' | 'hidden' | 'all'>('active')
   const [showAddItem, setShowAddItem] = useState(false)
   const [showMovement, setShowMovement] = useState(false)
   const [filterType, setFilterType] = useState<FilterType>('all')
@@ -80,13 +81,13 @@ export default function Inventory() {
 
   useEffect(() => {
     loadData()
-  }, [])
+  }, [itemStatusFilter])
 
   const loadData = async () => {
     try {
       setLoading(true)
       const [itemsData, movementsData] = await Promise.all([
-        inventoryService.getItems(),
+        inventoryService.getItems({ status: itemStatusFilter }),
         inventoryService.getMovements()
       ])
       setItems(itemsData)
@@ -307,6 +308,16 @@ export default function Inventory() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h1 className="brand-heading text-3xl">Inventario</h1>
         <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 w-full sm:w-auto">
+          <select
+            value={itemStatusFilter}
+            onChange={(e) => setItemStatusFilter(e.target.value as any)}
+            className="brand-input py-2 px-3 h-auto"
+            title="Filtrar por estado del insumo"
+          >
+            <option value="active">Activos</option>
+            <option value="hidden">Archivados (Ocultos)</option>
+            <option value="all">Mostrar Todos</option>
+          </select>
           <button
             onClick={() => setShowWasteModal(true)}
             className="bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 px-4 py-2 rounded-lg flex items-center justify-center transition-colors w-full sm:w-auto"
@@ -461,7 +472,7 @@ export default function Inventory() {
             <tr>
               <th className="px-6 py-3 text-left text-xs font-semibold text-secondary-300 uppercase tracking-widest">Producto</th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-secondary-300 uppercase tracking-widest">Categoría</th>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-secondary-300 uppercase tracking-widest">Stock</th>
+              <th className="px-6 py-3 text-left text-xs font-semibold text-secondary-300 uppercase tracking-widest">STOCK</th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-secondary-300 uppercase tracking-widest">Mínimo</th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-secondary-300 uppercase tracking-widest">Estado</th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-secondary-300 uppercase tracking-widest">Costo Unit.</th>

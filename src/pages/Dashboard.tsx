@@ -156,22 +156,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Empty State / Kits Call to Action para Cuentas Nuevas */}
-      {!loading && (!metrics?.total_sales && !metrics?.total_expenses && salesChartData.length === 0) && (
-        <div className="brand-card p-8 sm:p-12 flex flex-col sm:flex-row items-center justify-between gap-8 border-dashed border-2 border-primary-500/30 bg-primary-500/5">
-          <div className="flex-1 text-center sm:text-left">
-            <h2 className="brand-heading text-2xl text-primary-400 mb-2">¡Bienvenido a Brutal System!</h2>
-            <p className="text-secondary-300 max-w-xl">
-              Parece que tu cuenta es nueva y aún no tienes datos. Puedes acelerar tu configuración inicial instalando un <strong>Kit de Inicio</strong> preconfigurado con insumos y recetas base.
-            </p>
-          </div>
-          <Link to="/settings" className="brand-button px-6 py-4 flex items-center gap-2 whitespace-nowrap shadow-lg shadow-primary-500/20 hover:shadow-primary-500/40 shrink-0">
-            <RocketLaunchIcon className="h-6 w-6" />
-            Instalar Kit de Inicio
-          </Link>
-        </div>
-      )}
-
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6">
         <div className="brand-card p-4 sm:p-6 flex flex-col justify-between">
