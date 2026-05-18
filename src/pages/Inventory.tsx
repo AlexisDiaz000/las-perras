@@ -15,7 +15,7 @@ import {
   ShoppingCartIcon,
   ArrowPathIcon,
   ChevronDownIcon,
-  ChevronUpIcon
+  ChevronUpIcon,
 } from '@heroicons/react/24/outline'
 import { useAuthStore } from '../stores/auth'
 
@@ -78,6 +78,21 @@ export default function Inventory() {
     unit_cost: '',
     total_cost_input: ''
   })
+
+  // Modal state
+  const [modalState, setModalState] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    type: 'danger' | 'warning' | 'primary';
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'primary',
+    onConfirm: () => {}
+  });
 
   useEffect(() => {
     loadData()
@@ -222,34 +237,41 @@ export default function Inventory() {
   }
 
   const handleStocktake = async () => {
-    if (!window.confirm('¿Está seguro de realizar el cierre de inventario? Esto generará movimientos de ajuste automáticos.')) return
+    setModalState({
+      isOpen: true,
+      title: 'Cierre de Inventario',
+      message: '¿Está seguro de realizar el cierre de inventario? Esto generará movimientos de ajuste automáticos.',
+      type: 'warning',
+      onConfirm: async () => {
+        setModalState(prev => ({ ...prev, isOpen: false }));
+        try {
+          const adjustments = items.map(item => {
+            const realStock = stocktakeData[item.id] ? parseFloat(stocktakeData[item.id]) : item.current_stock
+            return {
+              itemId: item.id,
+              systemStock: item.current_stock,
+              realStock,
+              userId: user?.id || ''
+            }
+          }).filter(adj => adj.realStock !== adj.systemStock) // Solo procesar diferencias
 
-    try {
-      const adjustments = items.map(item => {
-        const realStock = stocktakeData[item.id] ? parseFloat(stocktakeData[item.id]) : item.current_stock
-        return {
-          itemId: item.id,
-          systemStock: item.current_stock,
-          realStock,
-          userId: user?.id || ''
+          if (adjustments.length === 0) {
+            alert('No hay diferencias para ajustar.')
+            setShowStocktakeModal(false)
+            return
+          }
+
+          await inventoryService.processStocktake(adjustments)
+          setShowStocktakeModal(false)
+          setStocktakeData({})
+          loadData()
+          alert(`Se han generado ${adjustments.length} ajustes de inventario exitosamente.`)
+        } catch (error) {
+          console.error('Error processing stocktake:', error)
+          alert('Error al procesar el cierre de inventario')
         }
-      }).filter(adj => adj.realStock !== adj.systemStock) // Solo procesar diferencias
-
-      if (adjustments.length === 0) {
-        alert('No hay diferencias para ajustar.')
-        setShowStocktakeModal(false)
-        return
       }
-
-      await inventoryService.processStocktake(adjustments)
-      setShowStocktakeModal(false)
-      setStocktakeData({})
-      loadData()
-      alert(`Se han generado ${adjustments.length} ajustes de inventario exitosamente.`)
-    } catch (error) {
-      console.error('Error processing stocktake:', error)
-      alert('Error al procesar el cierre de inventario')
-    }
+    });
   }
 
   const handleCreateMovement = async () => {
@@ -897,6 +919,42 @@ export default function Inventory() {
           )}
         </div>
       </div>
+
+      {/* Custom Confirmation Modal */}
+      {modalState.isOpen && (
+        <div className="fixed inset-0 bg-black/80 overflow-y-auto h-full w-full z-[60] flex items-center justify-center p-4">
+          <div className="brand-card w-full max-w-md p-6 flex flex-col items-center text-center space-y-4">
+            <ExclamationTriangleIcon className={`h-12 w-12 mb-2 ${
+              modalState.type === 'danger' ? 'text-red-500' :
+              modalState.type === 'warning' ? 'text-yellow-500' :
+              'text-primary-500'
+            }`} />
+            <h2 className="brand-heading text-xl text-white">{modalState.title}</h2>
+            <p className="text-secondary-300 whitespace-pre-line text-sm">
+              {modalState.message}
+            </p>
+
+            <div className="flex justify-center space-x-4 pt-4 w-full">
+              <button 
+                onClick={() => setModalState(prev => ({ ...prev, isOpen: false }))} 
+                className="px-6 py-2 text-secondary-300 hover:text-white uppercase tracking-widest text-sm w-1/2"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={modalState.onConfirm} 
+                className={`w-1/2 px-6 py-2 font-bold uppercase tracking-widest text-sm rounded transition-colors ${
+                  modalState.type === 'danger' ? 'bg-red-500 text-white hover:bg-red-600' :
+                  modalState.type === 'warning' ? 'bg-yellow-500 text-black hover:bg-yellow-600' :
+                  'brand-button'
+                }`}
+              >
+                Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
