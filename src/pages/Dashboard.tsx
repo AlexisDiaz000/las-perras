@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { dashboardService } from '../services/dashboard'
 import { getColombiaDate } from '../lib/dateUtils'
 import { DashboardMetrics } from '../types'
@@ -6,7 +7,8 @@ import {
   CurrencyDollarIcon, 
   ChartBarIcon,
   ExclamationTriangleIcon,
-  ArchiveBoxIcon
+  ArchiveBoxIcon,
+  RocketLaunchIcon
 } from '@heroicons/react/24/outline'
 import {
   BarChart,

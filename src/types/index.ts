@@ -26,6 +26,8 @@ export interface InventoryItem {
   current_stock: number
   min_threshold: number
   unit_cost: number
+  is_hidden?: boolean
+  hidden_reason?: string | null
   created_at: string
   updated_at: string
 }
@@ -110,6 +112,9 @@ export interface Product {
   active: boolean
   show_in_web: boolean
   requires_protein_choice: boolean
+  kit_id?: string | null
+  kit_temp_id?: string | null
+  is_kit?: boolean
   ingredients?: ProductIngredient[]
   created_at: string
 }

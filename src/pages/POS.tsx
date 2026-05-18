@@ -31,7 +31,7 @@ import { useSettingsStore } from '../stores/settings'
 
 import { generateReceiptPDF } from '../lib/pdf'
 
-import { DocumentArrowDownIcon } from '@heroicons/react/24/outline'
+import { DocumentArrowDownIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline'
 
 export default function POS() {
   const { user } = useAuthStore()
@@ -48,6 +48,24 @@ export default function POS() {
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [notif, setNotif] = useState<string | null>(null)
+
+  // Modal state
+  const [modalState, setModalState] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    type: 'danger' | 'warning' | 'primary';
+    requireInput?: boolean;
+    onConfirm: (input?: string) => void;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'primary',
+    onConfirm: () => {}
+  });
+  const [modalInput, setModalInput] = useState('');
+
   const [showReceiptModal, setShowReceiptModal] = useState(false)
   const [customerPhone, setCustomerPhone] = useState('')
   const [customerName, setCustomerName] = useState('')
@@ -58,6 +76,36 @@ export default function POS() {
     product?: Product
     protein: ProteinChoice
   }>({ open: false, protein: 'Desmechada de Res' })
+
+  // Calcular el uso actual del inventario basado en el carrito
+  const inventoryUsage = useMemo(() => {
+    const usage: Record<string, number> = {}
+    cart.forEach(line => {
+      line.product.ingredients?.forEach(ing => {
+        if (!ing.is_optional && ing.inventory_item_id) {
+          usage[ing.inventory_item_id] = (usage[ing.inventory_item_id] || 0) + (ing.quantity * line.quantity)
+        }
+      })
+    })
+    return usage
+  }, [cart])
+
+  // Verificar si hay stock suficiente para agregar 1 unidad más de este producto
+  const canAddProduct = (product: Product) => {
+    if (!product.ingredients || product.ingredients.length === 0) return true; // Productos sin receta no restan inventario
+
+    for (const ing of product.ingredients) {
+      if (ing.is_optional || !ing.inventory_item) continue;
+      
+      const currentUsage = inventoryUsage[ing.inventory_item_id] || 0;
+      const required = ing.quantity;
+      
+      if (ing.inventory_item.current_stock < (currentUsage + required)) {
+        return false; // Inventario insuficiente
+      }
+    }
+    return true;
+  }
 
   useEffect(() => {
     loadProducts()
@@ -104,6 +152,12 @@ export default function POS() {
   }, [])
 
   const addToCart = (product: Product) => {
+    if (!canAddProduct(product)) {
+      setMessage(`Inventario insuficiente para: ${product.name}`)
+      setTimeout(() => setMessage(null), 3000)
+      return
+    }
+
     if (product.requires_protein_choice) {
       setProteinModal({ open: true, product, protein: 'Desmechada de Res' })
       return
@@ -116,6 +170,14 @@ export default function POS() {
 
   const confirmProtein = () => {
     if (!proteinModal.product) return
+    // Double check just in case
+    if (!canAddProduct(proteinModal.product)) {
+      setMessage(`Inventario insuficiente para: ${proteinModal.product.name}`)
+      setTimeout(() => setMessage(null), 3000)
+      setProteinModal({ open: false, protein: 'Desmechada de Res' })
+      return
+    }
+
     setCart(prev => [
       ...prev,
       {
@@ -129,6 +191,15 @@ export default function POS() {
   }
 
   const updateQty = (id: string, delta: number) => {
+    if (delta > 0) {
+      const line = cart.find(l => l.id === id)
+      if (line && !canAddProduct(line.product)) {
+        setMessage(`Inventario insuficiente para añadir más de ${line.product.name}`)
+        setTimeout(() => setMessage(null), 3000)
+        return
+      }
+    }
+
     setCart(prev =>
       prev
         .map(line => (line.id === id ? { ...line, quantity: Math.max(1, line.quantity + delta) } : line))
@@ -235,20 +306,34 @@ export default function POS() {
       setMessage('Pedido anulado')
       return
     }
-    const reason = window.prompt('Motivo de anulación') || ''
-    if (!reason.trim()) return
-    setLoading(true)
-    setMessage(null)
-    salesService
-      .voidSale(saleId, reason, user.id, false)
-      .then(() => {
-        resetOrder()
-        setMessage('Pedido anulado')
-      })
-      .catch((e: any) => {
-        setMessage(e?.message || 'No se pudo anular el pedido')
-      })
-      .finally(() => setLoading(false))
+    
+    setModalInput('');
+    setModalState({
+      isOpen: true,
+      title: 'Anular Pedido',
+      message: 'Por favor, ingresa el motivo de anulación:',
+      type: 'warning',
+      requireInput: true,
+      onConfirm: (reasonInput) => {
+        const reason = reasonInput || '';
+        if (!reason.trim()) return;
+        
+        setModalState(prev => ({ ...prev, isOpen: false }));
+        setLoading(true);
+        setMessage(null);
+        
+        salesService
+          .voidSale(saleId, reason, user.id, false)
+          .then(() => {
+            resetOrder()
+            setMessage('Pedido anulado')
+          })
+          .catch((e: any) => {
+            setMessage(e?.message || 'No se pudo anular el pedido')
+          })
+          .finally(() => setLoading(false))
+      }
+    });
   }
 
   // Agrupar productos por categoría para renderizar
@@ -334,19 +419,33 @@ export default function POS() {
                 <div key={category} className="brand-card p-6">
                   <h2 className="brand-heading text-xl mb-4">{category}</h2>
                   <div className="flex overflow-x-auto pb-4 gap-4 md:grid md:grid-cols-3 md:overflow-visible md:pb-0 snap-x">
-                    {categoryProducts.map((product) => (
+                    {categoryProducts.map((product) => {
+                      const outOfStock = !canAddProduct(product);
+                      return (
                       <button 
                         key={product.id} 
-                        onClick={() => addToCart(product)} 
-                        className="brand-card p-4 text-left hover:bg-white/5 min-w-[200px] md:min-w-0 snap-center transition-all duration-200 active:scale-95 hover:brightness-110 active:brightness-90"
+                        onClick={() => !outOfStock && addToCart(product)} 
+                        disabled={outOfStock}
+                        className={`brand-card p-4 text-left min-w-[200px] md:min-w-0 snap-center transition-all duration-200 ${
+                          outOfStock 
+                            ? 'opacity-50 cursor-not-allowed grayscale bg-black/40 border-red-500/20' 
+                            : 'hover:bg-white/5 active:scale-95 hover:brightness-110 active:brightness-90'
+                        }`}
                       >
-                        <div className="brand-heading text-lg">{product.name}</div>
-                        <div className="text-sm text-secondary-300 mt-1">{formatCurrency(product.price)}</div>
+                        <div className="flex justify-between items-start mb-1">
+                          <div className="brand-heading text-lg leading-tight">{product.name}</div>
+                          {outOfStock && (
+                            <span className="text-[9px] bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded uppercase tracking-widest font-sans whitespace-nowrap ml-2">
+                              Agotado
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-sm text-secondary-300">{formatCurrency(product.price)}</div>
                         {product.requires_protein_choice && (
                           <div className="text-xs text-secondary-400 mt-1 uppercase tracking-widest">Requiere proteína</div>
                         )}
                       </button>
-                    ))}
+                    )})}
                   </div>
                 </div>
               )
@@ -478,6 +577,59 @@ export default function POS() {
               </button>
               <button onClick={confirmProtein} className="brand-button">
                 Agregar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Custom Confirmation/Prompt Modal */}
+      {modalState.isOpen && (
+        <div className="fixed inset-0 bg-black/80 overflow-y-auto h-full w-full z-[60] flex items-center justify-center p-4">
+          <div className="brand-card w-full max-w-md p-6 flex flex-col items-center text-center space-y-4">
+            <ExclamationTriangleIcon className={`h-12 w-12 mb-2 ${
+              modalState.type === 'danger' ? 'text-red-500' :
+              modalState.type === 'warning' ? 'text-yellow-500' :
+              'text-primary-500'
+            }`} />
+            <h2 className="brand-heading text-xl text-white">{modalState.title}</h2>
+            <p className="text-secondary-300 whitespace-pre-line text-sm">
+              {modalState.message}
+            </p>
+
+            {modalState.requireInput && (
+              <div className="w-full mt-4">
+                <input
+                  type="text"
+                  placeholder="Escribe aquí..."
+                  value={modalInput}
+                  onChange={(e) => setModalInput(e.target.value)}
+                  className="brand-input w-full text-center"
+                  autoFocus
+                />
+              </div>
+            )}
+
+            <div className="flex justify-center space-x-4 pt-4 w-full">
+              <button 
+                onClick={() => {
+                  setModalState(prev => ({ ...prev, isOpen: false }));
+                  setModalInput('');
+                }} 
+                className="px-6 py-2 text-secondary-300 hover:text-white uppercase tracking-widest text-sm w-1/2"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={() => modalState.onConfirm(modalInput)} 
+                disabled={modalState.requireInput && !modalInput.trim()}
+                className={`w-1/2 px-6 py-2 font-bold uppercase tracking-widest text-sm rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                  modalState.type === 'danger' ? 'bg-red-500 text-white hover:bg-red-600' :
+                  modalState.type === 'warning' ? 'bg-yellow-500 text-black hover:bg-yellow-600' :
+                  'brand-button'
+                }`}
+              >
+                Confirmar
               </button>
             </div>
           </div>

@@ -2,11 +2,22 @@ import { supabase } from '../lib/supabase'
 import { InventoryItem, InventoryMovement } from '../types'
 
 export const inventoryService = {
-  async getItems(): Promise<InventoryItem[]> {
-    const { data, error } = await supabase
+  async getItems(options?: { status?: 'active' | 'hidden' | 'all' }): Promise<InventoryItem[]> {
+    const status = options?.status || 'active'
+
+    let query = supabase
       .from('inventory_items')
       .select('*')
       .order('name')
+
+    if (status === 'active') {
+      query = query.eq('is_hidden', false)
+    } else if (status === 'hidden') {
+      query = query.eq('is_hidden', true)
+    }
+    // Si es 'all', no aplicamos filtro de is_hidden
+
+    const { data, error } = await query
 
     if (error) throw error
     return data as InventoryItem[]
@@ -25,6 +36,7 @@ export const inventoryService = {
     const { data, error } = await supabase
       .from('inventory_items')
       .select('*')
+      .eq('is_hidden', false)
       .order('current_stock', { ascending: true })
 
     if (error) throw error

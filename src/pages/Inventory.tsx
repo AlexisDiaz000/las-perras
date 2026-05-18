@@ -15,7 +15,7 @@ import {
   ShoppingCartIcon,
   ArrowPathIcon,
   ChevronDownIcon,
-  ChevronUpIcon
+  ChevronUpIcon,
 } from '@heroicons/react/24/outline'
 import { useAuthStore } from '../stores/auth'
 
@@ -35,6 +35,7 @@ export default function Inventory() {
   const [items, setItems] = useState<InventoryItem[]>([])
   const [movements, setMovements] = useState<InventoryMovement[]>([])
   const [loading, setLoading] = useState(true)
+  const [itemStatusFilter, setItemStatusFilter] = useState<'active' | 'hidden' | 'all'>('active')
   const [showAddItem, setShowAddItem] = useState(false)
   const [showMovement, setShowMovement] = useState(false)
   const [filterType, setFilterType] = useState<FilterType>('all')
@@ -78,15 +79,30 @@ export default function Inventory() {
     total_cost_input: ''
   })
 
+  // Modal state
+  const [modalState, setModalState] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    type: 'danger' | 'warning' | 'primary';
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'primary',
+    onConfirm: () => {}
+  });
+
   useEffect(() => {
     loadData()
-  }, [])
+  }, [itemStatusFilter])
 
   const loadData = async () => {
     try {
       setLoading(true)
       const [itemsData, movementsData] = await Promise.all([
-        inventoryService.getItems(),
+        inventoryService.getItems({ status: itemStatusFilter }),
         inventoryService.getMovements()
       ])
       setItems(itemsData)
@@ -221,34 +237,41 @@ export default function Inventory() {
   }
 
   const handleStocktake = async () => {
-    if (!window.confirm('¿Está seguro de realizar el cierre de inventario? Esto generará movimientos de ajuste automáticos.')) return
+    setModalState({
+      isOpen: true,
+      title: 'Cierre de Inventario',
+      message: '¿Está seguro de realizar el cierre de inventario? Esto generará movimientos de ajuste automáticos.',
+      type: 'warning',
+      onConfirm: async () => {
+        setModalState(prev => ({ ...prev, isOpen: false }));
+        try {
+          const adjustments = items.map(item => {
+            const realStock = stocktakeData[item.id] ? parseFloat(stocktakeData[item.id]) : item.current_stock
+            return {
+              itemId: item.id,
+              systemStock: item.current_stock,
+              realStock,
+              userId: user?.id || ''
+            }
+          }).filter(adj => adj.realStock !== adj.systemStock) // Solo procesar diferencias
 
-    try {
-      const adjustments = items.map(item => {
-        const realStock = stocktakeData[item.id] ? parseFloat(stocktakeData[item.id]) : item.current_stock
-        return {
-          itemId: item.id,
-          systemStock: item.current_stock,
-          realStock,
-          userId: user?.id || ''
+          if (adjustments.length === 0) {
+            alert('No hay diferencias para ajustar.')
+            setShowStocktakeModal(false)
+            return
+          }
+
+          await inventoryService.processStocktake(adjustments)
+          setShowStocktakeModal(false)
+          setStocktakeData({})
+          loadData()
+          alert(`Se han generado ${adjustments.length} ajustes de inventario exitosamente.`)
+        } catch (error) {
+          console.error('Error processing stocktake:', error)
+          alert('Error al procesar el cierre de inventario')
         }
-      }).filter(adj => adj.realStock !== adj.systemStock) // Solo procesar diferencias
-
-      if (adjustments.length === 0) {
-        alert('No hay diferencias para ajustar.')
-        setShowStocktakeModal(false)
-        return
       }
-
-      await inventoryService.processStocktake(adjustments)
-      setShowStocktakeModal(false)
-      setStocktakeData({})
-      loadData()
-      alert(`Se han generado ${adjustments.length} ajustes de inventario exitosamente.`)
-    } catch (error) {
-      console.error('Error processing stocktake:', error)
-      alert('Error al procesar el cierre de inventario')
-    }
+    });
   }
 
   const handleCreateMovement = async () => {
@@ -307,6 +330,16 @@ export default function Inventory() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h1 className="brand-heading text-3xl">Inventario</h1>
         <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 w-full sm:w-auto">
+          <select
+            value={itemStatusFilter}
+            onChange={(e) => setItemStatusFilter(e.target.value as any)}
+            className="brand-input py-2 px-3 h-auto"
+            title="Filtrar por estado del insumo"
+          >
+            <option value="active">Activos</option>
+            <option value="hidden">Archivados (Ocultos)</option>
+            <option value="all">Mostrar Todos</option>
+          </select>
           <button
             onClick={() => setShowWasteModal(true)}
             className="bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 px-4 py-2 rounded-lg flex items-center justify-center transition-colors w-full sm:w-auto"
@@ -461,7 +494,7 @@ export default function Inventory() {
             <tr>
               <th className="px-6 py-3 text-left text-xs font-semibold text-secondary-300 uppercase tracking-widest">Producto</th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-secondary-300 uppercase tracking-widest">Categoría</th>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-secondary-300 uppercase tracking-widest">Stock</th>
+              <th className="px-6 py-3 text-left text-xs font-semibold text-secondary-300 uppercase tracking-widest">STOCK</th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-secondary-300 uppercase tracking-widest">Mínimo</th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-secondary-300 uppercase tracking-widest">Estado</th>
               <th className="px-6 py-3 text-left text-xs font-semibold text-secondary-300 uppercase tracking-widest">Costo Unit.</th>
@@ -886,6 +919,42 @@ export default function Inventory() {
           )}
         </div>
       </div>
+
+      {/* Custom Confirmation Modal */}
+      {modalState.isOpen && (
+        <div className="fixed inset-0 bg-black/80 overflow-y-auto h-full w-full z-[60] flex items-center justify-center p-4">
+          <div className="brand-card w-full max-w-md p-6 flex flex-col items-center text-center space-y-4">
+            <ExclamationTriangleIcon className={`h-12 w-12 mb-2 ${
+              modalState.type === 'danger' ? 'text-red-500' :
+              modalState.type === 'warning' ? 'text-yellow-500' :
+              'text-primary-500'
+            }`} />
+            <h2 className="brand-heading text-xl text-white">{modalState.title}</h2>
+            <p className="text-secondary-300 whitespace-pre-line text-sm">
+              {modalState.message}
+            </p>
+
+            <div className="flex justify-center space-x-4 pt-4 w-full">
+              <button 
+                onClick={() => setModalState(prev => ({ ...prev, isOpen: false }))} 
+                className="px-6 py-2 text-secondary-300 hover:text-white uppercase tracking-widest text-sm w-1/2"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={modalState.onConfirm} 
+                className={`w-1/2 px-6 py-2 font-bold uppercase tracking-widest text-sm rounded transition-colors ${
+                  modalState.type === 'danger' ? 'bg-red-500 text-white hover:bg-red-600' :
+                  modalState.type === 'warning' ? 'bg-yellow-500 text-black hover:bg-yellow-600' :
+                  'brand-button'
+                }`}
+              >
+                Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

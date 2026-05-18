@@ -3,9 +3,14 @@ import { useAuthStore } from '../stores/auth'
 import { useSettingsStore } from '../stores/settings'
 import { authService } from '../services/auth'
 import { User } from '../types'
-import { PlusIcon, TrashIcon, NoSymbolIcon, CheckCircleIcon } from '@heroicons/react/24/outline'
+import { PlusIcon, TrashIcon, NoSymbolIcon, CheckCircleIcon, RocketLaunchIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline'
 import ImageCropper from '../components/ImageCropper'
 import { compressImage } from '../lib/imageCompression'
+import { availableKits } from '../lib/kits'
+import { kitsService } from '../services/kits'
+import { Kit } from '../lib/kits/types'
+import { linkSeedDataToKit } from '../scripts/linkSeedData'
+import { devService } from '../services/dev'
 
 export default function Settings() {
   const { user } = useAuthStore()
@@ -27,6 +32,101 @@ export default function Settings() {
     password: '',
     role: 'vendor' as 'admin' | 'vendor'
   })
+
+  // Kits state
+  const [installingKit, setInstallingKit] = useState<string | null>(null);
+  const [uninstallingKit, setUninstallingKit] = useState<string | null>(null);
+  const [isResetting, setIsResetting] = useState(false);
+
+  // Modal state
+  const [modalState, setModalState] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    type: 'danger' | 'warning' | 'primary';
+    requireText?: string;
+    confirmText?: string;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'primary',
+    onConfirm: () => {}
+  });
+  const [modalInput, setModalInput] = useState('');
+
+  const handleResetDatabase = async () => {
+    setModalState({
+      isOpen: true,
+      title: '🚨 PELIGRO EXTREMO 🚨',
+      message: '¿Estás absolutamente seguro de querer BORRAR TODOS LOS DATOS?\n\nEsto eliminará permanentemente:\n- Todas las ventas\n- Todos los productos y recetas\n- Todo el inventario\n\nTu cuenta quedará 100% en blanco. Esta acción NO se puede deshacer.\n\nPara confirmar, escribe la palabra: BORRAR',
+      type: 'danger',
+      requireText: 'BORRAR',
+      confirmText: 'Resetear Cuenta',
+      onConfirm: async () => {
+        setModalState(prev => ({ ...prev, isOpen: false }));
+        setModalInput('');
+        try {
+          setIsResetting(true);
+          await devService.resetDatabase();
+          // Replace alert with a temporary modal or just let the reload show the clean state
+          // For success we can use a small timeout before reload
+          window.location.reload(); 
+        } catch (error: any) {
+          alert(`Error limpiando la base de datos: ${error.message}`);
+        } finally {
+          setIsResetting(false);
+        }
+      }
+    });
+  };
+
+  const handleInstallKit = async (kit: Kit) => {
+    setModalState({
+      isOpen: true,
+      title: `Instalar ${kit.name}`,
+      message: `¿Estás seguro de instalar el "${kit.name}"?\n\nEsto creará ${kit.inventory.length} insumos y ${kit.products.length} productos en tu cuenta. Es ideal si tu cuenta está vacía.`,
+      type: 'primary',
+      confirmText: 'Instalar',
+      onConfirm: async () => {
+        setModalState(prev => ({ ...prev, isOpen: false }));
+        try {
+          setInstallingKit(kit.id);
+          await kitsService.installKit(kit);
+          // Optional: use a toast instead of alert, but keeping alert for success is less disruptive than for confirm.
+          // Or we can just let it finish. Let's keep it simple for now, but remove the alert if possible.
+          alert(`¡${kit.name} instalado con éxito! Revisa la sección de Inventario y Productos.`);
+        } catch (error: any) {
+          alert(`Error instalando el kit: ${error.message}`);
+        } finally {
+          setInstallingKit(null);
+        }
+      }
+    });
+  };
+
+  const handleUninstallKit = async (kit: Kit) => {
+    setModalState({
+      isOpen: true,
+      title: `Desinstalar ${kit.name}`,
+      message: `¿PELIGRO: Estás seguro de DESINSTALAR el "${kit.name}"?\n\nEsto ELIMINARÁ PERMANENTEMENTE los productos y el inventario asociados a este kit (que no tengan ventas previas).\n\nEsta acción no se puede deshacer.`,
+      type: 'danger',
+      confirmText: 'Desinstalar',
+      onConfirm: async () => {
+        setModalState(prev => ({ ...prev, isOpen: false }));
+        try {
+          setUninstallingKit(kit.id);
+          await kitsService.uninstallKit(kit);
+          alert(`¡${kit.name} desinstalado! Se limpiaron los productos e insumos base.`);
+        } catch (error: any) {
+          alert(`Error desinstalando el kit: ${error.message}`);
+        } finally {
+          setUninstallingKit(null);
+        }
+      }
+    });
+  };
 
   useEffect(() => {
     loadUsers()
@@ -95,30 +195,46 @@ export default function Settings() {
   }
 
   const handleDeleteUser = async (userId: string) => {
-    if (!window.confirm('¿Está seguro de eliminar este usuario? Esta acción es irreversible y podría fallar si el usuario tiene ventas asociadas.')) return
-    
-    try {
-      await authService.deleteUser(userId)
-      loadUsers()
-    } catch (error) {
-      console.error('Error deleting user:', error)
-      alert('Error al eliminar el usuario. Si tiene ventas asociadas, considere desactivarlo en su lugar.')
-    }
+    setModalState({
+      isOpen: true,
+      title: 'Eliminar Usuario',
+      message: '¿Está seguro de eliminar este usuario? Esta acción es irreversible y podría fallar si el usuario tiene ventas asociadas.',
+      type: 'danger',
+      confirmText: 'Eliminar',
+      onConfirm: async () => {
+        setModalState(prev => ({ ...prev, isOpen: false }));
+        try {
+          await authService.deleteUser(userId)
+          loadUsers()
+        } catch (error) {
+          console.error('Error deleting user:', error)
+          alert('Error al eliminar el usuario. Si tiene ventas asociadas, considere desactivarlo en su lugar.')
+        }
+      }
+    });
   }
 
   const handleToggleStatus = async (user: User) => {
     const action = user.active !== false ? 'desactivar' : 'activar'
-    if (!window.confirm(`¿Está seguro de ${action} a este usuario?`)) return
-
-    try {
-      // active es true por defecto si es undefined/null
-      const currentStatus = user.active !== false
-      await authService.toggleUserStatus(user.id, currentStatus)
-      loadUsers()
-    } catch (error) {
-      console.error('Error updating user status:', error)
-      alert('Error al actualizar el estado del usuario')
-    }
+    setModalState({
+      isOpen: true,
+      title: `${action === 'activar' ? 'Activar' : 'Desactivar'} Usuario`,
+      message: `¿Está seguro de ${action} a este usuario?`,
+      type: 'warning',
+      confirmText: action === 'activar' ? 'Activar' : 'Desactivar',
+      onConfirm: async () => {
+        setModalState(prev => ({ ...prev, isOpen: false }));
+        try {
+          // active es true por defecto si es undefined/null
+          const currentStatus = user.active !== false
+          await authService.toggleUserStatus(user.id, currentStatus)
+          loadUsers()
+        } catch (error) {
+          console.error('Error updating user status:', error)
+          alert('Error al actualizar el estado del usuario')
+        }
+      }
+    });
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -488,6 +604,74 @@ export default function Settings() {
         </div>
       </div>
 
+      {/* Kits de Inicio */}
+      {user?.role === 'admin' && (
+        <div className="mt-8 brand-card">
+          <div className="px-4 py-5 sm:p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <RocketLaunchIcon className="h-6 w-6 text-primary-400" />
+              <h3 className="brand-heading text-2xl">Kits de Inicio Rápidos</h3>
+            </div>
+            <p className="text-sm text-secondary-300 mb-6">
+              Acelera la configuración de tu negocio instalando plantillas preconfiguradas de insumos, productos y recetas. Ideal para cuentas nuevas.
+              <button onClick={() => { linkSeedDataToKit(); alert('Datos enlazados al kit'); }} className="ml-2 text-xs text-primary-500 underline hidden">
+                [Fix Seed Data]
+              </button>
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {availableKits.map((kit) => (
+                <div key={kit.id} className="border border-white/10 rounded-lg p-5 flex flex-col bg-black/20 hover:border-primary-500/30 transition-colors">
+                  <div className="flex items-center gap-3 mb-2">
+                    <span className="text-3xl">{kit.icon}</span>
+                    <h4 className="brand-heading text-lg text-secondary-50">{kit.name}</h4>
+                  </div>
+                  <p className="text-sm text-secondary-400 mb-4 flex-1">
+                    {kit.description}
+                  </p>
+                  <div className="text-xs text-secondary-500 mb-4 space-y-1">
+                    <p>• {kit.inventory.length} Insumos base</p>
+                    <p>• {kit.products.length} Productos y Recetas</p>
+                  </div>
+                  <button
+                    onClick={() => handleInstallKit(kit)}
+                    disabled={installingKit !== null || uninstallingKit !== null}
+                    className="w-full py-2 px-4 rounded font-bold uppercase tracking-widest text-xs transition-colors bg-primary-500/20 text-primary-400 hover:bg-primary-500 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed mb-2"
+                  >
+                    {installingKit === kit.id ? 'Instalando...' : 'Instalar Kit'}
+                  </button>
+                  <button
+                    onClick={() => handleUninstallKit(kit)}
+                    disabled={installingKit !== null || uninstallingKit !== null}
+                    className="w-full py-2 px-4 rounded border border-red-500/30 text-red-500 font-bold uppercase tracking-widest text-xs transition-colors hover:bg-red-500/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {uninstallingKit === kit.id ? 'Desinstalando...' : 'Desinstalar Kit'}
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Zona de Peligro / Pruebas */}
+      {user?.role === 'admin' && (
+        <div className="mt-8 brand-card border-red-500/30">
+          <div className="px-4 py-5 sm:p-6">
+            <h3 className="brand-heading text-xl text-red-500 mb-2">Zona de Peligro (Pruebas)</h3>
+            <p className="text-sm text-secondary-300 mb-4">
+              Opciones destructivas para limpiar la cuenta y hacer pruebas de instalación en limpio.
+            </p>
+            <button
+              onClick={handleResetDatabase}
+              disabled={isResetting}
+              className="bg-red-500/10 text-red-500 border border-red-500/50 hover:bg-red-500 hover:text-white font-bold py-2 px-4 rounded transition-colors disabled:opacity-50"
+            >
+              {isResetting ? 'Borrando todo...' : 'Resetear Cuenta a Cero'}
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* System Info */}
       <div className="mt-8 brand-card">
         <div className="px-4 py-5 sm:p-6">
@@ -512,6 +696,58 @@ export default function Settings() {
           </div>
         </div>
       </div>
+
+      {/* Custom Confirmation Modal */}
+      {modalState.isOpen && (
+        <div className="fixed inset-0 bg-black/80 overflow-y-auto h-full w-full z-[60] flex items-center justify-center p-4">
+          <div className="brand-card w-full max-w-md p-6 flex flex-col items-center text-center space-y-4">
+            <ExclamationTriangleIcon className={`h-12 w-12 mb-2 ${
+              modalState.type === 'danger' ? 'text-red-500' :
+              modalState.type === 'warning' ? 'text-yellow-500' :
+              'text-primary-500'
+            }`} />
+            <h2 className="brand-heading text-xl text-white">{modalState.title}</h2>
+            <p className="text-secondary-300 whitespace-pre-line text-sm">
+              {modalState.message}
+            </p>
+            
+            {modalState.requireText && (
+              <div className="w-full mt-4">
+                <input
+                  type="text"
+                  placeholder={`Escribe: ${modalState.requireText}`}
+                  value={modalInput}
+                  onChange={(e) => setModalInput(e.target.value)}
+                  className="brand-input w-full text-center text-lg uppercase font-bold text-red-500 placeholder:text-red-500/30 border-red-500/30 focus:border-red-500"
+                />
+              </div>
+            )}
+
+            <div className="flex justify-center space-x-4 pt-4 w-full">
+              <button 
+                onClick={() => {
+                  setModalState(prev => ({ ...prev, isOpen: false }));
+                  setModalInput('');
+                }} 
+                className="px-6 py-2 text-secondary-300 hover:text-white uppercase tracking-widest text-sm w-1/2"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={modalState.onConfirm} 
+                disabled={modalState.requireText ? modalInput !== modalState.requireText : false}
+                className={`w-1/2 px-6 py-2 font-bold uppercase tracking-widest text-sm rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                  modalState.type === 'danger' ? 'bg-red-500 text-white hover:bg-red-600' :
+                  modalState.type === 'warning' ? 'bg-yellow-500 text-black hover:bg-yellow-600' :
+                  'brand-button'
+                }`}
+              >
+                {modalState.confirmText || 'Confirmar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

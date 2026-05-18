@@ -99,5 +99,41 @@ export const productsService = {
       .eq('id', productId)
 
     if (error) throw error
+  },
+
+  async duplicateProduct(productId: string) {
+    // 1. Obtener el producto original con sus ingredientes
+    const { data: original, error: fetchError } = await supabase
+      .from('products')
+      .select(`
+        *,
+        ingredients:product_ingredients(
+          inventory_item_id,
+          quantity,
+          is_optional
+        )
+      `)
+      .eq('id', productId)
+      .single()
+
+    if (fetchError || !original) throw fetchError || new Error('Producto no encontrado')
+
+    // 2. Preparar los datos del nuevo producto
+    const newProduct = {
+      name: `Copia de ${original.name}`,
+      category: original.category,
+      price: original.price,
+      description: original.description,
+      image_url: original.image_url,
+      active: original.active,
+      requires_protein_choice: original.requires_protein_choice,
+      show_in_web: original.show_in_web
+    }
+
+    // 3. Preparar los ingredientes
+    const newIngredients = original.ingredients || []
+
+    // 4. Crear el nuevo producto usando el método existente
+    return await this.createProduct(newProduct, newIngredients)
   }
 }
