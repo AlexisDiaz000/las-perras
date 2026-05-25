@@ -60,7 +60,7 @@ export default function Settings() {
     setModalState({
       isOpen: true,
       title: '🚨 PELIGRO EXTREMO 🚨',
-      message: '¿Estás absolutamente seguro de querer BORRAR TODOS LOS DATOS?\n\nEsto eliminará permanentemente:\n- Todas las ventas\n- Todos los productos y recetas\n- Todo el inventario\n\nTu cuenta quedará 100% en blanco. Esta acción NO se puede deshacer.\n\nPara confirmar, escribe la palabra: BORRAR',
+      message: '¿Estás absolutamente seguro de querer BORRAR TODOS LOS DATOS?\n\nEsto eliminará permanentemente:\n- Todas las ventas\n- Todos los productos y recetas\n- Todo el inventario\n- Todos los gastos\n\nTu cuenta quedará 100% en blanco. Esta acción NO se puede deshacer.\n\nPara confirmar, escribe la palabra: BORRAR',
       type: 'danger',
       requireText: 'BORRAR',
       confirmText: 'Resetear Cuenta',
