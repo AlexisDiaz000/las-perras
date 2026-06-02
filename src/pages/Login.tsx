@@ -124,14 +124,6 @@ export default function Login() {
                 </button>
               </div>
             </form>
-
-            <div className="mt-8 pt-6 border-t border-[color:var(--app-border)] text-center">
-              <p className="text-[10px] text-[color:var(--app-muted-2)] uppercase tracking-widest mb-2 brand-heading">Cuentas de demostración</p>
-              <div className="flex flex-col gap-1 text-xs text-[color:var(--app-muted-1)] font-mono bg-[color:var(--app-hover)] p-3 rounded-lg">
-                <p>admin@brutalsystem.com / admin123</p>
-                <p>vendor@brutalsystem.com / vendor123</p>
-              </div>
-            </div>
           </div>
         </div>
         
