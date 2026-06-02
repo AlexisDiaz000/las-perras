@@ -1,4 +1,4 @@
-# Brutal System
+# BrutalBunny
 
 Brutal System es un sistema web (SPA) para operación diaria de negocios de comida rápida: punto de venta (POS), control de pedidos, pedidos web (menú público), inventario por insumos con consumo por receta, gastos, KPIs y reportes.
 
